@@ -52,6 +52,7 @@ from visualizations import (
     create_factor_radar_chart,
     create_percentile_chart,
     create_timelapse_animation,
+    create_timelapse_animation_3d,
     create_3d_pca_plot,
     create_cluster_summary_plot
 )
@@ -803,6 +804,17 @@ def render_visualizations(
         Click **Play** to start the animation.
         """)
         
+        # Add 2D/3D toggle
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            view_mode = st.radio(
+                "View Mode:",
+                options=["2D View", "3D View"],
+                index=0,
+                key="timelapse_view_mode",
+                horizontal=True
+            )
+        
         if st.button("🔄 Generate Time-Lapse Animation", key="timelapse_btn"):
             with st.spinner("Preparing animation..."):
                 time_series_data = prepare_time_series_data(
@@ -810,10 +822,26 @@ def render_visualizations(
                 )
                 
                 if not time_series_data.empty:
-                    fig_animation = create_timelapse_animation(
-                        time_series_data, selected_ticker, filtered_pca_df
-                    )
-                    st.plotly_chart(fig_animation, use_container_width=True)
+                    if view_mode == "3D View":
+                        # Check if PC3 data is available
+                        if 'PC3' in time_series_data.columns:
+                            from visualizations import create_timelapse_animation_3d
+                            fig_animation = create_timelapse_animation_3d(
+                                time_series_data, selected_ticker, filtered_pca_df
+                            )
+                            st.plotly_chart(fig_animation, use_container_width=True)
+                        else:
+                            st.warning("3D view requires PC3 data. Falling back to 2D view.")
+                            fig_animation = create_timelapse_animation(
+                                time_series_data, selected_ticker, filtered_pca_df
+                            )
+                            st.plotly_chart(fig_animation, use_container_width=True)
+                    else:
+                        # 2D View
+                        fig_animation = create_timelapse_animation(
+                            time_series_data, selected_ticker, filtered_pca_df
+                        )
+                        st.plotly_chart(fig_animation, use_container_width=True)
                 else:
                     st.warning("Insufficient time-series data for animation.")
     
