@@ -272,21 +272,32 @@ def create_pca_scatter_plot(
 
         if 'PC1' in loadings and 'positive' in loadings['PC1']:
             top_pos = list(loadings['PC1']['positive'].items())[:3]
-            pc1_pos_hover = "<br>".join([f"{feat}: {val:.3f}" for feat, val in top_pos])
+            pc1_pos_hover = "<br>".join([
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                for feat, val in top_pos
+            ])
 
         if 'PC1' in loadings and 'negative' in loadings['PC1']:
             top_neg = list(loadings['PC1']['negative'].items())[:3]
-            pc1_neg_hover = "<br>".join([f"{feat}: {val:.3f}" for feat, val in top_neg])
+            pc1_neg_hover = "<br>".join([
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                for feat, val in top_neg
+            ])
 
         if 'PC2' in loadings and 'positive' in loadings['PC2']:
             top_pos = list(loadings['PC2']['positive'].items())[:3]
-            pc2_pos_hover = "<br>".join([f"{feat}: {val:.3f}" for feat, val in top_pos])
+            pc2_pos_hover = "<br>".join([
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                for feat, val in top_pos
+            ])
 
         if 'PC2' in loadings and 'negative' in loadings['PC2']:
             top_neg = list(loadings['PC2']['negative'].items())[:3]
-            pc2_neg_hover = "<br>".join([f"{feat}: {val:.3f}" for feat, val in top_neg])
-
-    # Helper: add an invisible hover target at a specific x/y
+            pc2_neg_hover = "<br>".join([
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                for feat, val in top_neg
+            ])
+            
     def _add_hover_target(x, y, hover_html):
         fig.add_trace(go.Scatter(
             x=[x],
