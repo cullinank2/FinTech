@@ -822,6 +822,15 @@ def render_visualizations(
                 )
                 
                 if not time_series_data.empty:
+                    # Calculate time range
+                    start_date = pd.to_datetime(time_series_data['date'].iloc[0])
+                    end_date = pd.to_datetime(time_series_data['date'].iloc[-1])
+                    num_months = round((end_date - start_date).days / 30.44)
+                    num_datapoints = len(time_series_data)
+                    
+                    st.info(f"📅 **Time Range:** {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')} "
+                           f"({num_months} months, {num_datapoints} data points)")
+                    
                     if view_mode == "3D View":
                         # Check if PC3 data is available
                         if 'PC3' in time_series_data.columns:
