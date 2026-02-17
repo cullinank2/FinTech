@@ -884,6 +884,174 @@ def create_timelapse_animation(
     
     return fig
 
+def create_timelapse_animation_3d(
+    time_series_df: pd.DataFrame,
+    ticker: str,
+    pca_df: pd.DataFrame
+) -> go.Figure:
+    """
+    Create an animated 3D scatter plot showing stock movement over time.
+    
+    Args:
+        time_series_df: DataFrame with date, PC1, PC2, PC3 columns
+        ticker: Stock ticker
+        pca_df: Full PCA DataFrame for background context
+        
+    Returns:
+        Plotly Figure with 3D animation
+    """
+    if time_series_df.empty or 'PC3' not in time_series_df.columns:
+        return go.Figure()
+    
+    # Create figure with frames
+    fig = go.Figure()
+    
+    # Add static background (all other stocks, dimmed)
+    if 'PC3' in pca_df.columns:
+        fig.add_trace(go.Scatter3d(
+            x=pca_df['PC1'],
+            y=pca_df['PC2'],
+            z=pca_df['PC3'],
+            mode='markers',
+            marker=dict(size=3, color='lightgray', opacity=0.2),
+            name='Other Stocks',
+            hoverinfo='skip'
+        ))
+    
+    # Add the animated trace (current position)
+    fig.add_trace(go.Scatter3d(
+        x=[time_series_df['PC1'].iloc[0]],
+        y=[time_series_df['PC2'].iloc[0]],
+        z=[time_series_df['PC3'].iloc[0]],
+        mode='markers+text',
+        marker=dict(size=10, color='red', symbol='diamond'),
+        text=[ticker],
+        textposition='top center',
+        name=f'{ticker} Position'
+    ))
+    
+    # Add trail trace
+    fig.add_trace(go.Scatter3d(
+        x=time_series_df['PC1'].iloc[:1],
+        y=time_series_df['PC2'].iloc[:1],
+        z=time_series_df['PC3'].iloc[:1],
+        mode='lines',
+        line=dict(color='blue', width=4),
+        name='Historical Path',
+        opacity=0.6
+    ))
+    
+    # Create frames for animation
+    frames = []
+    for i in range(1, len(time_series_df)):
+        frame_data = [
+            # Background (unchanged)
+            go.Scatter3d(
+                x=pca_df['PC1'] if 'PC3' in pca_df.columns else [],
+                y=pca_df['PC2'] if 'PC3' in pca_df.columns else [],
+                z=pca_df['PC3'] if 'PC3' in pca_df.columns else [],
+                mode='markers',
+                marker=dict(size=3, color='lightgray', opacity=0.2)
+            ),
+            # Current position
+            go.Scatter3d(
+                x=[time_series_df['PC1'].iloc[i]],
+                y=[time_series_df['PC2'].iloc[i]],
+                z=[time_series_df['PC3'].iloc[i]],
+                mode='markers+text',
+                marker=dict(size=10, color='red', symbol='diamond'),
+                text=[ticker],
+                textposition='top center'
+            ),
+            # Trail
+            go.Scatter3d(
+                x=time_series_df['PC1'].iloc[:i+1],
+                y=time_series_df['PC2'].iloc[:i+1],
+                z=time_series_df['PC3'].iloc[:i+1],
+                mode='lines',
+                line=dict(color='blue', width=4),
+                opacity=0.6
+            )
+        ]
+        
+        frame_name = str(time_series_df['date'].iloc[i])[:10]
+        frames.append(go.Frame(data=frame_data, name=frame_name))
+    
+    fig.frames = frames
+    
+    # Add animation controls
+    fig.update_layout(
+        title=f'3D Historical Movement: {ticker}',
+        scene=dict(
+            xaxis_title=f"PC1: {PC1_INTERPRETATION['name']}",
+            yaxis_title=f"PC2: {PC2_INTERPRETATION['name']}",
+            zaxis_title=f"PC3: {PC3_INTERPRETATION['name']}"
+        ),
+        width=PLOT_WIDTH,
+        height=PLOT_HEIGHT,
+        updatemenus=[
+            dict(
+                type="buttons",
+                showactive=False,
+                y=1.15,
+                x=0.5,
+                xanchor="center",
+                buttons=[
+                    dict(
+                        label="▶ Play",
+                        method="animate",
+                        args=[None, {
+                            "frame": {"duration": ANIMATION_FRAME_DURATION, "redraw": True},
+                            "fromcurrent": True,
+                            "transition": {"duration": 200}
+                        }]
+                    ),
+                    dict(
+                        label="⏸ Pause",
+                        method="animate",
+                        args=[[None], {
+                            "frame": {"duration": 0, "redraw": False},
+                            "mode": "immediate",
+                            "transition": {"duration": 0}
+                        }]
+                    )
+                ]
+            )
+        ],
+        sliders=[
+            dict(
+                active=0,
+                yanchor="top",
+                xanchor="left",
+                currentvalue=dict(
+                    font=dict(size=12),
+                    prefix="Date: ",
+                    visible=True,
+                    xanchor="center"
+                ),
+                transition=dict(duration=200),
+                pad=dict(b=10, t=50),
+                len=0.9,
+                x=0.05,
+                y=0,
+                steps=[
+                    dict(
+                        args=[[f.name], {
+                            "frame": {"duration": 200, "redraw": True},
+                            "mode": "immediate",
+                            "transition": {"duration": 200}
+                        }],
+                        label=f.name,
+                        method="animate"
+                    )
+                    for f in frames
+                ]
+            )
+        ]
+    )
+    
+    return fig
+
 
 # =============================================================================
 # 3D PCA VISUALIZATION
