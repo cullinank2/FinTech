@@ -715,7 +715,7 @@ def render_visualizations(
                     pc2_var = round(variance_ratios[1] * 100, 1)
                     combined = round(pc1_var + pc2_var + pc3_var, 1)
                     pc3_variance = f" &nbsp;|&nbsp; <i>Explains ~{pc3_var}% of variance</i>"
-                    combined_variance = f" &nbsp;|&nbsp; <b>Combined PC1+PC2+PC3: ~{combined}%</b>"
+                    combined_variance = f" &nbsp;|&nbsp; <i>Combined PC1+PC2+PC3: ~{combined}%</i>"
             
             # PC3 info box
             st.markdown(f"""
