@@ -285,7 +285,7 @@ def render_sidebar():
         "🎯 Cluster Plot",
         "👥 Quadrant Peers",
         "📊 Factor Analysis",
-        "🕐 Time-Lapse",
+        "🕐 2D or 3D Time-Lapse",
         "🌐 3D Cluster View",
         "🌐 3D Quadrant Peers"
     ]
@@ -797,7 +797,7 @@ def render_visualizations(
             if factor_table:
                 st.dataframe(pd.DataFrame(factor_table))
     
-    elif current_view == "🕐 Time-Lapse":
+    elif current_view == "🕐 2D or 3D Time-Lapse":
         st.markdown("### 🕐 Historical Movement Animation")
         st.markdown("""
         Watch how the stock's position has changed over time in the PCA space.
