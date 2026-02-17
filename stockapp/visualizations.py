@@ -297,7 +297,7 @@ def create_pca_scatter_plot(
                 f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
                 for feat, val in top_neg
             ])
-            
+
     def _add_hover_target(x, y, hover_html):
         fig.add_trace(go.Scatter(
             x=[x],
@@ -630,12 +630,22 @@ def create_factor_radar_chart(
         customdata=values + [values[0]] if values else []
     ))
     
+    # Theme-aware tick color
+    theme_base = st.get_option("theme.base")
+    tick_color = "rgba(255,255,255,0.75)" if theme_base == "dark" else "rgba(0,0,0,0.65)"
+
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
                 range=[0, 100],
-                ticksuffix='%'
+                ticksuffix='%',
+                tickfont=dict(
+                    size=10,
+                    color=tick_color
+                ),
+                gridcolor="rgba(128,128,128,0.3)",
+                linecolor="rgba(128,128,128,0.3)"
             )
         ),
         title=f'Factor Breakdown: {ticker}',
