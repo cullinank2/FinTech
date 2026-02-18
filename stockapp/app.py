@@ -52,6 +52,7 @@ from visualizations import (
     create_quadrant_comparison_plot,
     create_factor_radar_chart,
     create_percentile_chart,
+    create_factor_trend_chart,
     create_timelapse_animation,
     create_timelapse_animation_3d,
     create_3d_pca_plot,

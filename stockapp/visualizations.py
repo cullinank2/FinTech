@@ -717,7 +717,143 @@ def create_percentile_chart(
 
     return fig
 
+
+# =============================================================================
+# FACTOR TREND CHART
+# =============================================================================
+
+def create_factor_trend_chart(
+    raw_data: pd.DataFrame,
+    ticker: str,
+    loadings_dict: dict,
+    period: str = "All"
+) -> Tuple[go.Figure, go.Figure]:
+    """
+    Create dual trend charts showing how top PC1 and PC2 drivers change over time.
     
+    Args:
+        raw_data: Full raw dataset with time series data
+        ticker: Selected stock ticker
+        loadings_dict: PCA loadings from session state
+        period: Time period filter ("1Y", "3Y", "5Y", "All")
+        
+    Returns:
+        Tuple of (PC1 figure, PC2 figure)
+    """
+    # Filter for selected ticker
+    stock_data = raw_data[raw_data['ticker'].str.upper() == ticker.upper()].copy()
+    
+    if stock_data.empty:
+        return go.Figure(), go.Figure()
+    
+    # Get date column
+    date_col = None
+    for col in ['public_date', 'date', 'datadate']:
+        if col in stock_data.columns:
+            date_col = col
+            break
+    
+    if date_col is None:
+        return go.Figure(), go.Figure()
+    
+    # Sort by date
+    stock_data = stock_data.sort_values(date_col)
+    stock_data['date'] = pd.to_datetime(stock_data[date_col])
+    
+    # Filter by period
+    if period != "All":
+        end_date = stock_data['date'].max()
+        if period == "1Y":
+            start_date = end_date - pd.DateOffset(years=1)
+        elif period == "3Y":
+            start_date = end_date - pd.DateOffset(years=3)
+        elif period == "5Y":
+            start_date = end_date - pd.DateOffset(years=5)
+        stock_data = stock_data[stock_data['date'] >= start_date]
+    
+    # Get top 3 drivers for PC1 and PC2
+    pc1_features = []
+    pc2_features = []
+    
+    if 'PC1' in loadings_dict and 'positive' in loadings_dict['PC1']:
+        pc1_features = list(loadings_dict['PC1']['positive'].keys())[:3]
+    
+    if 'PC2' in loadings_dict and 'positive' in loadings_dict['PC2']:
+        pc2_features = list(loadings_dict['PC2']['positive'].keys())[:3]
+    
+    # Create PC1 trend chart
+    fig_pc1 = go.Figure()
+    
+    for feat in pc1_features:
+        if feat in stock_data.columns:
+            # Normalize to 0-100 percentile scale within this stock's history
+            values = stock_data[feat].values
+            if len(values) > 0 and values.std() > 0:
+                normalized = ((values - values.min()) / (values.max() - values.min())) * 100
+            else:
+                normalized = [50] * len(values)
+            
+            display_name = FEATURE_DISPLAY_NAMES.get(feat, feat)
+            
+            fig_pc1.add_trace(go.Scatter(
+                x=stock_data['date'],
+                y=normalized,
+                mode='lines+markers',
+                name=display_name,
+                line=dict(width=2),
+                marker=dict(size=6),
+                hovertemplate=f"<b>{display_name}</b><br>Date: %{{x|%Y-%m-%d}}<br>Normalized: %{{y:.1f}}<extra></extra>"
+            ))
+    
+    fig_pc1.update_layout(
+        title=f'PC1 Driver Trends: {ticker}',
+        xaxis_title='Date',
+        yaxis_title='Normalized Value (0-100)',
+        width=PLOT_WIDTH,
+        height=400,
+        hovermode='x unified',
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    
+    # Create PC2 trend chart
+    fig_pc2 = go.Figure()
+    
+    for feat in pc2_features:
+        if feat in stock_data.columns:
+            # Normalize to 0-100 percentile scale within this stock's history
+            values = stock_data[feat].values
+            if len(values) > 0 and values.std() > 0:
+                normalized = ((values - values.min()) / (values.max() - values.min())) * 100
+            else:
+                normalized = [50] * len(values)
+            
+            display_name = FEATURE_DISPLAY_NAMES.get(feat, feat)
+            
+            fig_pc2.add_trace(go.Scatter(
+                x=stock_data['date'],
+                y=normalized,
+                mode='lines+markers',
+                name=display_name,
+                line=dict(width=2),
+                marker=dict(size=6),
+                hovertemplate=f"<b>{display_name}</b><br>Date: %{{x|%Y-%m-%d}}<br>Normalized: %{{y:.1f}}<extra></extra>"
+            ))
+    
+    fig_pc2.update_layout(
+        title=f'PC2 Driver Trends: {ticker}',
+        xaxis_title='Date',
+        yaxis_title='Normalized Value (0-100)',
+        width=PLOT_WIDTH,
+        height=400,
+        hovermode='x unified',
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    
+    return fig_pc1, fig_pc2
+
+
 # =============================================================================
 # TIME-LAPSE ANIMATION
 # =============================================================================
