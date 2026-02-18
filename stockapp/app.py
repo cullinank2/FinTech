@@ -618,6 +618,49 @@ def render_visualizations(
         
         fig = create_pca_scatter_plot(filtered_pca_df, selected_ticker)
         st.plotly_chart(fig, use_container_width=True)
+        
+        # ============================================================
+        # TEMPORARY DEBUG: PCA Loadings Table
+        # ============================================================
+        st.markdown("---")
+        st.markdown("### 🔧 DEBUG: Live PCA Loadings")
+        
+        if 'pca_loadings' in st.session_state:
+            loadings = st.session_state.pca_loadings
+            
+            # Build debug table
+            debug_data = []
+            for pc in ['PC1', 'PC2', 'PC3']:
+                if pc in loadings:
+                    # Add positive loadings
+                    if 'positive' in loadings[pc]:
+                        for feat, val in loadings[pc]['positive'].items():
+                            debug_data.append({
+                                'PC': pc,
+                                'Type': 'Positive',
+                                'Feature': feat,
+                                'Display Name': FEATURE_DISPLAY_NAMES.get(feat, feat),
+                                'Loading': val
+                            })
+                    
+                    # Add negative loadings
+                    if 'negative' in loadings[pc]:
+                        for feat, val in loadings[pc]['negative'].items():
+                            debug_data.append({
+                                'PC': pc,
+                                'Type': 'Negative',
+                                'Feature': feat,
+                                'Display Name': FEATURE_DISPLAY_NAMES.get(feat, feat),
+                                'Loading': val
+                            })
+            
+            if debug_data:
+                debug_df = pd.DataFrame(debug_data)
+                st.dataframe(debug_df, use_container_width=True)
+            else:
+                st.warning("No loadings data available")
+        else:
+            st.warning("pca_loadings not found in session state")
     
     elif current_view == "👥 Quadrant Peers":
 
