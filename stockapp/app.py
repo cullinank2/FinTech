@@ -52,6 +52,7 @@ from visualizations import (
     create_quadrant_comparison_plot,
     create_factor_radar_chart,
     create_percentile_chart,
+    create_factor_trend_chart,
     create_timelapse_animation,
     create_timelapse_animation_3d,
     create_3d_pca_plot,
@@ -840,6 +841,46 @@ def render_visualizations(
             
             if factor_table:
                 st.dataframe(pd.DataFrame(factor_table))
+        
+        # Factor Trend Charts
+        st.markdown("---")
+        st.markdown("### 📈 Factor Trends Over Time")
+        st.markdown("""
+        Visualize how the top PC1 and PC2 drivers have changed over time, 
+        helping explain movement on the 2D cluster plot.
+        """)
+        
+        # Time period selector
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            time_period = st.selectbox(
+                "Time Period:",
+                options=["All", "5Y", "3Y", "1Y"],
+                index=0,
+                key="factor_trend_period"
+            )
+        
+        # Generate charts if loadings available
+        if 'pca_loadings' in st.session_state:
+            fig_pc1_trend, fig_pc2_trend = create_factor_trend_chart(
+                raw_data, 
+                selected_ticker, 
+                st.session_state.pca_loadings,
+                period=time_period
+            )
+            
+            # Display charts side by side
+            col1, col2 = st.columns(2)
+            with col1:
+                st.plotly_chart(fig_pc1_trend, use_container_width=True)
+            with col2:
+                st.plotly_chart(fig_pc2_trend, use_container_width=True)
+            
+            # Explanation
+            st.info("💡 **Interpretation:** Rising lines indicate improving metrics. "
+                   "PC1 drivers (left) explain horizontal movement. PC2 drivers (right) explain vertical movement.")
+        else:
+            st.warning("PCA loadings not available.")
     
     elif current_view == "🕐 2D or 3D Time-Lapse":
         st.markdown("### 🕐 Historical Movement Animation")
