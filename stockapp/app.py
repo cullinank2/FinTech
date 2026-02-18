@@ -29,7 +29,8 @@ from config import (
     PC1_INTERPRETATION,
     PC2_INTERPRETATION,
     PC3_INTERPRETATION,
-    OPENAI_API_KEY_PLACEHOLDER
+    OPENAI_API_KEY_PLACEHOLDER,
+    FEATURE_DISPLAY_NAMES
 )
 from utils import (
     load_data,
