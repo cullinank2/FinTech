@@ -111,7 +111,7 @@ PC1_INTERPRETATION = {
 }
 
 PC2_INTERPRETATION = {
-    'name': 'Valuation Style: Value vs Growth',
+    'name': 'Valuation Style: Growth vs Value',
     'variance_explained': 14.6,
     'high_meaning': ['Deep value stocks', 'High book value', 'High sales relative to price', 'Cheap on traditional metrics'],
     'low_meaning': ['Growth/premium stocks', 'Trading at premium to fundamentals'],
