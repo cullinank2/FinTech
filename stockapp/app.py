@@ -1184,9 +1184,6 @@ def main():
     # Initialize session state
     init_session_state()
     
-    # Render sidebar
-    render_sidebar()
-    
     # Render main header
     render_main_header()
     
@@ -1215,6 +1212,9 @@ def main():
             st.session_state.pca_loadings = loadings
             st.session_state.data_loaded = True
     
+    # Render sidebar AFTER data is loaded so counts and filters work on first click
+    render_sidebar()
+
     # Check for selected stock
     if st.session_state.selected_stock is None:
         st.info("👆 Enter a stock ticker or PERMNO in the sidebar to begin analysis.")
