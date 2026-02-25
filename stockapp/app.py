@@ -1247,23 +1247,7 @@ def main():
             st.markdown(f"### 📊 Cluster Overview{sector_label}")
 
             fig = create_pca_scatter_plot(plot_df)
-            selected_point = st.plotly_chart(
-                fig,
-                use_container_width=True,
-                on_select="rerun",
-                key="landing_cluster_plot"
-            )
-
-            # Handle click on a stock dot
-            if selected_point and selected_point.selection and selected_point.selection.points:
-                clicked = selected_point.selection.points[0]
-                clicked_ticker = clicked.get("customdata", None)
-                if clicked_ticker and isinstance(clicked_ticker, str):
-                    st.session_state.selected_stock = {
-                        'value': clicked_ticker,
-                        'type': 'ticker'
-                    }
-                    st.rerun()
+            st.plotly_chart(fig, use_container_width=True)
 
             cluster_summary = get_cluster_summary(plot_df)
             fig_summary = create_cluster_summary_plot(cluster_summary)
