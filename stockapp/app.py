@@ -309,6 +309,43 @@ def render_sidebar():
         if selected_view != st.session_state.current_view:
             st.session_state.current_view = selected_view
 
+    # GICS Sector filter for landing page Cluster Plot
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🏭 GICS Sector Filter")
+
+    gics_sectors = [
+        "All Sectors",
+        "Energy",
+        "Materials",
+        "Industrials",
+        "Consumer Discretionary",
+        "Consumer Staples",
+        "Health Care",
+        "Financials",
+        "Information Technology",
+        "Communication Services",
+        "Utilities",
+        "Real Estate"
+    ]
+
+    if stock_selected:
+        st.sidebar.selectbox(
+            "Filter landing page by sector:",
+            options=gics_sectors,
+            index=0,
+            key="gics_sector_filter_disabled",
+            disabled=True,
+            help="Sector filter is for the landing page only. Clear the ticker to use it."
+        )
+    else:
+        selected_sector = st.sidebar.selectbox(
+            "Filter landing page by sector:",
+            options=gics_sectors,
+            key="gics_sector_filter",
+            help="Select a GICS sector to show only that sector's stocks in the Cluster Plot"
+        )
+        st.session_state.selected_gics_sector = selected_sector
+
     # GICS Sector filter (always visible, disabled until stock selected)
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🔍 Stock Universe Filter")
@@ -1150,12 +1187,24 @@ def main():
         
         # Show overall cluster summary
         if st.session_state.pca_df is not None:
-            st.markdown("### 📊 Cluster Overview")
-            
-            fig = create_pca_scatter_plot(st.session_state.pca_df)
+
+            # Apply GICS sector filter if selected on landing page
+            plot_df = st.session_state.pca_df.copy()
+            selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
+
+            if selected_sector and selected_sector != "All Sectors" and 'gicdesc' in st.session_state.raw_data.columns:
+                sector_tickers = st.session_state.raw_data[
+                    st.session_state.raw_data['gicdesc'] == selected_sector
+                ]['ticker'].unique()
+                plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
+
+            sector_label = f" — {selected_sector}" if selected_sector and selected_sector != "All Sectors" else ""
+            st.markdown(f"### 📊 Cluster Overview{sector_label}")
+
+            fig = create_pca_scatter_plot(plot_df)
             st.plotly_chart(fig, use_container_width=True)
-            
-            cluster_summary = get_cluster_summary(st.session_state.pca_df)
+
+            cluster_summary = get_cluster_summary(plot_df)
             fig_summary = create_cluster_summary_plot(cluster_summary)
             st.plotly_chart(fig_summary, use_container_width=True)
         
