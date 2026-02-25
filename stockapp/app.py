@@ -244,6 +244,12 @@ def render_sidebar():
         else:
             st.sidebar.error(f"❌ '{stock_input}' not found in dataset")
             st.session_state.selected_stock = None
+    elif not stock_input:
+        # Ticker cleared — reset stock selection so GICS filter reactivates
+        st.session_state.selected_stock = None
+        # Also clear Quick Select dropdown
+        if 'ticker_dropdown' in st.session_state:
+            st.session_state.ticker_dropdown = ''
     
     # Quick selection dropdown (always visible, disabled until data loads)
     st.sidebar.markdown("---")
