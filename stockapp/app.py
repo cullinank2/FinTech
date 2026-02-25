@@ -326,6 +326,13 @@ def render_sidebar():
         else:
             gics_sectors_with_counts = gics_sectors
 
+        # Store options so callback can access them
+        st.session_state['_gics_sector_options'] = gics_sectors_with_counts
+
+        def on_sector_change():
+            raw_selection = st.session_state.get('gics_sector_filter', 'All Sectors')
+            st.session_state.selected_gics_sector = raw_selection.split(" (")[0]
+
         # Find the index matching the previously selected sector
         current_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
         current_index = 0
@@ -334,17 +341,14 @@ def render_sidebar():
                 current_index = i
                 break
 
-        selected_sector_with_count = st.sidebar.selectbox(
+        st.sidebar.selectbox(
             "Filter landing page by sector:",
             options=gics_sectors_with_counts,
             index=current_index,
             key="gics_sector_filter",
+            on_change=on_sector_change,
             help="Select a GICS sector to show only that sector's stocks in the Cluster Plot"
         )
-
-        # Strip the count off before storing in session state
-        selected_sector = selected_sector_with_count.split(" (")[0]
-        st.session_state.selected_gics_sector = selected_sector
 
     # Visualizations dropdown (always visible, disabled until stock selected)
     st.sidebar.markdown("---")
