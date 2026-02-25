@@ -1249,21 +1249,6 @@ def main():
             fig = create_pca_scatter_plot(plot_df)
             st.plotly_chart(fig, use_container_width=True)
 
-            # Ticker picker below chart
-            if 'ticker' in plot_df.columns:
-                ticker_list = [''] + sorted(plot_df['ticker'].dropna().unique().tolist())
-                picked = st.selectbox(
-                    "🔍 Hover a dot to identify it, then select ticker here to load full analysis:",
-                    options=ticker_list,
-                    key="landing_ticker_pick"
-                )
-                if picked:
-                    st.session_state.selected_stock = {
-                        'value': picked,
-                        'type': 'ticker'
-                    }
-                    st.rerun()
-
             cluster_summary = get_cluster_summary(plot_df)
             fig_summary = create_cluster_summary_plot(cluster_summary)
             st.plotly_chart(fig_summary, use_container_width=True)
