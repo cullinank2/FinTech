@@ -308,12 +308,32 @@ def render_sidebar():
             help="Sector filter is for the landing page only. Clear the ticker to use it."
         )
     else:
-        selected_sector = st.sidebar.selectbox(
+        # Build sector options with stock counts
+        if st.session_state.pca_df is not None and st.session_state.raw_data is not None:
+            pca_tickers = set(st.session_state.pca_df['ticker'].str.upper().tolist())
+            raw = st.session_state.raw_data
+            gics_sectors_with_counts = ["All Sectors"]
+            for sector in gics_sectors[1:]:  # skip "All Sectors"
+                if 'gicdesc' in raw.columns and 'ticker' in raw.columns:
+                    count = raw[
+                        (raw['gicdesc'] == sector) &
+                        (raw['ticker'].str.upper().isin(pca_tickers))
+                    ]['ticker'].nunique()
+                    gics_sectors_with_counts.append(f"{sector} ({count})")
+                else:
+                    gics_sectors_with_counts.append(sector)
+        else:
+            gics_sectors_with_counts = gics_sectors
+
+        selected_sector_with_count = st.sidebar.selectbox(
             "Filter landing page by sector:",
-            options=gics_sectors,
+            options=gics_sectors_with_counts,
             key="gics_sector_filter",
             help="Select a GICS sector to show only that sector's stocks in the Cluster Plot"
         )
+
+        # Strip the count off before storing in session state
+        selected_sector = selected_sector_with_count.split(" (")[0]
         st.session_state.selected_gics_sector = selected_sector
 
     # Visualizations dropdown (always visible, disabled until stock selected)
