@@ -207,7 +207,8 @@ def create_pca_scatter_plot(
             ),
             name=f'Cluster {cluster_id}',
             hovertemplate="%{text}<extra></extra>",
-            text=hover_text
+            text=hover_text,
+            customdata=cluster_data['ticker'].values
         ))
     
     # Highlight selected stock
