@@ -319,7 +319,8 @@ def render_sidebar():
         if st.session_state.pca_df is not None and st.session_state.raw_data is not None:
             pca_tickers = set(st.session_state.pca_df['ticker'].str.upper().tolist())
             raw = st.session_state.raw_data
-            gics_sectors_with_counts = ["All Sectors"]
+            all_sectors_count = len(st.session_state.pca_df)
+            gics_sectors_with_counts = [f"All Sectors ({all_sectors_count})"]
             for sector in gics_sectors[1:]:  # skip "All Sectors"
                 if 'gicdesc' in raw.columns and 'ticker' in raw.columns:
                     count = raw[
