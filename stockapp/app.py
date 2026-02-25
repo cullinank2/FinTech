@@ -1257,22 +1257,10 @@ def main():
             # Handle click on a stock dot
             if selected_point and selected_point.selection and selected_point.selection.points:
                 clicked = selected_point.selection.points[0]
-                
-                # Debug - remove once working
-                st.write("DEBUG clicked point:", clicked)
-                
-                # customdata can come back as a string, list, or nested
-                raw = clicked.get("customdata", None)
-                if isinstance(raw, list):
-                    clicked_ticker = raw[0] if raw else None
-                elif isinstance(raw, str):
-                    clicked_ticker = raw
-                else:
-                    clicked_ticker = str(raw) if raw is not None else None
-                
-                if clicked_ticker and clicked_ticker.strip():
+                clicked_ticker = clicked.get("customdata", None)
+                if clicked_ticker and isinstance(clicked_ticker, str):
                     st.session_state.selected_stock = {
-                        'value': clicked_ticker.strip(),
+                        'value': clicked_ticker,
                         'type': 'ticker'
                     }
                     st.rerun()
