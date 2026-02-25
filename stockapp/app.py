@@ -1238,11 +1238,11 @@ def main():
                 ]['ticker'].unique()
                 plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
 
+            total_count = len(plot_df)
             if selected_sector and selected_sector != "All Sectors":
-                sector_count = len(plot_df)
-                sector_label = f" — {selected_sector} ({sector_count})"
+                sector_label = f" — {selected_sector} ({total_count})"
             else:
-                sector_label = ""
+                sector_label = f" — All Sectors ({total_count})"
             st.markdown(f"### 📊 Cluster Overview{sector_label}")
 
             fig = create_pca_scatter_plot(plot_df)
