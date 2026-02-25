@@ -1257,10 +1257,24 @@ def main():
             # Handle click on a stock dot
             if selected_point and selected_point.selection and selected_point.selection.points:
                 clicked = selected_point.selection.points[0]
-                clicked_ticker = clicked.get("customdata", None)
-                if clicked_ticker and isinstance(clicked_ticker, str):
+                
+                # Try customdata first, then fall back to point index lookup
+                raw = clicked.get("customdata", None)
+                if isinstance(raw, list):
+                    clicked_ticker = raw[0] if raw else None
+                elif isinstance(raw, str):
+                    clicked_ticker = raw
+                else:
+                    # Fall back: use point index to find ticker in plot_df
+                    clicked_ticker = None
+                    point_index = clicked.get("point_index", None)
+                    if point_index is not None and 'ticker' in plot_df.columns:
+                        if point_index < len(plot_df):
+                            clicked_ticker = plot_df.iloc[point_index]['ticker']
+                
+                if clicked_ticker and str(clicked_ticker).strip():
                     st.session_state.selected_stock = {
-                        'value': clicked_ticker,
+                        'value': str(clicked_ticker).strip(),
                         'type': 'ticker'
                     }
                     st.rerun()
