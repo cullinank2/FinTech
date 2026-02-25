@@ -174,7 +174,8 @@ def init_session_state():
         'selected_stock': None,
         'selected_stock_data': None,
         'chatbot': None,
-        'chat_history': []
+        'chat_history': [],
+        'selected_gics_sector': 'All Sectors'
     }
     
     for key, default_value in defaults.items():
