@@ -326,9 +326,18 @@ def render_sidebar():
         else:
             gics_sectors_with_counts = gics_sectors
 
+        # Find the index matching the previously selected sector
+        current_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
+        current_index = 0
+        for i, opt in enumerate(gics_sectors_with_counts):
+            if opt.split(" (")[0] == current_sector:
+                current_index = i
+                break
+
         selected_sector_with_count = st.sidebar.selectbox(
             "Filter landing page by sector:",
             options=gics_sectors_with_counts,
+            index=current_index,
             key="gics_sector_filter",
             help="Select a GICS sector to show only that sector's stocks in the Cluster Plot"
         )
