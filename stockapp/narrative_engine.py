@@ -158,7 +158,40 @@ def _describe_pc2(pc2: float) -> str:
         )
 
 
-def generate_summary(ticker: str, pca_row: Any) -> str:
+def _describe_pc3(pc3: float) -> str:
+    """Plain-English description of PC3 score (Leverage & Risk Profile)."""
+    if pc3 >= 1.5:
+        return (
+            f"a PC3 score of {pc3:.2f} — well above average — indicates a heavily "
+            "leveraged, asset-intensive balance sheet. Debt-to-assets is elevated and "
+            "the stock screens as deep value on an asset basis, typical of capital-heavy industries."
+        )
+    elif pc3 >= 0.5:
+        return (
+            f"a PC3 score of {pc3:.2f} indicates above-average leverage and asset intensity. "
+            "The balance sheet carries more debt relative to assets than typical peers, "
+            "though not at an extreme level."
+        )
+    elif pc3 >= -0.5:
+        return (
+            f"a PC3 score of {pc3:.2f} reflects a near-average leverage and risk profile — "
+            "debt levels and asset intensity are broadly in line with the wider stock universe."
+        )
+    elif pc3 >= -1.5:
+        return (
+            f"a PC3 score of {pc3:.2f} indicates a relatively asset-light, lower-leverage profile. "
+            "The business is more capital efficient than average, with stronger profitability "
+            "relative to book value."
+        )
+    else:
+        return (
+            f"a PC3 score of {pc3:.2f} — well below average — reflects a highly asset-light, "
+            "capital-efficient business. Low leverage combined with strong profitability "
+            "relative to assets places this stock at the growth end of the PC3 spectrum."
+        )
+
+
+def generate_summary(ticker: str, pca_row: Any, show_pc3: bool = False) -> str:
     """Section 1: Overall position summary."""
     pc1      = float(pca_row.get('PC1', 0) if isinstance(pca_row, dict) else pca_row['PC1'])
     pc2      = float(pca_row.get('PC2', 0) if isinstance(pca_row, dict) else pca_row['PC2'])
@@ -181,6 +214,11 @@ def generate_summary(ticker: str, pca_row: Any) -> str:
         "",
         "**Valuation Style (PC2):** " + _describe_pc2(pc2),
     ]
+
+    if show_pc3:
+        pc3 = float(pca_row.get('PC3', 0) if isinstance(pca_row, dict) else pca_row.get('PC3', 0))
+        lines += ["", "**Leverage & Risk Profile (PC3):** " + _describe_pc3(pc3)]
+
     return "\n".join(lines)
 
 
@@ -499,7 +537,7 @@ def generate_narrative(
             'peers'      -> Section 4 markdown string
     """
     return {
-        'summary':    generate_summary(ticker, pca_row),
+        'summary':    generate_summary(ticker, pca_row, show_pc3),
         'factors':    generate_factor_highlights(ticker, percentiles, factor_data),
         'trajectory': (
             generate_trajectory_narrative(ticker, raw_data, loadings, show_pc3)
