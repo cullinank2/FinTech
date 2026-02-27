@@ -365,7 +365,16 @@ def generate_peer_context(
     n_peers  = len(peer_df)
     pc1      = float(pca_row.get('PC1', 0) if isinstance(pca_row, dict) else pca_row['PC1'])
     pc2      = float(pca_row.get('PC2', 0) if isinstance(pca_row, dict) else pca_row['PC2'])
-    quadrant = str(pca_row.get('quadrant', 'Q3') if isinstance(pca_row, dict) else pca_row['quadrant'])
+    pc1_val  = pc1
+    pc2_val  = pc2
+    if pc1_val >= 0 and pc2_val >= 0:
+        quadrant = 'Q1'
+    elif pc1_val < 0 and pc2_val >= 0:
+        quadrant = 'Q2'
+    elif pc1_val < 0 and pc2_val < 0:
+        quadrant = 'Q3'
+    else:
+        quadrant = 'Q4'
     meta     = _QUADRANT_META.get(quadrant, _QUADRANT_META['Q3'])
 
     pc1_pct_rank = ((peer_df['PC1'] < pc1).sum() / n_peers * 100) if 'PC1' in peer_df.columns else None
