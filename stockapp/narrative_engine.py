@@ -162,7 +162,14 @@ def generate_summary(ticker: str, pca_row: Any) -> str:
     """Section 1: Overall position summary."""
     pc1      = float(pca_row.get('PC1', 0) if isinstance(pca_row, dict) else pca_row['PC1'])
     pc2      = float(pca_row.get('PC2', 0) if isinstance(pca_row, dict) else pca_row['PC2'])
-    quadrant = str(pca_row.get('quadrant', 'Q3') if isinstance(pca_row, dict) else pca_row['quadrant'])
+    if pc1 >= 0 and pc2 >= 0:
+        quadrant = 'Q1'
+    elif pc1 < 0 and pc2 >= 0:
+        quadrant = 'Q2'
+    elif pc1 < 0 and pc2 < 0:
+        quadrant = 'Q3'
+    else:
+        quadrant = 'Q4'
 
     meta = _QUADRANT_META.get(quadrant, _QUADRANT_META['Q3'])
 
