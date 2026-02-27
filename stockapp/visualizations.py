@@ -705,7 +705,7 @@ def create_percentile_chart(
 
     # Base layout (NO annotations list here)
     fig.update_layout(
-        title=f'Percentile Rankings vs Quadrant Peers: {ticker}',
+        title=f'Percentile Rankings vs GICS Sector Peers: {ticker}',
         xaxis_title='Percentile Rank',
         yaxis_title='Factor',
         xaxis=dict(range=[0, 105]),
