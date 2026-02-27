@@ -1090,7 +1090,7 @@ def render_narrative_section(
         current_view == "🕐 2D or 3D Time-Lapse" and
         st.session_state.get('timelapse_view_mode', '2D View') == '3D View'
     )
-    cluster_3d = current_view == "🌐 3D Cluster View"
+    cluster_3d = current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"]
     show_pc3 = timelapse_is_3d or cluster_3d
 
     with st.spinner("Generating narrative analysis..."):
