@@ -1093,21 +1093,18 @@ def render_narrative_section(
             gics_sector = gics_sector,
         )
 
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📍 Position Summary",
-        "📊 Factor Highlights",
-        "📈 Trajectory",
-        "👥 Peer Context",
-    ])
+    current_view = st.session_state.get('current_view', '🎯 Cluster Plot')
 
-    with tab1:
+    if current_view == '🎯 Cluster Plot':
         st.markdown(sections['summary'])
-    with tab2:
+    elif current_view == '📊 Factor Analysis':
         st.markdown(sections['factors'])
-    with tab3:
+    elif current_view == '🕐 2D or 3D Time-Lapse':
         st.markdown(sections['trajectory'])
-    with tab4:
+    elif current_view in ['👥 Quadrant Peers', '🌐 3D Quadrant Peers']:
         st.markdown(sections['peers'])
+    else:
+        st.markdown(sections['summary'])
 
 
 def render_chatbot_section(
