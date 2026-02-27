@@ -1084,6 +1084,7 @@ def render_narrative_section(
     factor_data  = st.session_state.get('current_factor_data', {})
     raw_data     = st.session_state.get('raw_data', None)
     loadings     = st.session_state.get('pca_loadings', None)
+    current_view = st.session_state.get('current_view', '🎯 Cluster Plot')
 
     timelapse_is_3d = (
         current_view == "🕐 2D or 3D Time-Lapse" and
