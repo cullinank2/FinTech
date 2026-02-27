@@ -1064,6 +1064,50 @@ def render_visualizations(
             st.info("3D visualization requires PC3 data.")
 
 
+def render_narrative_section(
+    ticker: str,
+    pca_row: pd.Series,
+    peer_df: pd.DataFrame,
+):
+    """Render the AI Narrative Analysis section (no API key required)."""
+
+    st.markdown("---")
+    st.header("📊 AI Narrative Analysis")
+    st.caption("Auto-generated plain-English interpretation — no API key required.")
+
+    percentiles  = st.session_state.get('current_percentiles', {})
+    factor_data  = st.session_state.get('current_factor_data', {})
+    raw_data     = st.session_state.get('raw_data', None)
+    loadings     = st.session_state.get('pca_loadings', None)
+
+    with st.spinner("Generating narrative analysis..."):
+        sections = generate_narrative(
+            ticker      = ticker,
+            pca_row     = pca_row,
+            percentiles = percentiles,
+            factor_data = factor_data,
+            peer_df     = peer_df,
+            raw_data    = raw_data,
+            loadings    = loadings,
+        )
+
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "📍 Position Summary",
+        "📊 Factor Highlights",
+        "📈 Trajectory",
+        "👥 Peer Context",
+    ])
+
+    with tab1:
+        st.markdown(sections['summary'])
+    with tab2:
+        st.markdown(sections['factors'])
+    with tab3:
+        st.markdown(sections['trajectory'])
+    with tab4:
+        st.markdown(sections['peers'])
+
+
 def render_chatbot_section(
     ticker: str,
     permno: str,
@@ -1076,6 +1120,13 @@ def render_chatbot_section(
     peer_count: int,
     cluster_summary: pd.DataFrame
 ):
+```
+
+Save (`Ctrl+S`) and let me know when done!
+
+**Commit message:**
+```
+Add render_narrative_section function to app.py
     """Render the AI chatbot section."""
     
     st.markdown("---")
