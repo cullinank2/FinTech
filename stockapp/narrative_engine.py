@@ -271,6 +271,7 @@ def generate_trajectory_narrative(
     ticker: str,
     raw_data: pd.DataFrame,
     loadings: Optional[Dict] = None,
+    show_pc3: bool = False,
 ) -> str:
     """Section 3: Time trajectory narrative from raw time-series data."""
     ticker_upper = ticker.upper()
@@ -296,12 +297,15 @@ def generate_trajectory_narrative(
     # Default driver features; override from loadings if available
     pc1_features = ['roa', 'roe', 'cash_debt']
     pc2_features = ['sales_to_price', 'bm', 'earnings_yield']
+    pc3_features = ['debt_assets', 'vol_60d_ann', 'gprof']
 
     if loadings:
         if 'PC1' in loadings and 'positive' in loadings['PC1']:
             pc1_features = list(loadings['PC1']['positive'].keys())[:3]
         if 'PC2' in loadings and 'positive' in loadings['PC2']:
             pc2_features = list(loadings['PC2']['positive'].keys())[:3]
+        if 'PC3' in loadings and 'positive' in loadings['PC3']:
+            pc3_features = list(loadings['PC3']['positive'].keys())[:3]
 
     def _trend_parts(features):
         parts = []
@@ -332,6 +336,8 @@ def generate_trajectory_narrative(
     pc1_trends = _trend_parts(pc1_features)
     pc2_trends = _trend_parts(pc2_features)
 
+    pc3_trends = _trend_parts(pc3_features) if show_pc3 else []
+
     lines = [
         f"**Time Range:** {date_min} → {date_max}  ({n_periods} data points)",
         "",
@@ -348,6 +354,20 @@ def generate_trajectory_narrative(
             "Valuation multiples (Sales-to-Price, Book-to-Market, Earnings Yield) "
             "have remained relatively stable over the observation window."
         ),
+    ]
+
+    if show_pc3:
+        lines += [
+            "",
+            "**Leverage & Risk Profile Trajectory (PC3 drivers):** " + (
+                "; ".join(pc3_trends) + "."
+                if pc3_trends else
+                "Leverage and risk metrics (Debt-to-Assets, Volatility, Gross Profitability) "
+                "have remained broadly stable over the observation window."
+            ),
+        ]
+
+    lines += [
         "",
         "*Note: Stepped changes in Cash-to-Debt reflect discrete corporate financing "
         "decisions rather than gradual operational changes — a pattern observed "
@@ -456,6 +476,7 @@ def generate_narrative(
     raw_data: Optional[pd.DataFrame] = None,
     loadings: Optional[Dict] = None,
     gics_sector: str = 'N/A',
+    show_pc3: bool = False,
 ) -> Dict[str, str]:
     """
     Generate all four narrative sections for a selected stock.
@@ -481,7 +502,7 @@ def generate_narrative(
         'summary':    generate_summary(ticker, pca_row),
         'factors':    generate_factor_highlights(ticker, percentiles, factor_data),
         'trajectory': (
-            generate_trajectory_narrative(ticker, raw_data, loadings)
+            generate_trajectory_narrative(ticker, raw_data, loadings, show_pc3)
             if raw_data is not None
             else "Time-series data was not passed to the narrative engine."
         ),
