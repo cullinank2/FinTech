@@ -1044,11 +1044,11 @@ def render_visualizations(
             st.info("Load data first by entering a ticker in the sidebar.")
         else:
             date_col = next(
-                (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD'] if c in raw_df.columns),
+                (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth'] if c in raw_df.columns),
                 None
             )
             if date_col is None:
-                st.error("Could not find a date column in the dataset.")
+                st.error(f"Date column not found. Available columns: {list(raw_df.columns)}")
             else:
                 raw_df[date_col] = pd.to_datetime(raw_df[date_col])
                 features = get_features_from_df(raw_df)
