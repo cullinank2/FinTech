@@ -393,10 +393,18 @@ def generate_peer_context(
     standouts = []
     for feat, pct in sorted(percentiles.items(), key=lambda x: abs(x[1] - 50), reverse=True)[:3]:
         label = FEATURE_DISPLAY_NAMES.get(feat, feat)
+        def _ordinal(n: float) -> str:
+            i = int(n)
+            if 11 <= (i % 100) <= 13:
+                suffix = 'th'
+            else:
+                suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(i % 10, 'th')
+            return f"{i}{suffix}"
+
         if pct >= 80:
-            standouts.append(f"**{label}** ranks in the top {100 - pct:.0f}% of the group ({pct:.0f}th percentile)")
+            standouts.append(f"**{label}** ranks in the top {100 - int(pct)}% of the group ({_ordinal(pct)} percentile)")
         elif pct <= 20:
-            standouts.append(f"**{label}** ranks in the bottom {pct:.0f}% of the group ({pct:.0f}th percentile)")
+            standouts.append(f"**{label}** ranks in the bottom {int(pct)}% of the group ({_ordinal(pct)} percentile)")
 
     lines = [
         f"**{ticker}** is one of **{n_peers} stocks** in the **{gics_sector}** sector in **{quadrant} — {meta['name']}** quadrant.",
@@ -429,7 +437,7 @@ def generate_peer_context(
         )
 
     if standouts:
-        lines += ["", "**Notable factor differentiators vs. quadrant peers:**"]
+        lines += ["", "**Notable factor differentiators vs. GICS sector peers:**"]
         lines += [f"- {s}" for s in standouts]
 
     return "\n".join(lines)
