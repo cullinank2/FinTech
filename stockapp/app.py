@@ -487,7 +487,11 @@ def render_sidebar():
     
     # Only show PC3 expander when 3D View is selected
     current_view = st.session_state.get('current_view', '')
-    if stock_selected and current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"]:
+    timelapse_is_3d = (
+        current_view == "🕐 2D or 3D Time-Lapse" and
+        st.session_state.get('timelapse_view_mode', '2D View') == '3D View'
+    )
+    if stock_selected and (current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"] or timelapse_is_3d):
         with st.sidebar.expander(f"PC3 (Z-axis): {PC3_INTERPRETATION['name']}"):
             st.markdown(f"""
             **Explains ~{pc3_var}% of variance**
