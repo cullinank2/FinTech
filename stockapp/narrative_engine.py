@@ -357,6 +357,7 @@ def generate_peer_context(
     pca_row: Any,
     peer_df: pd.DataFrame,
     percentiles: Dict[str, float],
+    gics_sector: str = 'N/A',
 ) -> str:
     """Section 4: Peer context — how the stock compares within its quadrant."""
     if peer_df is None or peer_df.empty:
@@ -390,7 +391,7 @@ def generate_peer_context(
             standouts.append(f"**{label}** ranks in the bottom {pct:.0f}% of the group ({pct:.0f}th percentile)")
 
     lines = [
-        f"**{ticker}** is one of **{n_peers} stocks** in the **{quadrant} — {meta['name']}** quadrant.",
+        f"**{ticker}** is one of **{n_peers} stocks** in the **{gics_sector}** sector in **{quadrant} — {meta['name']}** quadrant.",
         "",
     ]
 
@@ -438,6 +439,7 @@ def generate_narrative(
     peer_df: Optional[pd.DataFrame] = None,
     raw_data: Optional[pd.DataFrame] = None,
     loadings: Optional[Dict] = None,
+    gics_sector: str = 'N/A',
 ) -> Dict[str, str]:
     """
     Generate all four narrative sections for a selected stock.
@@ -468,7 +470,7 @@ def generate_narrative(
             else "Time-series data was not passed to the narrative engine."
         ),
         'peers': (
-            generate_peer_context(ticker, pca_row, peer_df, percentiles)
+            generate_peer_context(ticker, pca_row, peer_df, percentiles, gics_sector)
             if peer_df is not None
             else "Peer data was not passed to the narrative engine."
         ),

@@ -1068,6 +1068,7 @@ def render_narrative_section(
     ticker: str,
     pca_row: pd.Series,
     peer_df: pd.DataFrame,
+    gics_sector: str = 'N/A',
 ):
     """Render the AI Narrative Analysis section (no API key required)."""
 
@@ -1089,6 +1090,7 @@ def render_narrative_section(
             peer_df     = peer_df,
             raw_data    = raw_data,
             loadings    = loadings,
+            gics_sector = gics_sector,
         )
 
     tab1, tab2, tab3, tab4 = st.tabs([
@@ -1353,8 +1355,15 @@ def main():
     gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
     narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
 
+    # Get GICS sector name for narrative
+    gics_sector = 'N/A'
+    if 'gicdesc' in st.session_state.raw_data.columns:
+        ticker_rows = st.session_state.raw_data[st.session_state.raw_data['ticker'].str.upper() == ticker.upper()]
+        if not ticker_rows.empty:
+            gics_sector = ticker_rows['gicdesc'].iloc[0]
+
     # Render narrative engine section
-    render_narrative_section(ticker, pca_row, narrative_peers)
+    render_narrative_section(ticker, pca_row, narrative_peers, gics_sector)
 
     # Render chatbot section
     render_chatbot_section(
