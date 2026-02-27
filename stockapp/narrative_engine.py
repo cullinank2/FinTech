@@ -207,13 +207,21 @@ def generate_factor_highlights(
     strengths   = sorted_pcts[:3]
     weaknesses  = sorted_pcts[-3:][::-1]
 
+    def _ordinal(n: float) -> str:
+        i = int(n)
+        if 11 <= (i % 100) <= 13:
+            suffix = 'th'
+        else:
+            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(i % 10, 'th')
+        return f"{i}{suffix}"
+
     def _row(feat: str, pct: float) -> str:
         label = FEATURE_DISPLAY_NAMES.get(feat, feat)
         raw   = raw_vals.get(feat)
         raw_str = f" (raw: {raw:.3f})" if raw is not None else ""
         bar_filled = int(pct / 10)
         bar = "█" * bar_filled + "░" * (10 - bar_filled)
-        return f"- **{label}**: {pct:.0f}th percentile  `{bar}`{raw_str}"
+        return f"- **{label}**: {_ordinal(pct)} percentile  `{bar}`{raw_str}"
 
     top_feat = FEATURE_DISPLAY_NAMES.get(strengths[0][0], strengths[0][0])
     bot_feat = FEATURE_DISPLAY_NAMES.get(weaknesses[0][0], weaknesses[0][0])
@@ -221,14 +229,14 @@ def generate_factor_highlights(
     bot_pct  = weaknesses[0][1]
 
     lines = [
-        "**🟢 Top 3 Strengths** *(highest percentile ranks vs. quadrant peers)*",
+        "**🟢 Top 3 Strengths** *(highest percentile ranks vs. GICS sector peers)*",
         *[_row(f, p) for f, p in strengths],
         "",
-        "**🔴 Top 3 Weaknesses** *(lowest percentile ranks vs. quadrant peers)*",
+        "**🔴 Top 3 Weaknesses** *(lowest percentile ranks vs. GICS sector peers)*",
         *[_row(f, p) for f, p in weaknesses],
         "",
-        f"*{ticker}'s clearest edge is **{top_feat}** ({top_pct:.0f}th percentile). "
-        f"Its most notable drag is **{bot_feat}** ({bot_pct:.0f}th percentile).*",
+        f"*{ticker}'s clearest edge is **{top_feat}** ({_ordinal(top_pct)} percentile). "
+        f"Its most notable drag is **{bot_feat}** ({_ordinal(bot_pct)} percentile).*",
     ]
     return "\n".join(lines)
 
