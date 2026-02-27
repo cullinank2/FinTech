@@ -34,17 +34,16 @@ PERIOD_KEYS = list(SUB_PERIODS.keys())
 FEATURE_DISPLAY_NAMES = {
     'roa':            'ROA',
     'roe':            'ROE',
-    'cash_to_debt':   'Cash-to-Debt',
-    'vol_60d':        '60d Volatility',
+    'cash_debt':      'Cash-to-Debt',
+    'vol_60d_ann':    '60d Volatility',
     'sales_to_price': 'Sales/Price',
-    'book_to_market': 'Book/Market',
+    'bm':             'Book/Market',
     'earnings_yield': 'Earnings Yield',
-    'debt_to_assets': 'Debt/Assets',
-    'gross_profit':   'Gross Profitability',
+    'debt_assets':    'Debt/Assets',
+    'gprof':          'Gross Profitability',
     'momentum_12m':   'Momentum 12M',
-    'size':           'Size (log MktCap)',
+    'ps':             'Sales Multiple',
 }
-
 
 # ── Core: run PCA on one sub-period ──────────────────────────────────────────
 

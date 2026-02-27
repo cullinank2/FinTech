@@ -1044,7 +1044,7 @@ def render_visualizations(
             st.info("Load data first by entering a ticker in the sidebar.")
         else:
             date_col = next(
-                (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth'] if c in raw_df.columns),
+                (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth', 'public_date'] if c in raw_df.columns),
                 None
             )
             if date_col is None:
