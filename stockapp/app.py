@@ -1339,18 +1339,18 @@ def main():
         st.session_state.scaler
     )
     
-    # Get cluster summary and percentiles for chatbot
+    # Build GICS sector filtered peers — used consistently for all percentiles and narratives
+    gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
+    narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
+
+    # Get cluster summary and percentiles — using GICS sector peers only
     cluster_summary = get_cluster_summary(pca_df)
     available_features = [c for c in FEATURE_COLUMNS if c in pca_row.index]
-    percentiles = compute_percentile_ranks(quadrant_peers, pca_row, available_features)
-    
+    percentiles = compute_percentile_ranks(narrative_peers, pca_row, available_features)
+
     # Store for narrative engine
     st.session_state.current_percentiles = percentiles
     st.session_state.current_factor_data = get_factor_breakdown(pca_row)
-
-    # Build GICS sector filtered peers for narrative engine
-    gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
-    narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
 
     # Get GICS sector name for narrative
     gics_sector = 'N/A'
