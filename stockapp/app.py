@@ -1301,6 +1301,13 @@ def main():
     available_features = [c for c in FEATURE_COLUMNS if c in pca_row.index]
     percentiles = compute_percentile_ranks(quadrant_peers, pca_row, available_features)
     
+    # Store for narrative engine
+    st.session_state.current_percentiles = percentiles
+    st.session_state.current_factor_data = get_factor_breakdown(pca_row)
+
+    # Render narrative engine section
+    render_narrative_section(ticker, pca_row, quadrant_peers)
+
     # Render chatbot section
     render_chatbot_section(
         ticker, permno, cluster, quadrant, pc1, pc2,
