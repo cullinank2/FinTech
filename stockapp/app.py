@@ -1120,14 +1120,14 @@ def render_chatbot_section(
     peer_count: int,
     cluster_summary: pd.DataFrame
 ):
-```
-
-Save (`Ctrl+S`) and let me know when done!
-
-**Commit message:**
-```
-Add render_narrative_section function to app.py
     """Render the AI chatbot section."""
+```
+
+So you're deleting all those stray lines and keeping only the clean `):` followed immediately by the docstring with 4-space indent.
+
+Save (`Ctrl+S`) then commit & push:
+```
+Fix render_chatbot_section definition in app.py
     
     st.markdown("---")
     st.markdown("## 🤖 AI Analysis Assistant")
