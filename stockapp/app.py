@@ -59,6 +59,7 @@ from visualizations import (
     create_cluster_summary_plot
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
+from narrative_engine import generate_narrative
 
 
 # =============================================================================
