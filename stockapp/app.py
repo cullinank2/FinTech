@@ -1349,8 +1349,12 @@ def main():
     st.session_state.current_percentiles = percentiles
     st.session_state.current_factor_data = get_factor_breakdown(pca_row)
 
+    # Build GICS sector filtered peers for narrative engine
+    gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
+    narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
+
     # Render narrative engine section
-    render_narrative_section(ticker, pca_row, quadrant_peers)
+    render_narrative_section(ticker, pca_row, narrative_peers)
 
     # Render chatbot section
     render_chatbot_section(
