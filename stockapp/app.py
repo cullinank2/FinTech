@@ -378,7 +378,6 @@ def render_sidebar():
         "🕐 2D or 3D Time-Lapse",
         "🌐 3D Cluster View",
         "🌐 3D Quadrant Peers",
-        "📐 Period Comparison"
     ]
     
     # Always show dropdown, but disable if no stock selected
@@ -1032,113 +1031,6 @@ def render_visualizations(
                 else:
                     st.warning("Insufficient time-series data for animation.")
     
-    elif current_view == "📐 Period Comparison":
-        st.subheader("📐 Sub-Period PCA Comparison")
-        st.caption(
-            "Validates whether factor structure and stock behavior genuinely differ "
-            "across Post-COVID, Rate Shock, and Disinflation regimes."
-        )
-
-        raw_df = st.session_state.raw_data
-        if raw_df is None:
-            st.info("Load data first by entering a ticker in the sidebar.")
-        else:
-            date_col = next(
-                (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth', 'public_date'] if c in raw_df.columns),
-                None
-            )
-            if date_col is None:
-                st.error(f"Date column not found. Available columns: {list(raw_df.columns)}")
-            else:
-                raw_df[date_col] = pd.to_datetime(raw_df[date_col])
-                features = get_features_from_df(raw_df)
-
-                if len(features) < 3:
-                    st.error(f"Too few feature columns detected: {features}")
-                else:
-                    # Section 1: Loading Charts
-                    st.markdown("---")
-                    st.markdown("### 1 · Factor Loadings by Sub-Period")
-                    st.caption("If bars change size or flip sign across periods, the factor structure shifted.")
-
-                    pc_choice = st.radio(
-                        "Select principal component:",
-                        options=["PC1", "PC2", "PC3"],
-                        horizontal=True,
-                        key="period_pc_choice"
-                    )
-
-                    with st.spinner("Running PCA for each sub-period…"):
-                        fig_loadings = create_loading_comparison_chart(raw_df, features, date_col, pc=pc_choice)
-                    st.plotly_chart(fig_loadings, use_container_width=True)
-
-                    with st.expander("📖 How to read this chart"):
-                        st.markdown("""
-                        - **Bar height** = how strongly that feature drives this component in that period.
-                        - **Positive loading** = the feature pushes stocks *higher* on this axis.
-                        - **Negative loading** = the feature pushes stocks *lower* on this axis.
-                        - If a bar **flips sign** between periods, the factor literally reversed its role.
-                        - If a bar **shrinks toward zero**, that feature lost explanatory power in that regime.
-                        """)
-
-                    # Section 2: Procrustes
-                    st.markdown("---")
-                    st.markdown("### 2 · Procrustes Disparity Scores")
-                    st.caption("0 = identical structure; >0.15 = meaningful regime change.")
-
-                    with st.spinner("Computing Procrustes analysis…"):
-                        proc_df  = compute_procrustes_table(raw_df, features, date_col)
-                        fig_proc = create_procrustes_heatmap(proc_df)
-
-                    col_heat, col_table = st.columns([1.2, 1])
-                    with col_heat:
-                        st.plotly_chart(fig_proc, use_container_width=True)
-                    with col_table:
-                        st.markdown("**Pairwise results**")
-                        st.dataframe(proc_df, use_container_width=True, hide_index=True)
-
-                    with st.expander("📖 How to read Procrustes"):
-                        st.markdown("""
-                        - **< 0.05** 🟢 Factor structure nearly identical across periods.
-                        - **0.05–0.15** 🟡 Moderate shift; broadly similar structure.
-                        - **0.15–0.30** 🟠 Meaningful regime change; factors rewiring.
-                        - **> 0.30** 🔴 Major structural break; treat as distinct regimes.
-                        - Procrustes is **rotation-invariant** — accounts for PCA sign flips and axis swaps.
-                        """)
-
-                    # Section 3: Quadrant Migration
-                    st.markdown("---")
-                    st.markdown("### 3 · Quadrant Migration")
-                    st.caption("Tracks where each stock sat in PCA space across the three regimes.")
-
-                    with st.spinner("Computing quadrant assignments…"):
-                        period_names = [k.split('\n')[0] for k in PERIOD_KEYS]
-                        migration_df, summary_df, migration_pct = compute_quadrant_migration(
-                            raw_df, features, date_col
-                        )
-
-                    if migration_df is not None and not migration_df.empty:
-                        col_a, col_b, col_c = st.columns(3)
-                        col_a.metric("Stocks Tracked", f"{len(migration_df):,}")
-                        col_b.metric("Changed Quadrant", f"{migration_pct:.1f}%")
-                        col_c.metric("Stayed Same", f"{100 - migration_pct:.1f}%")
-
-                        st.markdown("**Migration rates between adjacent periods:**")
-                        st.dataframe(summary_df, use_container_width=True, hide_index=True)
-
-                        st.markdown("**Flow diagram:**")
-                        fig_sankey = create_migration_sankey(migration_df, period_names)
-                        st.plotly_chart(fig_sankey, use_container_width=True)
-
-                        with st.expander("🔍 View stock-level quadrant table"):
-                            st.dataframe(
-                                migration_df.sort_values('Any Change', ascending=False),
-                                use_container_width=True,
-                                hide_index=True
-                            )
-                    else:
-                        st.warning("Not enough common tickers across all three sub-periods to compute migration.")
-
     elif current_view == "🌐 3D Cluster View":
         st.markdown("### 🌐 3D PCA Visualization")
         st.markdown("""
@@ -1403,30 +1295,143 @@ def main():
         # Show overall cluster summary
         if st.session_state.pca_df is not None:
 
-            # Apply GICS sector filter if selected on landing page
-            plot_df = st.session_state.pca_df.copy()
-            selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
+            landing_tab1, landing_tab2 = st.tabs([
+                "📊 Cluster Overview",
+                "📐 Period Comparison"
+            ])
 
-            if selected_sector and selected_sector != "All Sectors" and 'gicdesc' in st.session_state.raw_data.columns:
-                sector_tickers = st.session_state.raw_data[
-                    st.session_state.raw_data['gicdesc'] == selected_sector
-                ]['ticker'].unique()
-                plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
+            with landing_tab1:
+                # Apply GICS sector filter if selected on landing page
+                plot_df = st.session_state.pca_df.copy()
+                selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
 
-            total_count = len(plot_df)
-            if selected_sector and selected_sector != "All Sectors":
-                sector_label = f" — {selected_sector} ({total_count})"
-            else:
-                sector_label = f" — All Sectors ({total_count})"
-            st.markdown(f"### 📊 Cluster Overview{sector_label}")
+                if selected_sector and selected_sector != "All Sectors" and 'gicdesc' in st.session_state.raw_data.columns:
+                    sector_tickers = st.session_state.raw_data[
+                        st.session_state.raw_data['gicdesc'] == selected_sector
+                    ]['ticker'].unique()
+                    plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
 
-            fig = create_pca_scatter_plot(plot_df)
-            st.plotly_chart(fig, use_container_width=True)
+                total_count = len(plot_df)
+                if selected_sector and selected_sector != "All Sectors":
+                    sector_label = f" — {selected_sector} ({total_count})"
+                else:
+                    sector_label = f" — All Sectors ({total_count})"
+                st.markdown(f"### 📊 Cluster Overview{sector_label}")
 
-            cluster_summary = get_cluster_summary(plot_df)
-            fig_summary = create_cluster_summary_plot(cluster_summary)
-            st.plotly_chart(fig_summary, use_container_width=True)
-        
+                fig = create_pca_scatter_plot(plot_df)
+                st.plotly_chart(fig, use_container_width=True)
+
+                cluster_summary = get_cluster_summary(plot_df)
+                fig_summary = create_cluster_summary_plot(cluster_summary)
+                st.plotly_chart(fig_summary, use_container_width=True)
+
+            with landing_tab2:
+                st.subheader("📐 Sub-Period PCA Comparison")
+                st.caption(
+                    "Validates whether factor structure and stock behavior genuinely differ "
+                    "across Post-COVID, Rate Shock, and Disinflation regimes."
+                )
+
+                raw_df = st.session_state.raw_data
+                if raw_df is None:
+                    st.info("Data not yet loaded.")
+                else:
+                    date_col = next(
+                        (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth', 'public_date'] if c in raw_df.columns),
+                        None
+                    )
+                    if date_col is None:
+                        st.error(f"Date column not found. Available columns: {list(raw_df.columns)}")
+                    else:
+                        raw_df[date_col] = pd.to_datetime(raw_df[date_col])
+                        features = get_features_from_df(raw_df)
+
+                        if len(features) < 3:
+                            st.error(f"Too few feature columns detected: {features}")
+                        else:
+                            # Section 1: Loading Charts
+                            st.markdown("---")
+                            st.markdown("### 1 · Factor Loadings by Sub-Period")
+                            st.caption("If bars change size or flip sign across periods, the factor structure shifted.")
+
+                            pc_choice = st.radio(
+                                "Select principal component:",
+                                options=["PC1", "PC2", "PC3"],
+                                horizontal=True,
+                                key="landing_period_pc_choice"
+                            )
+
+                            with st.spinner("Running PCA for each sub-period…"):
+                                fig_loadings = create_loading_comparison_chart(raw_df, features, date_col, pc=pc_choice)
+                            st.plotly_chart(fig_loadings, use_container_width=True)
+
+                            with st.expander("📖 How to read this chart"):
+                                st.markdown("""
+                                - **Bar height** = how strongly that feature drives this component in that period.
+                                - **Positive loading** = the feature pushes stocks *higher* on this axis.
+                                - **Negative loading** = the feature pushes stocks *lower* on this axis.
+                                - If a bar **flips sign** between periods, the factor literally reversed its role.
+                                - If a bar **shrinks toward zero**, that feature lost explanatory power in that regime.
+                                """)
+
+                            # Section 2: Procrustes
+                            st.markdown("---")
+                            st.markdown("### 2 · Procrustes Disparity Scores")
+                            st.caption("0 = identical structure; >0.15 = meaningful regime change.")
+
+                            with st.spinner("Computing Procrustes analysis…"):
+                                proc_df  = compute_procrustes_table(raw_df, features, date_col)
+                                fig_proc = create_procrustes_heatmap(proc_df)
+
+                            col_heat, col_table = st.columns([1.2, 1])
+                            with col_heat:
+                                st.plotly_chart(fig_proc, use_container_width=True)
+                            with col_table:
+                                st.markdown("**Pairwise results**")
+                                st.dataframe(proc_df, use_container_width=True, hide_index=True)
+
+                            with st.expander("📖 How to read Procrustes"):
+                                st.markdown("""
+                                - **< 0.05** 🟢 Factor structure nearly identical across periods.
+                                - **0.05–0.15** 🟡 Moderate shift; broadly similar structure.
+                                - **0.15–0.30** 🟠 Meaningful regime change; factors rewiring.
+                                - **> 0.30** 🔴 Major structural break; treat as distinct regimes.
+                                - Procrustes is **rotation-invariant** — accounts for PCA sign flips and axis swaps.
+                                """)
+
+                            # Section 3: Quadrant Migration
+                            st.markdown("---")
+                            st.markdown("### 3 · Quadrant Migration")
+                            st.caption("Tracks where each stock sat in PCA space across the three regimes.")
+
+                            with st.spinner("Computing quadrant assignments…"):
+                                period_names = [k.split('\n')[0] for k in PERIOD_KEYS]
+                                migration_df, summary_df, migration_pct = compute_quadrant_migration(
+                                    raw_df, features, date_col
+                                )
+
+                            if migration_df is not None and not migration_df.empty:
+                                col_a, col_b, col_c = st.columns(3)
+                                col_a.metric("Stocks Tracked", f"{len(migration_df):,}")
+                                col_b.metric("Changed Quadrant", f"{migration_pct:.1f}%")
+                                col_c.metric("Stayed Same", f"{100 - migration_pct:.1f}%")
+
+                                st.markdown("**Migration rates between adjacent periods:**")
+                                st.dataframe(summary_df, use_container_width=True, hide_index=True)
+
+                                st.markdown("**Flow diagram:**")
+                                fig_sankey = create_migration_sankey(migration_df, period_names)
+                                st.plotly_chart(fig_sankey, use_container_width=True)
+
+                                with st.expander("🔍 View stock-level quadrant table"):
+                                    st.dataframe(
+                                        migration_df.sort_values('Any Change', ascending=False),
+                                        use_container_width=True,
+                                        hide_index=True
+                                    )
+                            else:
+                                st.warning("Not enough common tickers across all three sub-periods to compute migration.")
+
         return
     
     # Get selected stock data
