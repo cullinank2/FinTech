@@ -1477,23 +1477,6 @@ def main():
                                     all_period_rows.append(scores_df)
                                 except Exception:
                                     continue
-```
-
----
-
-## Why this matters
-
-Three things were wrong:
-
-1. **Missing `start` and `end` args** — the function needs the date range to filter data itself; it doesn't use the pre-sliced `period_slice` the way you called it
-2. **Wrong return order** — the first return value is `pca_model`, not a DataFrame; `scores_df` is the second return value
-3. **Missing `cluster` column** — `compute_crowding_scores` needs a `cluster` column to count membership; the scores_df from `_run_pca_for_period` has `Quadrant` strings instead, so the map converts them to integer cluster IDs 0–3
-
----
-
-**VS Code Commit Message:**
-```
-Fix _run_pca_for_period call — correct arg order (start/end), return unpacking (scores_df second), and add cluster column from Quadrant map for crowding score computation
 
                             if all_period_rows:
                                 combined_period_df = pd.concat(all_period_rows, ignore_index=True)
