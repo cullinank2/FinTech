@@ -1405,3 +1405,100 @@ def create_cluster_summary_plot(cluster_summary: pd.DataFrame) -> go.Figure:
     )
     
     return fig
+
+# ============================================================
+# CROWDING SCORE CHART
+# ============================================================
+
+def plot_crowding_score(crowding_df: pd.DataFrame):
+    """
+    Renders a gauge-style bar chart of Crowding Scores per regime,
+    plus a summary table.
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    if crowding_df.empty:
+        return None
+
+    period_order = ['Post-COVID', 'Rate Shock', 'Disinflation']
+    df = crowding_df.set_index('period').reindex(period_order).dropna()
+
+    colors = []
+    for score in df['crowding_score']:
+        if score >= 70:
+            colors.append('#EF4444')   # red
+        elif score >= 50:
+            colors.append('#F59E0B')   # amber
+        else:
+            colors.append('#10B981')   # green
+
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=('Factor Crowding Score by Regime', 'Component Breakdown'),
+        column_widths=[0.55, 0.45]
+    )
+
+    # Left: Crowding Score bars
+    fig.add_trace(
+        go.Bar(
+            y=df.index.tolist(),
+            x=df['crowding_score'].tolist(),
+            orientation='h',
+            marker_color=colors,
+            text=[f"{s:.0f}" for s in df['crowding_score']],
+            textposition='inside',
+            name='Crowding Score',
+            showlegend=False,
+        ),
+        row=1, col=1
+    )
+
+    # Add 70 and 50 threshold lines
+    fig.add_vline(x=70, line_dash='dash', line_color='#EF4444',
+                  annotation_text='High Risk', annotation_position='top',
+                  row=1, col=1)
+    fig.add_vline(x=50, line_dash='dash', line_color='#F59E0B',
+                  annotation_text='Elevated', annotation_position='top',
+                  row=1, col=1)
+
+    # Right: Stacked component bars (Concentration vs Dispersion contribution)
+    fig.add_trace(
+        go.Bar(
+            y=df.index.tolist(),
+            x=(0.6 * df['largest_cluster_pct']).tolist(),
+            orientation='h',
+            name='Concentration (60%)',
+            marker_color='#6366F1',
+        ),
+        row=1, col=2
+    )
+    fig.add_trace(
+        go.Bar(
+            y=df.index.tolist(),
+            x=(0.4 * (100 - df.get('dispersion_normalized',
+               pd.Series([50]*len(df), index=df.index)))).tolist(),
+            orientation='h',
+            name='Tight Packing (40%)',
+            marker_color='#A78BFA',
+        ),
+        row=1, col=2
+    )
+
+    fig.update_layout(
+        barmode='stack',
+        height=320,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='#E2E8F0'),
+        xaxis=dict(range=[0, 100], title='Score (0–100)',
+                   gridcolor='rgba(255,255,255,0.1)'),
+        xaxis2=dict(range=[0, 100], title='Component Score',
+                    gridcolor='rgba(255,255,255,0.1)'),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+        yaxis2=dict(gridcolor='rgba(255,255,255,0.05)'),
+        legend=dict(orientation='h', yanchor='bottom', y=-0.35),
+        margin=dict(l=20, r=20, t=50, b=20),
+    )
+
+    return fig

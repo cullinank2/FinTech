@@ -45,7 +45,8 @@ from utils import (
     compute_percentile_ranks,
     get_cluster_summary,
     prepare_time_series_data,
-    get_factor_breakdown
+    get_factor_breakdown,
+    compute_crowding_scores
 )
 from visualizations import (
     create_pca_scatter_plot,
@@ -56,7 +57,8 @@ from visualizations import (
     create_timelapse_animation,
     create_timelapse_animation_3d,
     create_3d_pca_plot,
-    create_cluster_summary_plot
+    create_cluster_summary_plot,
+    plot_crowding_score
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
 from period_analysis import (
@@ -1431,6 +1433,125 @@ def main():
                                     )
                             else:
                                 st.warning("Not enough common tickers across all three sub-periods to compute migration.")
+
+                            # ============================================================
+                            # CROWDING SCORE MODULE
+                            # ============================================================
+                            st.markdown("---")
+                            st.markdown("### 4 · Factor Crowding Score")
+                            st.caption(
+                                "Measures how structurally concentrated the equity universe has become "
+                                "in PCA space each regime. A rising score signals factor crowding building "
+                                "before it becomes a realized risk event."
+                            )
+
+                            # Build a combined pca_df across all three periods
+                            from period_analysis import _run_pca_for_period
+                            all_period_rows = []
+                            period_label_map = {
+                                'Post-COVID':   ('2021-03-01', '2022-06-30'),
+                                'Rate Shock':   ('2022-07-01', '2023-09-30'),
+                                'Disinflation': ('2023-10-01', '2024-10-31'),
+                            }
+                            for period_name, (start, end) in period_label_map.items():
+                                period_mask = (raw_df[date_col] >= start) & (raw_df[date_col] <= end)
+                                period_slice = raw_df[period_mask]
+                                if len(period_slice) < 10:
+                                    continue
+                                try:
+                                    _, scores_df, _, _ = _run_pca_for_period(
+                                        period_slice, features, date_col, start, end
+                                    )
+                                    if scores_df is None:
+                                        continue
+                                    scores_df['period'] = period_name
+                                    # compute_crowding_scores needs 'cluster' column
+                                    # derive it from Quadrant label
+                                    quad_map = {
+                                        'Q1: Profitable Value':       0,
+                                        'Q2: Value Traps/Distressed': 1,
+                                        'Q3: Struggling Growth':      2,
+                                        'Q4: Quality Growth':         3,
+                                    }
+                                    scores_df['cluster'] = scores_df['Quadrant'].map(quad_map)
+                                    all_period_rows.append(scores_df)
+                                except Exception:
+                                    continue
+```
+
+---
+
+## Why this matters
+
+Three things were wrong:
+
+1. **Missing `start` and `end` args** — the function needs the date range to filter data itself; it doesn't use the pre-sliced `period_slice` the way you called it
+2. **Wrong return order** — the first return value is `pca_model`, not a DataFrame; `scores_df` is the second return value
+3. **Missing `cluster` column** — `compute_crowding_scores` needs a `cluster` column to count membership; the scores_df from `_run_pca_for_period` has `Quadrant` strings instead, so the map converts them to integer cluster IDs 0–3
+
+---
+
+**VS Code Commit Message:**
+```
+Fix _run_pca_for_period call — correct arg order (start/end), return unpacking (scores_df second), and add cluster column from Quadrant map for crowding score computation
+
+                            if all_period_rows:
+                                combined_period_df = pd.concat(all_period_rows, ignore_index=True)
+                                crowding_df = compute_crowding_scores(combined_period_df)
+
+                                if not crowding_df.empty:
+                                    # Metric cards — one per regime
+                                    metric_cols = st.columns(len(crowding_df))
+                                    for i, row in crowding_df.iterrows():
+                                        with metric_cols[i]:
+                                            delta_str = ""
+                                            if i > 0:
+                                                prev_score = crowding_df.iloc[i - 1]['crowding_score']
+                                                delta = row['crowding_score'] - prev_score
+                                                delta_str = f"{delta:+.1f} vs prior regime"
+                                            st.metric(
+                                                label=f"{row['period']}",
+                                                value=f"{row['crowding_score']:.0f} / 100",
+                                                delta=delta_str,
+                                                delta_color="inverse"
+                                            )
+                                            st.caption(row['risk_level'])
+
+                                    # Chart
+                                    crowding_fig = plot_crowding_score(crowding_df)
+                                    if crowding_fig:
+                                        st.plotly_chart(crowding_fig, use_container_width=True)
+
+                                    # Detail table
+                                    with st.expander("📋 Crowding Score Detail Table"):
+                                        display_df = crowding_df.rename(columns={
+                                            'period':               'Regime',
+                                            'n_stocks':             'Stocks',
+                                            'largest_cluster_pct':  '% in Largest Cluster',
+                                            'centroid_dispersion':  'Centroid Dispersion',
+                                            'crowding_score':       'Crowding Score',
+                                            'risk_level':           'Risk Level'
+                                        })
+                                        st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+                                    # Plain-English narrative
+                                    latest   = crowding_df.iloc[-1]
+                                    earliest = crowding_df.iloc[0]
+                                    trend    = "increased" if latest['crowding_score'] > earliest['crowding_score'] else "decreased"
+                                    st.info(
+                                        f"**Crowding Trend:** Factor crowding has **{trend}** from "
+                                        f"{earliest['crowding_score']:.0f} in the {earliest['period']} regime "
+                                        f"to {latest['crowding_score']:.0f} in the {latest['period']} regime. "
+                                        f"The current {latest['risk_level']} reading reflects that "
+                                        f"{latest['largest_cluster_pct']:.0f}% of the universe is concentrated "
+                                        f"in the single largest cluster — a portfolio overweight this cluster "
+                                        f"is running a structural factor bet that may not be visible in "
+                                        f"traditional correlation-based risk systems."
+                                    )
+                                else:
+                                    st.warning("Crowding score could not be computed — check cluster labels.")
+                            else:
+                                st.warning("Not enough period data to compute crowding scores.")
 
         return
     

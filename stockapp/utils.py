@@ -498,3 +498,97 @@ def get_factor_breakdown(
                 breakdown[category][feature] = row[feature]
     
     return breakdown
+# ============================================================
+# CROWDING SCORE MODULE
+# ============================================================
+
+def compute_crowding_scores(pca_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute a Factor Crowding Score for each market regime.
+
+    Logic:
+    - Concentration Score: % of universe in the single largest cluster (0-100)
+    - Dispersion Score: mean pairwise distance between cluster centroids in PC1/PC2 space
+      (normalized and inverted so low dispersion = high crowding)
+    - Crowding Score = 0.6 * Concentration + 0.4 * (100 - NormalizedDispersion)
+
+    Returns a DataFrame with one row per period with columns:
+        period, n_stocks, largest_cluster_pct, centroid_dispersion, crowding_score, risk_level
+    """
+    import numpy as np
+    from itertools import combinations
+
+    period_col = 'period' if 'period' in pca_df.columns else None
+    if period_col is None:
+        return pd.DataFrame()
+
+    results = []
+
+    # Define canonical period order
+    period_order = ['Post-COVID', 'Rate Shock', 'Disinflation']
+    periods_present = [p for p in period_order if p in pca_df[period_col].unique()]
+
+    for period in periods_present:
+        df_p = pca_df[pca_df[period_col] == period].copy()
+        n_stocks = len(df_p)
+
+        if n_stocks == 0 or 'cluster' not in df_p.columns:
+            continue
+
+        # --- Concentration Score ---
+        cluster_counts = df_p['cluster'].value_counts()
+        largest_pct = (cluster_counts.iloc[0] / n_stocks) * 100  # % in biggest cluster
+
+        # --- Centroid Dispersion ---
+        centroids = df_p.groupby('cluster')[['PC1', 'PC2']].mean()
+        if len(centroids) < 2:
+            dispersion = 0.0
+        else:
+            dists = []
+            for c1, c2 in combinations(centroids.index, 2):
+                p1 = centroids.loc[c1].values
+                p2 = centroids.loc[c2].values
+                dists.append(np.sqrt(((p1 - p2) ** 2).sum()))
+            dispersion = np.mean(dists)
+
+        results.append({
+            'period': period,
+            'n_stocks': n_stocks,
+            'largest_cluster_pct': round(largest_pct, 1),
+            'centroid_dispersion': round(dispersion, 2),
+        })
+
+    if not results:
+        return pd.DataFrame()
+
+    df_results = pd.DataFrame(results)
+
+    # Normalize dispersion to 0-100 scale across periods
+    d_min = df_results['centroid_dispersion'].min()
+    d_max = df_results['centroid_dispersion'].max()
+    if d_max > d_min:
+        df_results['dispersion_normalized'] = (
+            (df_results['centroid_dispersion'] - d_min) / (d_max - d_min) * 100
+        )
+    else:
+        df_results['dispersion_normalized'] = 50.0  # flat if only one period
+
+    # Final Crowding Score: high concentration + low dispersion = high crowding
+    df_results['crowding_score'] = (
+        0.6 * df_results['largest_cluster_pct'] +
+        0.4 * (100 - df_results['dispersion_normalized'])
+    ).round(1)
+
+    # Risk Level label
+    def risk_label(score):
+        if score >= 70:
+            return '🔴 High'
+        elif score >= 50:
+            return '🟡 Elevated'
+        else:
+            return '🟢 Normal'
+
+    df_results['risk_level'] = df_results['crowding_score'].apply(risk_label)
+
+    return df_results[['period', 'n_stocks', 'largest_cluster_pct',
+                        'centroid_dispersion', 'crowding_score', 'risk_level']]
