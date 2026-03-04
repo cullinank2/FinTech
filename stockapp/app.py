@@ -618,7 +618,7 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
         st.metric(
             "PC2 Score (Valuation Style: Value vs Growth)", 
             f"{pc2:.3f}",
-            delta="Large/Leveraged" if pc2 >= 0 else "Cash-Rich",
+            delta="Large/Leveraged" if pc2 >= 0 else "Value",
             delta_color="off"
         )
     
