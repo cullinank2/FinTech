@@ -807,7 +807,7 @@ def create_factor_trend_chart(
             ))
     
     fig_pc1.update_layout(
-        title=f'Factor Driver Trends (PC1): {ticker}',
+        title=f'Factor Driver Trends: {ticker}',
         xaxis_title='Date',
         yaxis_title='Normalized Value (0-100)',
         width=PLOT_WIDTH,
