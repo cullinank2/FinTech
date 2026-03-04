@@ -842,7 +842,7 @@ def create_factor_trend_chart(
             ))
     
     fig_pc2.update_layout(
-        title=f'PC2 Driver Trends: {ticker}',
+        title=f'Factor Driver Trends-PC2: {ticker}',
         xaxis_title='Date',
         yaxis_title='Normalized Value (0-100)',
         width=PLOT_WIDTH,
