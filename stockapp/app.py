@@ -829,11 +829,10 @@ def render_visualizations(
     
     elif current_view == "🌐 3D Quadrant Peers":
         st.markdown("### 🌐 3D Quadrant Peer Comparison")
-        st.markdown("""
+        st.markdown(f"""
         Explore quadrant peers in 3D space. The Z-axis (PC3) reveals the 
-        Value vs Growth dimension within your peer group.
+        {PC3_INTERPRETATION['name']} dimension within your peer group.
         """)
-        
         pc1 = pca_row.get('PC1', 0)
         pc2 = pca_row.get('PC2', 0)
         filtered_quadrant_peers = get_stocks_in_same_quadrant(
