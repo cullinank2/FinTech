@@ -619,7 +619,6 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
             f"PC2 Score ({PC2_INTERPRETATION['name']})", 
             f"{pc2:.3f}",
             delta=PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand'],
-
             delta_color="off"
         )
     
