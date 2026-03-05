@@ -611,14 +611,14 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
         st.metric(
             f"PC1 Score ({PC1_INTERPRETATION['name']})", 
             f"{pc1:.3f}",
-            delta=PC1_INTERPRETATION['high_meaning_shorthand'] if pc1 >= 0 else PC1_INTERPRETATION['low_meaning_shorthand'],
+            delta=("↑ " if pc1 >= 0 else "↓ ") + (PC1_INTERPRETATION['high_meaning_shorthand'] if pc1 >= 0 else PC1_INTERPRETATION['low_meaning_shorthand']),
             delta_color="normal" if pc1 >= 0 else "inverse"
         )
     with col2:
         st.metric(
             f"PC2 Score ({PC2_INTERPRETATION['name']})", 
             f"{pc2:.3f}",
-            delta=PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand'],
+            delta=("↑ " if pc2 >= 0 else "↓ ") + (PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand']),
             delta_color="off"
         )
     
