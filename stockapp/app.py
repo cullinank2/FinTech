@@ -1467,10 +1467,10 @@ def main():
                                     # compute_crowding_scores needs 'cluster' column
                                     # derive it from Quadrant label
                                     quad_map = {
-                                        'Q1: Profitable Value':       0,
-                                        'Q2: Value Traps/Distressed': 1,
-                                        'Q3: Struggling Growth':      2,
-                                        'Q4: Quality Growth':         3,
+                                        f"Q1: {QUADRANTS['Q1']['name']}": 0,
+                                        f"Q2: {QUADRANTS['Q2']['name']}": 1,
+                                        f"Q3: {QUADRANTS['Q3']['name']}": 2,
+                                        f"Q4: {QUADRANTS['Q4']['name']}": 3,
                                     }
                                     scores_df['cluster'] = scores_df['Quadrant'].map(quad_map)
                                     all_period_rows.append(scores_df)

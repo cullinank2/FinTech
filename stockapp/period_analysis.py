@@ -19,6 +19,7 @@ from sklearn.cluster import KMeans
 from scipy.spatial import procrustes
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from config import QUADRANTS
 
 # ── Sub-period definitions ────────────────────────────────────────────────────
 SUB_PERIODS = {
@@ -97,13 +98,13 @@ def _run_pca_for_period(df: pd.DataFrame, features: list, date_col: str,
 
 def _assign_quadrant(row):
     if row['PC1'] >= 0 and row['PC2'] >= 0:
-        return 'Q1: Profitable Value'
+        return f"Q1: {QUADRANTS['Q1']['name']}"
     elif row['PC1'] < 0 and row['PC2'] >= 0:
-        return 'Q2: Value Traps/Distressed'
+        return f"Q2: {QUADRANTS['Q2']['name']}"
     elif row['PC1'] < 0 and row['PC2'] < 0:
-        return 'Q3: Struggling Growth'
+        return f"Q3: {QUADRANTS['Q3']['name']}"
     else:
-        return 'Q4: Quality Growth'
+        return f"Q4: {QUADRANTS['Q4']['name']}"
 
 
 # ── Method 1: Loading Bar Charts ──────────────────────────────────────────────
@@ -330,16 +331,16 @@ def create_migration_sankey(migration_df: pd.DataFrame,
     Sankey diagram showing stock flow between quadrants across sub-periods.
     """
     quadrant_order = [
-        'Q1: Profitable Value',
-        'Q2: Value Traps/Distressed',
-        'Q3: Struggling Growth',
-        'Q4: Quality Growth',
+        f"Q1: {QUADRANTS['Q1']['name']}",
+        f"Q2: {QUADRANTS['Q2']['name']}",
+        f"Q3: {QUADRANTS['Q3']['name']}",
+        f"Q4: {QUADRANTS['Q4']['name']}",
     ]
     q_colors = {
-        'Q1: Profitable Value':       '#54A24B',
-        'Q2: Value Traps/Distressed': '#E45756',
-        'Q3: Struggling Growth':      '#F58518',
-        'Q4: Quality Growth':         '#4C78A8',
+        f"Q1: {QUADRANTS['Q1']['name']}": '#54A24B',
+        f"Q2: {QUADRANTS['Q2']['name']}": '#E45756',
+        f"Q3: {QUADRANTS['Q3']['name']}": '#F58518',
+        f"Q4: {QUADRANTS['Q4']['name']}": '#4C78A8',
     }
 
     # Build node list: each period × each quadrant
