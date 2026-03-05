@@ -609,14 +609,14 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
     col1, col2 = st.columns(2)
     with col1:
         st.metric(
-            "PC1 Score (Profitability & Operational Quality)", 
+            f"PC1 Score ({PC1_INTERPRETATION['name']})", 
             f"{pc1:.3f}",
             delta="Higher Quality" if pc1 >= 0 else "Riskier",
             delta_color="normal" if pc1 >= 0 else "inverse"
         )
     with col2:
         st.metric(
-            "PC2 Score (Valuation Style: Value vs Growth)", 
+            f"PC2 Score ({PC2_INTERPRETATION['name']})", 
             f"{pc2:.3f}",
             delta="Large/Leveraged" if pc2 >= 0 else "Cash-Rich",
             delta_color="off"
