@@ -618,9 +618,10 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
         st.metric(
             f"PC2 Score ({PC2_INTERPRETATION['name']})", 
             f"{pc2:.3f}",
-            delta=PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand'],
+            delta=pc2,
             delta_color="off"
         )
+        st.caption("↑ Value" if pc2 >= 0 else "↓ Growth")
     
     return ticker, permno, cluster, pc1, pc2, quadrant
 
