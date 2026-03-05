@@ -854,6 +854,8 @@ def render_visualizations(
                     combined_variance = f" &nbsp;|&nbsp; <i>Combined PC1+PC2+PC3: ~{combined}%</i>"
             
             # PC3 info box
+            pc3_high = ' · '.join(PC3_INTERPRETATION['high_meaning'])
+            pc3_low  = ' · '.join(PC3_INTERPRETATION['low_meaning'])
             st.markdown(f"""
                 <div style="
                     background-color: var(--secondary-background-color);
@@ -865,12 +867,11 @@ def render_visualizations(
                     line-height: 2;
                     white-space: nowrap;
                 ">
-                    <b>📐 PC3: Leverage & Risk Profile:</b><i> cleanest factor in the model</i>{pc3_variance}{combined_variance}<br>
-                    ↑ <b>High PC3 - </b><i>Deep value · Asset-heavy · Leveraged</i> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    ↓ <b>Low PC3 - </b><i>Growth · Asset-light · Capital efficient</i>
+                    <b>📐 PC3: {PC3_INTERPRETATION['name']}:</b>{pc3_variance}{combined_variance}<br>
+                    ↑ <b>High PC3 - </b><i>{pc3_high}</i> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    ↓ <b>Low PC3 - </b><i>{pc3_low}</i>
                 </div>
-                """, unsafe_allow_html=True)
-            
+                """, unsafe_allow_html=True)            
             from visualizations import create_3d_quadrant_peers_plot
             fig_3d_peers = create_3d_quadrant_peers_plot(
                 filtered_quadrant_peers, selected_ticker, pca_row
@@ -1051,6 +1052,8 @@ def render_visualizations(
                     combined_variance = f" &nbsp;|&nbsp; <b>Combined PC1+PC2+PC3: ~{combined}%</b>"
             
             # PC3 info box ABOVE chart
+            pc3_high = ' · '.join(PC3_INTERPRETATION['high_meaning'])
+            pc3_low  = ' · '.join(PC3_INTERPRETATION['low_meaning'])
             st.markdown(f"""
                 <div style="
                     background-color: var(--secondary-background-color);
@@ -1062,9 +1065,9 @@ def render_visualizations(
                     line-height: 2;
                     white-space: nowrap;
                 ">
-                    <b>📐 PC3: Leverage & Risk Profile:</b><i> cleanest factor in the model</i>{pc3_variance}{combined_variance}<br>
-                    ↑ <b>High PC3 - </b><i>Deep value · Asset-heavy · Leveraged</i> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    ↓ <b>Low PC3 - </b><i>Growth · Asset-light · Capital efficient</i>
+                    <b>📐 PC3: {PC3_INTERPRETATION['name']}:</b>{pc3_variance}{combined_variance}<br>
+                    ↑ <b>High PC3 - </b><i>{pc3_high}</i> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    ↓ <b>Low PC3 - </b><i>{pc3_low}</i>
                 </div>
                 """, unsafe_allow_html=True)
             
