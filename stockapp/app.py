@@ -608,19 +608,16 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
     # PCA scores
     col1, col2 = st.columns(2)
     with col1:
-        st.metric(
-            f"PC1 Score ({PC1_INTERPRETATION['name']})", 
-            f"{pc1:.3f}",
-            delta=PC1_INTERPRETATION['high_meaning_shorthand'] if pc1 >= 0 else PC1_INTERPRETATION['low_meaning_shorthand'],
-            delta_color="normal" if pc1 >= 0 else "inverse"
-        )
+        pc1_label = PC1_INTERPRETATION['high_meaning_shorthand'] if pc1 >= 0 else PC1_INTERPRETATION['low_meaning_shorthand']
+        pc1_arrow = "↑" if pc1 >= 0 else "↓"
+        pc1_color = "#10B981" if pc1 >= 0 else "#EF4444"
+        st.metric(f"PC1 Score ({PC1_INTERPRETATION['name']})", f"{pc1:.3f}")
+        st.markdown(f"<span style='color:{pc1_color}; font-size:14px'>{pc1_arrow} {pc1_label}</span>", unsafe_allow_html=True)
     with col2:
-        st.metric(
-            f"PC2 Score ({PC2_INTERPRETATION['name']})", 
-            f"{pc2:.3f}",
-            delta=PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand'],
-            delta_color="off"
-        )
+        pc2_label = PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand']
+        pc2_arrow = "↑" if pc2 >= 0 else "↓"
+        st.metric(f"PC2 Score ({PC2_INTERPRETATION['name']})", f"{pc2:.3f}")
+        st.markdown(f"<span style='color:gray; font-size:14px'>{pc2_arrow} {pc2_label}</span>", unsafe_allow_html=True)
     
     return ticker, permno, cluster, pc1, pc2, quadrant
 
