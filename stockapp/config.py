@@ -108,6 +108,8 @@ PC1_INTERPRETATION = {
     'variance_explained': 37.5,
     'high_meaning': ['Operationally profitable', 'Stable', 'Strong cash position'],
     'low_meaning': ['Lower profitability', 'Weaker operations', 'Volatile', 'Cash-constrained'],
+    'high_meaning_shorthand': 'Higher Quality',
+    'low_meaning_shorthand': 'Lower Quality',
 }
 
 PC2_INTERPRETATION = {
@@ -115,6 +117,8 @@ PC2_INTERPRETATION = {
     'variance_explained': 14.6,
     'high_meaning': ['Deep value stocks', 'High book value', 'High sales relative to price', 'Cheap on traditional metrics'],
     'low_meaning': ['Growth/premium stocks', 'Trading at premium to fundamentals'],
+    'high_meaning_shorthand': 'Value',
+    'low_meaning_shorthand': 'Growth',
 }
 
 PC3_INTERPRETATION = {
