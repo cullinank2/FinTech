@@ -612,12 +612,12 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
         pc1_arrow = "↑" if pc1 >= 0 else "↓"
         pc1_color = "#10B981" if pc1 >= 0 else "#EF4444"
         st.metric(f"PC1 Score ({PC1_INTERPRETATION['name']})", f"{pc1:.3f}")
-        st.markdown(f"<span style='color:{pc1_color}; font-size:14px'>{pc1_arrow} {pc1_label}</span>", unsafe_allow_html=True)
+        st.markdown(f"<div style='margin-top:-18px; color:{pc1_color}; font-size:14px'>{pc1_arrow} {pc1_label}</div>", unsafe_allow_html=True)
     with col2:
         pc2_label = PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand']
         pc2_arrow = "↑" if pc2 >= 0 else "↓"
         st.metric(f"PC2 Score ({PC2_INTERPRETATION['name']})", f"{pc2:.3f}")
-        st.markdown(f"<span style='color:gray; font-size:14px'>{pc2_arrow} {pc2_label}</span>", unsafe_allow_html=True)
+        st.markdown(f"<div style='margin-top:-18px; color:gray; font-size:14px'>{pc2_arrow} {pc2_label}</div>", unsafe_allow_html=True)
     
     return ticker, permno, cluster, pc1, pc2, quadrant
 
