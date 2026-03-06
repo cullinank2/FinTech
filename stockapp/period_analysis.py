@@ -184,7 +184,7 @@ def get_loading_comparison_data(df: pd.DataFrame, features: list,
     if len(cols) >= 3:
         table[f'Δ {cols[1]} → {cols[2]}'] = (table[cols[2]] - table[cols[1]]).round(3)
 
-    return table.round(3)
+    return table.round(3) 
 
 
 # ── Method 2: Procrustes Analysis ────────────────────────────────────────────
