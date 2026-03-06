@@ -157,6 +157,36 @@ def create_loading_comparison_chart(df: pd.DataFrame, features: list,
     return fig
 
 
+def get_loading_comparison_data(df: pd.DataFrame, features: list,
+                                 date_col: str, pc: str = 'PC1') -> pd.DataFrame:
+    """
+    Returns a DataFrame of factor loadings across the three sub-periods
+    for the selected PC — used to render the 'View factor loadings table' expander.
+    """
+    SHORT = {k: k.split('\n')[0] for k in SUB_PERIODS}
+
+    period_loadings = {}
+    for label, (start, end) in SUB_PERIODS.items():
+        _, _, loadings_df, _ = _run_pca_for_period(df, features, date_col, start, end)
+        if loadings_df is not None:
+            period_loadings[SHORT[label]] = loadings_df[pc]
+
+    if not period_loadings:
+        return pd.DataFrame()
+
+    table = pd.DataFrame(period_loadings)
+    table.index = [FEATURE_DISPLAY_NAMES.get(f, f) for f in table.index]
+    table.index.name = 'Factor'
+
+    cols = list(table.columns)
+    if len(cols) >= 2:
+        table[f'Δ {cols[0]} → {cols[1]}'] = (table[cols[1]] - table[cols[0]]).round(3)
+    if len(cols) >= 3:
+        table[f'Δ {cols[1]} → {cols[2]}'] = (table[cols[2]] - table[cols[1]]).round(3)
+
+    return table.round(3)
+
+
 # ── Method 2: Procrustes Analysis ────────────────────────────────────────────
 
 def compute_procrustes_table(df: pd.DataFrame, features: list,
