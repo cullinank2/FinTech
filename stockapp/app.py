@@ -544,6 +544,11 @@ def render_sidebar():
         os.environ['OPENAI_API_KEY'] = api_key
         st.session_state.chatbot = create_chatbot(api_key)
 
+    # TEMP DEBUG - DELETE AFTER CHECKING
+    if st.session_state.get('raw_data') is not None:
+        st.sidebar.write(st.session_state.raw_data[st.session_state.raw_data['ticker'] == 'GE'].shape)
+        st.sidebar.write(st.session_state.raw_data[st.session_state.raw_data['ticker'] == 'GE'][['public_date','PC1','PC2']].head(10))
+
 
 # =============================================================================
 # MAIN CONTENT COMPONENTS
