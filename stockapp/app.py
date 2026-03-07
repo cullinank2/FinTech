@@ -543,13 +543,7 @@ def render_sidebar():
     if api_key:
         os.environ['OPENAI_API_KEY'] = api_key
         st.session_state.chatbot = create_chatbot(api_key)
-
-    # TEMP DEBUG - DELETE AFTER CHECKING
-    if st.session_state.get('raw_data') is not None:
-        ge = st.session_state.raw_data[st.session_state.raw_data['ticker'] == 'GE']
-        st.sidebar.write("GE rows:", ge.shape)
-        st.sidebar.write("Columns:", list(ge.columns))
-        st.sidebar.write(ge.head(5))
+     
 
 
 # =============================================================================
@@ -573,53 +567,67 @@ def render_main_header():
 def _build_quadrant_history_html(stock_data: pd.DataFrame, ticker: str) -> str:
     """
     Build HTML for a 3-quarter quadrant history panel.
-    Looks back through the ticker's time-series rows, buckets by calendar quarter,
-    and returns the 3 most recent quarters prior to the latest observation.
+    Projects raw factor data through the fitted scaler+PCA to get PC1/PC2
+    for each historical quarter, then determines quadrant.
     """
     quadrant_colors = {
-        'Q1': ('#10B981', '🟢'),  # green
-        'Q2': ('#EF4444', '🔴'),  # red
-        'Q3': ('#F59E0B', '🟡'),  # amber
-        'Q4': ('#3B82F6', '🔵'),  # blue
+        'Q1': ('#10B981', '🟢'),
+        'Q2': ('#EF4444', '🔴'),
+        'Q3': ('#F59E0B', '🟡'),
+        'Q4': ('#3B82F6', '🔵'),
     }
+
+    history_rows = []
+
+    scaler  = st.session_state.get('scaler')
+    pca_model = st.session_state.get('pca_model')
 
     date_col = next(
         (c for c in ['public_date', 'date', 'datadate'] if c in stock_data.columns),
         None
     )
 
-    history_rows = []
-
-    if date_col and 'PC1' in stock_data.columns and 'PC2' in stock_data.columns:
+    if date_col and scaler is not None and pca_model is not None:
         ts = stock_data[stock_data['ticker'].str.upper() == ticker.upper()].copy()
         ts[date_col] = pd.to_datetime(ts[date_col])
         ts = ts.sort_values(date_col)
 
-        # Assign calendar quarter label
-        ts['_qtr'] = ts[date_col].dt.to_period('Q')
+        # Keep only feature columns that exist in this data
+        available_features = [c for c in FEATURE_COLUMNS if c in ts.columns]
 
-        # Aggregate to quarterly (take last observation per quarter)
-        qtr_df = (
-            ts.groupby('_qtr')
-            .last()
-            .reset_index()
-            .sort_values('_qtr', ascending=False)
-        )
+        if len(available_features) >= 2:
+            # Fill missing values
+            ts[available_features] = ts[available_features].fillna(ts[available_features].median())
 
-        # Skip the most recent quarter (that's the current card), take next 3
-        past_qtrs = qtr_df.iloc[1:4]
+            # Project each row through scaler + PCA
+            X_scaled = scaler.transform(ts[available_features])
+            X_pca    = pca_model.transform(X_scaled)
+            ts['_PC1'] = X_pca[:, 0]
+            ts['_PC2'] = X_pca[:, 1]
 
-        for _, row in past_qtrs.iterrows():
-            q = determine_quadrant(row['PC1'], row['PC2'])
-            q_info = QUADRANTS.get(q, {})
-            color, icon = quadrant_colors.get(q, ('#888', '⬜'))
-            history_rows.append({
-                'label': str(row['_qtr']),
-                'quadrant': q,
-                'name': q_info.get('name', ''),
-                'color': color,
-                'icon': icon,
-            })
+            # Bucket by calendar quarter, take last obs per quarter
+            ts['_qtr'] = ts[date_col].dt.to_period('Q')
+            qtr_df = (
+                ts.groupby('_qtr')
+                .last()
+                .reset_index()
+                .sort_values('_qtr', ascending=False)
+            )
+
+            # Skip most recent quarter (= current card), take prior 3
+            past_qtrs = qtr_df.iloc[1:4]
+
+            for _, row in past_qtrs.iterrows():
+                q = determine_quadrant(row['_PC1'], row['_PC2'])
+                q_info = QUADRANTS.get(q, {})
+                color, icon = quadrant_colors.get(q, ('#888', '⬜'))
+                history_rows.append({
+                    'label':    str(row['_qtr']),
+                    'quadrant': q,
+                    'name':     q_info.get('name', ''),
+                    'color':    color,
+                    'icon':     icon,
+                })
 
     if not history_rows:
         return """
@@ -638,7 +646,7 @@ def _build_quadrant_history_html(stock_data: pd.DataFrame, ticker: str) -> str:
 
     rows_html = ""
     for i, r in enumerate(history_rows):
-        ago_label = ["1Q ago", "2Q ago", "3Q ago"][i] if i < 3 else f"{i+1}Q ago"
+        ago_label = ["1Q ago", "2Q ago", "3Q ago"][i]
         rows_html += f"""
         <div style="display:flex; justify-content:space-between; align-items:center;
                     padding:4px 0; border-bottom:1px solid rgba(128,128,128,0.12);">
