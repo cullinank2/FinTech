@@ -648,16 +648,14 @@ def _build_quadrant_history_html(stock_data: pd.DataFrame, ticker: str) -> str:
     for i, r in enumerate(history_rows):
         ago_label = ["1Q ago", "2Q ago", "3Q ago"][i]
         rows_html += f"""
-        <div style="display:flex; justify-content:space-between; align-items:center;
+        <div style="display:flex; align-items:center; gap:8px;
                     padding:4px 0; border-bottom:1px solid rgba(128,128,128,0.12);">
-            <span style="font-size:12px; color:gray; width:52px;">{ago_label}</span>
-            <span style="font-size:11px; color:gray; width:60px;">{r['label']}</span>
-            <span style="font-size:13px; font-weight:700; color:{r['color']};">
+            <span style="font-size:12px; color:gray; width:48px; flex-shrink:0;">{ago_label}</span>
+            <span style="font-size:11px; color:gray; width:52px; flex-shrink:0;">{r['label']}</span>
+            <span style="font-size:13px; font-weight:700; color:{r['color']}; flex-shrink:0;">
                 {r['icon']} {r['quadrant']}
             </span>
-            <span style="font-size:11px; color:{r['color']}; text-align:right; flex:1;
-                         padding-left:6px; white-space:nowrap; overflow:hidden;
-                         text-overflow:ellipsis;">
+            <span style="font-size:11px; color:{r['color']}; white-space:nowrap;">
                 {r['name']}
             </span>
         </div>
