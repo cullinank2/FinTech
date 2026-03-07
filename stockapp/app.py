@@ -737,7 +737,7 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
 
     with right_col:
         # --- Quadrant History: last 3 quarters ---
-        history_html = _build_quadrant_history_html(stock_data, ticker)
+        history_html = _build_quadrant_history_html(st.session_state.raw_data, ticker)
         st.markdown(history_html, unsafe_allow_html=True)
 
     return ticker, permno, cluster, pc1, pc2, quadrant
