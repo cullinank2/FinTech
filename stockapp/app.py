@@ -563,6 +563,104 @@ def render_main_header():
     """)
 
 
+def _build_quadrant_history_html(stock_data: pd.DataFrame, ticker: str) -> str:
+    """
+    Build HTML for a 3-quarter quadrant history panel.
+    Looks back through the ticker's time-series rows, buckets by calendar quarter,
+    and returns the 3 most recent quarters prior to the latest observation.
+    """
+    quadrant_colors = {
+        'Q1': ('#10B981', '🟢'),  # green
+        'Q2': ('#EF4444', '🔴'),  # red
+        'Q3': ('#F59E0B', '🟡'),  # amber
+        'Q4': ('#3B82F6', '🔵'),  # blue
+    }
+
+    date_col = next(
+        (c for c in ['public_date', 'date', 'datadate'] if c in stock_data.columns),
+        None
+    )
+
+    history_rows = []
+
+    if date_col and 'PC1' in stock_data.columns and 'PC2' in stock_data.columns:
+        ts = stock_data[stock_data['ticker'].str.upper() == ticker.upper()].copy()
+        ts[date_col] = pd.to_datetime(ts[date_col])
+        ts = ts.sort_values(date_col)
+
+        # Assign calendar quarter label
+        ts['_qtr'] = ts[date_col].dt.to_period('Q')
+
+        # Aggregate to quarterly (take last observation per quarter)
+        qtr_df = (
+            ts.groupby('_qtr')
+            .last()
+            .reset_index()
+            .sort_values('_qtr', ascending=False)
+        )
+
+        # Skip the most recent quarter (that's the current card), take next 3
+        past_qtrs = qtr_df.iloc[1:4]
+
+        for _, row in past_qtrs.iterrows():
+            q = determine_quadrant(row['PC1'], row['PC2'])
+            q_info = QUADRANTS.get(q, {})
+            color, icon = quadrant_colors.get(q, ('#888', '⬜'))
+            history_rows.append({
+                'label': str(row['_qtr']),
+                'quadrant': q,
+                'name': q_info.get('name', ''),
+                'color': color,
+                'icon': icon,
+            })
+
+    if not history_rows:
+        return """
+        <div style="padding:0.6rem 0.8rem; border-radius:8px;
+                    border:1px solid rgba(128,128,128,0.25);
+                    background:var(--secondary-background-color);">
+            <div style="font-size:12px; color:gray; margin-bottom:6px; font-weight:600;
+                        text-transform:uppercase; letter-spacing:0.05em;">
+                Quadrant History
+            </div>
+            <div style="font-size:13px; color:gray; font-style:italic;">
+                Insufficient historical data
+            </div>
+        </div>
+        """
+
+    rows_html = ""
+    for i, r in enumerate(history_rows):
+        ago_label = ["1Q ago", "2Q ago", "3Q ago"][i] if i < 3 else f"{i+1}Q ago"
+        rows_html += f"""
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    padding:4px 0; border-bottom:1px solid rgba(128,128,128,0.12);">
+            <span style="font-size:12px; color:gray; width:52px;">{ago_label}</span>
+            <span style="font-size:11px; color:gray; width:60px;">{r['label']}</span>
+            <span style="font-size:13px; font-weight:700; color:{r['color']};">
+                {r['icon']} {r['quadrant']}
+            </span>
+            <span style="font-size:11px; color:{r['color']}; text-align:right; flex:1;
+                         padding-left:6px; white-space:nowrap; overflow:hidden;
+                         text-overflow:ellipsis;">
+                {r['name']}
+            </span>
+        </div>
+        """
+
+    return f"""
+    <div style="padding:0.6rem 0.8rem; border-radius:8px;
+                border:1px solid rgba(128,128,128,0.25);
+                background:var(--secondary-background-color);">
+        <div style="font-size:12px; color:gray; margin-bottom:6px; font-weight:600;
+                    text-transform:uppercase; letter-spacing:0.05em;">
+            📅 Quadrant History
+        </div>
+        {rows_html}
+    </div>
+    """
+
+
 def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
     """Render the stock overview section.""" 
     
@@ -605,20 +703,28 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
     </div>
     """, unsafe_allow_html=True)
     
-    # PCA scores
-    col1, col2 = st.columns(2)
-    with col1:
-        pc1_label = PC1_INTERPRETATION['high_meaning_shorthand'] if pc1 >= 0 else PC1_INTERPRETATION['low_meaning_shorthand']
-        pc1_arrow = "↑" if pc1 >= 0 else "↓"
-        pc1_color = "#10B981" if pc1 >= 0 else "#EF4444"
-        st.metric(f"PC1 Score ({PC1_INTERPRETATION['name']})", f"{pc1:.3f}")
-        st.markdown(f"<div style='margin-top:-30px; color:{pc1_color}; font-size:14px'>{pc1_arrow} {pc1_label}</div>", unsafe_allow_html=True)
-    with col2:
-        pc2_label = PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand']
-        pc2_arrow = "↑" if pc2 >= 0 else "↓"
-        st.metric(f"PC2 Score ({PC2_INTERPRETATION['name']})", f"{pc2:.3f}")
-        st.markdown(f"<div style='margin-top:-30px; color:gray; font-size:14px'>{pc2_arrow} {pc2_label}</div>", unsafe_allow_html=True)
-    
+    # PCA scores + quadrant history side by side
+    left_col, right_col = st.columns([1.2, 1])
+
+    with left_col:
+        col1, col2 = st.columns(2)
+        with col1:
+            pc1_label = PC1_INTERPRETATION['high_meaning_shorthand'] if pc1 >= 0 else PC1_INTERPRETATION['low_meaning_shorthand']
+            pc1_arrow = "↑" if pc1 >= 0 else "↓"
+            pc1_color = "#10B981" if pc1 >= 0 else "#EF4444"
+            st.metric(f"PC1 Score ({PC1_INTERPRETATION['name']})", f"{pc1:.3f}")
+            st.markdown(f"<div style='margin-top:-30px; color:{pc1_color}; font-size:14px'>{pc1_arrow} {pc1_label}</div>", unsafe_allow_html=True)
+        with col2:
+            pc2_label = PC2_INTERPRETATION['high_meaning_shorthand'] if pc2 >= 0 else PC2_INTERPRETATION['low_meaning_shorthand']
+            pc2_arrow = "↑" if pc2 >= 0 else "↓"
+            st.metric(f"PC2 Score ({PC2_INTERPRETATION['name']})", f"{pc2:.3f}")
+            st.markdown(f"<div style='margin-top:-30px; color:gray; font-size:14px'>{pc2_arrow} {pc2_label}</div>", unsafe_allow_html=True)
+
+    with right_col:
+        # --- Quadrant History: last 3 quarters ---
+        history_html = _build_quadrant_history_html(stock_data, ticker)
+        st.markdown(history_html, unsafe_allow_html=True)
+
     return ticker, permno, cluster, pc1, pc2, quadrant
 
 
