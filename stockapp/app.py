@@ -1494,39 +1494,6 @@ def main():
                                 - Procrustes is **rotation-invariant** — accounts for PCA sign flips and axis swaps.
                                 """)
 
-                            # Section 3: Quadrant Migration
-                            st.markdown("---")
-                            st.markdown("### 3 · Quadrant Migration")
-                            st.caption("Tracks where each stock sat in PCA space across the three regimes.")
-
-                            with st.spinner("Computing quadrant assignments…"):
-                                period_names = [k.split('\n')[0] for k in PERIOD_KEYS]
-                                migration_df, summary_df, migration_pct = compute_quadrant_migration(
-                                    raw_df, features, date_col
-                                )
-
-                            if migration_df is not None and not migration_df.empty:
-                                col_a, col_b, col_c = st.columns(3)
-                                col_a.metric("Stocks Tracked", f"{len(migration_df):,}")
-                                col_b.metric("Changed Quadrant", f"{migration_pct:.1f}%")
-                                col_c.metric("Stayed Same", f"{100 - migration_pct:.1f}%")
-
-                                st.markdown("**Migration rates between adjacent periods:**")
-                                st.dataframe(summary_df, use_container_width=True, hide_index=True)
-
-                                st.markdown("**Flow diagram:**")
-                                fig_sankey = create_migration_sankey(migration_df, period_names)
-                                st.plotly_chart(fig_sankey, use_container_width=True)
-
-                                with st.expander("🔍 View stock-level quadrant table"):
-                                    st.dataframe(
-                                        migration_df.sort_values('Any Change', ascending=False),
-                                        use_container_width=True,
-                                        hide_index=True
-                                    )
-                            else:
-                                st.warning("Not enough common tickers across all three sub-periods to compute migration.")
-
                             # ============================================================
                             # CROWDING SCORE MODULE
                             # ============================================================
@@ -1628,6 +1595,39 @@ def main():
                                     st.warning("Crowding score could not be computed — check cluster labels.")
                             else:
                                 st.warning("Not enough period data to compute crowding scores.")
+
+                            # Section 3: Quadrant Migration
+                            st.markdown("---")
+                            st.markdown("### 3 · Quadrant Migration")
+                            st.caption("Tracks where each stock sat in PCA space across the three regimes.")
+
+                            with st.spinner("Computing quadrant assignments…"):
+                                period_names = [k.split('\n')[0] for k in PERIOD_KEYS]
+                                migration_df, summary_df, migration_pct = compute_quadrant_migration(
+                                    raw_df, features, date_col
+                                )
+
+                            if migration_df is not None and not migration_df.empty:
+                                col_a, col_b, col_c = st.columns(3)
+                                col_a.metric("Stocks Tracked", f"{len(migration_df):,}")
+                                col_b.metric("Changed Quadrant", f"{migration_pct:.1f}%")
+                                col_c.metric("Stayed Same", f"{100 - migration_pct:.1f}%")
+
+                                st.markdown("**Migration rates between adjacent periods:**")
+                                st.dataframe(summary_df, use_container_width=True, hide_index=True)
+
+                                st.markdown("**Flow diagram:**")
+                                fig_sankey = create_migration_sankey(migration_df, period_names)
+                                st.plotly_chart(fig_sankey, use_container_width=True)
+
+                                with st.expander("🔍 View stock-level quadrant table"):
+                                    st.dataframe(
+                                        migration_df.sort_values('Any Change', ascending=False),
+                                        use_container_width=True,
+                                        hide_index=True
+                                    )
+                            else:
+                                st.warning("Not enough common tickers across all three sub-periods to compute migration.")
 
                             # Section 4: Factor Loadings by Sub-Period
                             st.markdown("---")
