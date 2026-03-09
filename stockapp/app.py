@@ -1469,92 +1469,9 @@ def main():
                         if len(features) < 3:
                             st.error(f"Too few feature columns detected: {features}")
                         else:
-                            # Section 1: Loading Charts
+                            # Section 1: Procrustes
                             st.markdown("---")
-                            st.markdown("### 1 · Factor Loadings by Sub-Period")
-                            st.caption("If bars change size or flip sign across periods, the factor structure shifted.")
-
-                            pc_choice = st.radio(
-                                "Select principal component:",
-                                options=["PC1", "PC2", "PC3"],
-                                horizontal=True,
-                                key="landing_period_pc_choice"
-                            )
-
-                            with st.spinner("Running PCA for each sub-period…"):
-                                fig_loadings = create_loading_comparison_chart(raw_df, features, date_col, pc=pc_choice)
-                            st.plotly_chart(fig_loadings, use_container_width=True)
-
-                            from period_analysis import get_loading_comparison_data
-                            loadings_table = get_loading_comparison_data(raw_df, features, date_col, pc=pc_choice)
-                            if not loadings_table.empty:
-                                with st.expander(f"🔍 View {pc_choice} factor loadings table"):
-                                    period_cols = ['Post-COVID', 'Rate Shock', 'Disinflation']
-                                    delta_cols  = [c for c in loadings_table.columns if c.startswith('Δ')]
-
-                                    def _style_loading(val):
-                                        if not isinstance(val, (int, float)):
-                                            return ''
-                                        if val >= 0.30:
-                                            return 'background-color: rgba(84,162,75,0.75); color: white; font-weight:bold;'
-                                        elif val >= 0.10:
-                                            return 'background-color: rgba(84,162,75,0.35); color: white;'
-                                        elif val <= -0.30:
-                                            return 'background-color: rgba(228,87,86,0.75); color: white; font-weight:bold;'
-                                        elif val <= -0.10:
-                                            return 'background-color: rgba(228,87,86,0.35); color: white;'
-                                        return ''
-
-                                    def _style_delta(val):
-                                        if not isinstance(val, (int, float)):
-                                            return ''
-                                        if val > 0.05:
-                                            return 'color: #54A24B; font-weight: bold;'
-                                        elif val < -0.05:
-                                            return 'color: #E45756; font-weight: bold;'
-                                        return 'color: #888888;'
-
-                                    styled = (
-                                        loadings_table.style
-                                        .applymap(_style_loading, subset=period_cols)
-                                        .applymap(_style_delta,   subset=delta_cols)
-                                        .format('{:+.3f}', subset=delta_cols)
-                                        .format('{:.3f}',  subset=period_cols)
-                                        .set_properties(**{'text-align': 'center'})
-                                        .set_table_styles([
-                                            {'selector': 'th',
-                                             'props': [('background-color', '#1e1e2e'),
-                                                       ('color', '#ffffff'),
-                                                       ('font-size', '12px'),
-                                                       ('text-align', 'center'),
-                                                       ('padding', '6px 10px')]},
-                                            {'selector': 'td',
-                                             'props': [('font-size', '12px'),
-                                                       ('padding', '4px 10px')]},
-                                            {'selector': 'tr:hover td',
-                                             'props': [('background-color', 'rgba(255,255,255,0.05)')]},
-                                        ])
-                                    )
-                                    st.dataframe(styled, use_container_width=True)
-                                    st.caption(
-                                        f"Loading weights for **{pc_choice}** across the three sub-periods. "
-                                        "Bold shading = dominant driver (|loading| ≥ 0.30). "
-                                        "Δ columns show shift between adjacent regimes; "
-                                        "green = strengthening, red = weakening."
-                                    )
-
-                            with st.expander("📖 How to read this chart"):
-                                st.markdown("""
-                                - **Bar height** = how strongly that feature drives this component in that period.
-                                - **Positive loading** = the feature pushes stocks *higher* on this axis.
-                                - **Negative loading** = the feature pushes stocks *lower* on this axis.
-                                - If a bar **flips sign** between periods, the factor literally reversed its role.
-                                - If a bar **shrinks toward zero**, that feature lost explanatory power in that regime.
-                                """)
-
-                            # Section 2: Procrustes
-                            st.markdown("---")
-                            st.markdown("### 2 · Procrustes Disparity Scores")
+                            st.markdown("### 1 · Procrustes Disparity Scores")
                             st.caption("0 = identical structure; >0.15 = meaningful regime change.")
 
                             with st.spinner("Computing Procrustes analysis…"):
@@ -1614,7 +1531,7 @@ def main():
                             # CROWDING SCORE MODULE
                             # ============================================================
                             st.markdown("---")
-                            st.markdown("### 4 · Factor Crowding Score")
+                            st.markdown("### 2 · Factor Crowding Score")
                             st.caption(
                                 "Measures how structurally concentrated the equity universe has become "
                                 "in PCA space each regime. A rising score signals factor crowding building "
@@ -1711,6 +1628,89 @@ def main():
                                     st.warning("Crowding score could not be computed — check cluster labels.")
                             else:
                                 st.warning("Not enough period data to compute crowding scores.")
+
+                            # Section 4: Factor Loadings by Sub-Period
+                            st.markdown("---")
+                            st.markdown("### 4 · Factor Loadings by Sub-Period")
+                            st.caption("If bars change size or flip sign across periods, the factor structure shifted.")
+
+                            pc_choice = st.radio(
+                                "Select principal component:",
+                                options=["PC1", "PC2", "PC3"],
+                                horizontal=True,
+                                key="landing_period_pc_choice"
+                            )
+
+                            with st.spinner("Running PCA for each sub-period…"):
+                                fig_loadings = create_loading_comparison_chart(raw_df, features, date_col, pc=pc_choice)
+                            st.plotly_chart(fig_loadings, use_container_width=True)
+
+                            from period_analysis import get_loading_comparison_data
+                            loadings_table = get_loading_comparison_data(raw_df, features, date_col, pc=pc_choice)
+                            if not loadings_table.empty:
+                                with st.expander(f"🔍 View {pc_choice} factor loadings table"):
+                                    period_cols = ['Post-COVID', 'Rate Shock', 'Disinflation']
+                                    delta_cols  = [c for c in loadings_table.columns if c.startswith('Δ')]
+
+                                    def _style_loading(val):
+                                        if not isinstance(val, (int, float)):
+                                            return ''
+                                        if val >= 0.30:
+                                            return 'background-color: rgba(84,162,75,0.75); color: white; font-weight:bold;'
+                                        elif val >= 0.10:
+                                            return 'background-color: rgba(84,162,75,0.35); color: white;'
+                                        elif val <= -0.30:
+                                            return 'background-color: rgba(228,87,86,0.75); color: white; font-weight:bold;'
+                                        elif val <= -0.10:
+                                            return 'background-color: rgba(228,87,86,0.35); color: white;'
+                                        return ''
+
+                                    def _style_delta(val):
+                                        if not isinstance(val, (int, float)):
+                                            return ''
+                                        if val > 0.05:
+                                            return 'color: #54A24B; font-weight: bold;'
+                                        elif val < -0.05:
+                                            return 'color: #E45756; font-weight: bold;'
+                                        return 'color: #888888;'
+
+                                    styled = (
+                                        loadings_table.style
+                                        .applymap(_style_loading, subset=period_cols)
+                                        .applymap(_style_delta,   subset=delta_cols)
+                                        .format('{:+.3f}', subset=delta_cols)
+                                        .format('{:.3f}',  subset=period_cols)
+                                        .set_properties(**{'text-align': 'center'})
+                                        .set_table_styles([
+                                            {'selector': 'th',
+                                             'props': [('background-color', '#1e1e2e'),
+                                                       ('color', '#ffffff'),
+                                                       ('font-size', '12px'),
+                                                       ('text-align', 'center'),
+                                                       ('padding', '6px 10px')]},
+                                            {'selector': 'td',
+                                             'props': [('font-size', '12px'),
+                                                       ('padding', '4px 10px')]},
+                                            {'selector': 'tr:hover td',
+                                             'props': [('background-color', 'rgba(255,255,255,0.05)')]},
+                                        ])
+                                    )
+                                    st.dataframe(styled, use_container_width=True)
+                                    st.caption(
+                                        f"Loading weights for **{pc_choice}** across the three sub-periods. "
+                                        "Bold shading = dominant driver (|loading| ≥ 0.30). "
+                                        "Δ columns show shift between adjacent regimes; "
+                                        "green = strengthening, red = weakening."
+                                    )
+
+                            with st.expander("📖 How to read this chart"):
+                                st.markdown("""
+                                - **Bar height** = how strongly that feature drives this component in that period.
+                                - **Positive loading** = the feature pushes stocks *higher* on this axis.
+                                - **Negative loading** = the feature pushes stocks *lower* on this axis.
+                                - If a bar **flips sign** between periods, the factor literally reversed its role.
+                                - If a bar **shrinks toward zero**, that feature lost explanatory power in that regime.
+                                """)
 
         return
     
