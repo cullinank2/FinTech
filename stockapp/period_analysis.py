@@ -63,11 +63,6 @@ def _run_pca_for_period(df: pd.DataFrame, features: list, date_col: str,
     mask = (df[date_col] >= pd.Timestamp(start)) & (df[date_col] <= pd.Timestamp(end))
     sub = df.loc[mask].copy()
 
-    import streamlit as st
-
-    missing_counts = sub[features].isna().sum().sort_values(ascending=False)
-    st.write("Missing factor counts for this period:", missing_counts)
-
     if sub.empty:
         return None, None, None, None
 
