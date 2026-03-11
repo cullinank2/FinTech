@@ -73,7 +73,10 @@ def _run_pca_for_period(df: pd.DataFrame, features: list, date_col: str,
 
     # Average across time for each ticker
     ticker_col = next((c for c in ['ticker', 'TICKER'] if c in sub.columns), None)
-    grp = sub.groupby(ticker_col)[features].mean().dropna()
+    grp = sub.groupby(ticker_col)[features].mean().dropna(thresh=int(len(features)*0.75))
+
+    # Fill missing values with cross-sectional medians
+    grp = grp.fillna(grp.median())
 
     if len(grp) < 10:
         return None, None, None, None
