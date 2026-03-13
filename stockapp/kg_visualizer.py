@@ -592,3 +592,4 @@ def render_kg_tab() -> None:
 - PCA as Governance Diagnostic — structural framing without precedent
             """
         )
+
