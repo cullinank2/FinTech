@@ -62,6 +62,7 @@ from visualizations import (
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
 # from kg_visualizer import render_kg_tab
+from kg_visualizer import render_kg_tab
 from period_analysis import (
     create_loading_comparison_chart,
     compute_procrustes_table,
