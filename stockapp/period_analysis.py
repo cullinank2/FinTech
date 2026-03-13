@@ -361,7 +361,14 @@ def compute_quadrant_migration(df: pd.DataFrame, features: list,
         })
 
     summary_df = pd.DataFrame(summary_rows)
-    return wide.reset_index(), summary_df, migration_pct
+    wide_df = wide.reset_index()
+
+    # Store live migration diagnostics for the Knowledge Graph
+    st.session_state["migration_wide"] = wide_df
+    st.session_state["migration_summary"] = summary_df
+    st.session_state["migration_pct"] = migration_pct
+
+    return wide_df, summary_df, migration_pct
 
 
 def create_migration_sankey(migration_df: pd.DataFrame,

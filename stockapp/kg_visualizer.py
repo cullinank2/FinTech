@@ -85,9 +85,115 @@ EDGE_COLORS = {
     "default":      "#495057",
 }
 
+# ── Live diagnostics helpers ─────────────────────────────────────────────────
+
+def _safe_float(value, default=None):
+    try:
+        if value is None:
+            return default
+        return float(str(value).replace("%", "").replace(",", "").strip())
+    except Exception:
+        return default
+
+
+def _get_procrustes_map() -> dict:
+    df = st.session_state.get("procrustes_results")
+    if df is None or len(df) == 0:
+        return {}
+
+    out = {}
+    for _, row in df.iterrows():
+        a = row.get("Period A")
+        b = row.get("Period B")
+        if a and b:
+            out[(a, b)] = row
+    return out
+
+
+def _lookup_procrustes(a: str, b: str):
+    pro_map = _get_procrustes_map()
+    return pro_map.get((a, b)) or pro_map.get((b, a))
+
+
+def _get_migration_map() -> dict:
+    df = st.session_state.get("migration_summary")
+    if df is None or len(df) == 0:
+        return {}
+
+    out = {}
+    for _, row in df.iterrows():
+        key = row.get("Transition")
+        if key:
+            out[key] = row
+    return out
+
+
+def _get_crowding_map() -> dict:
+    df = st.session_state.get("crowding_df") or st.session_state.get("crowding_results")
+    if df is None or len(df) == 0:
+        return {}
+
+    out = {}
+    for _, row in df.iterrows():
+        period = row.get("period") or row.get("Period")
+        if period:
+            out[period] = row
+    return out
+
+
+def _crowding_score(period_name: str):
+    crowding = _get_crowding_map()
+    row = crowding.get(period_name)
+    if row is None:
+        return None
+    return _safe_float(row.get("crowding_score"))
+
+
+def _migration_row(transition: str):
+    return _get_migration_map().get(transition)
+
+
 # ── Node definitions for the static ontology ─────────────────────────────────
 
 def _regime_nodes() -> list[dict]:
+    pc_rs = _lookup_procrustes("Post-COVID", "Rate Shock")
+    pc_d = _lookup_procrustes("Post-COVID", "Disinflation")
+    rs_d = _lookup_procrustes("Rate Shock", "Disinflation")
+
+    pc_rs_mig = _migration_row("Post-COVID → Rate Shock")
+    rs_d_mig = _migration_row("Rate Shock → Disinflation")
+
+    pc_crowd = _crowding_score("Post-COVID")
+    rs_crowd = _crowding_score("Rate Shock")
+    d_crowd = _crowding_score("Disinflation")
+
+    pc_rs_text = (
+        f"Procrustes vs Rate Shock: {pc_rs['Disparity']:.3f} "
+        f"({int(pc_rs['Common Tickers']):,} common stocks)"
+        if pc_rs is not None else "Procrustes vs Rate Shock: unavailable"
+    )
+    pc_d_text = (
+        f"Procrustes vs Disinflation: {pc_d['Disparity']:.3f} "
+        f"({int(pc_d['Common Tickers']):,} common stocks)"
+        if pc_d is not None else "Procrustes vs Disinflation: unavailable"
+    )
+    rs_d_text = (
+        f"Procrustes vs Disinflation: {rs_d['Disparity']:.3f} "
+        f"({int(rs_d['Common Tickers']):,} common stocks)"
+        if rs_d is not None else "Procrustes vs Disinflation: unavailable"
+    )
+
+    pc_mig_text = (
+        f"Migration to Rate Shock: {pc_rs_mig['Migration Rate']} "
+        f"({int(pc_rs_mig['Changed Quadrant']):,}/{int(pc_rs_mig['Stocks Analyzed']):,} stocks)"
+        if pc_rs_mig is not None else "Migration to Rate Shock: unavailable"
+    )
+    rs_mig_text = (
+        f"Migration to Disinflation: {rs_d_mig['Migration Rate']} "
+        f"({int(rs_d_mig['Changed Quadrant']):,}/{int(rs_d_mig['Stocks Analyzed']):,} stocks)"
+        if rs_d_mig is not None else "Migration to Disinflation: unavailable"
+    )
+
     return [
         {
             "id": "regime_postcovid",
@@ -95,10 +201,9 @@ def _regime_nodes() -> list[dict]:
             "layer": "regime",
             "tooltip": (
                 "Post-COVID regime\n"
-                "Procrustes vs Rate Shock: 0.342 (322 common tickers)\n"
-                "Crowding score: 28.3 (Normal)\n"
-                "Migration to Rate Shock: 43.7% (138/316 stocks)"
-            ),
+                f"{pc_rs_text}\n"
+                f"Crowding score: {pc_crowd:.1f}" if pc_crowd is not None else "Crowding score: unavailable"
+            ) + "\n" + pc_mig_text,
         },
         {
             "id": "regime_rateshock",
@@ -106,10 +211,9 @@ def _regime_nodes() -> list[dict]:
             "layer": "regime",
             "tooltip": (
                 "Rate Shock regime\n"
-                "Procrustes vs Disinflation: 0.186 (1,590 common tickers)\n"
-                "Crowding score: 30.1 (Normal)\n"
-                "Migration to Disinflation: 30.1% (95/316 stocks)"
-            ),
+                f"{rs_d_text}\n"
+                f"Crowding score: {rs_crowd:.1f}" if rs_crowd is not None else "Crowding score: unavailable"
+            ) + "\n" + rs_mig_text,
         },
         {
             "id": "regime_disinflation",
@@ -117,9 +221,8 @@ def _regime_nodes() -> list[dict]:
             "layer": "regime",
             "tooltip": (
                 "Disinflation regime\n"
-                "Crowding score: 67.9 (ELEVATED — compression signal)\n"
-                "PC1 variance: 28.3% | PC2: 14.4% | PC3: 12.0%\n"
-                "60.1% of tracked stocks changed quadrant at least once"
+                f"{pc_d_text}\n"
+                f"Crowding score: {d_crowd:.1f}" if d_crowd is not None else "Crowding score: unavailable"
             ),
         },
     ]
@@ -179,60 +282,93 @@ def _quadrant_nodes() -> list[dict]:
     ]
 
 
-def _mechanism_nodes() -> list[dict]:
-    return [
-        {
-            "id": "mech_pca",
-            "label": "PCA\nStructural\nCoordinate System",
-            "layer": "mechanism",
-            "tooltip": (
-                "Structural geometry — not return prediction\n"
-                "PC1: 28.3% variance (Profitability & Quality)\n"
-                "PC2: 14.4% variance (Valuation Style)\n"
-                "PC3: 12.0% variance (Leverage & Asset Intensity)\n"
-                "Zero prior art as governance diagnostic framing"
-            ),
-        },
-        {
-            "id": "mech_procrustes",
-            "label": "Procrustes\nDisparity\n(Regime Break Detector)",
-            "layer": "mechanism",
-            "tooltip": (
-                "Rotation-invariant structural distance between factor spaces\n"
-                "0.342: Post-COVID → Rate Shock (322 tickers) — EXCEEDS 0.30 threshold\n"
-                "0.459: Post-COVID → Disinflation (316 tickers) — EXCEEDS 0.30 threshold\n"
-                "0.186: Rate Shock → Disinflation (1,590 tickers) — adjacent continuity\n"
-                "ZERO PRIOR ART in finance"
-            ),
-        },
-        {
-            "id": "mech_crowding",
-            "label": "Geometric\nCrowding\nDetection",
-            "layer": "mechanism",
-            "tooltip": (
-                "Spatial compression in PCA factor space — prospective signal\n"
-                "Scores: 28.3 (Post-COVID) / 30.1 (Rate Shock) / 67.9 (Disinflation)\n"
-                "Formula: 0.6 × Concentration + 0.4 × (100 − Dispersion Normalized)\n"
-                "ZERO PRIOR ART as geometric crowding measure"
-            ),
-        },
-        {
-            "id": "mech_kmeans",
-            "label": "KMeans\nClustering",
-            "layer": "mechanism",
-            "tooltip": "Cuts across GICS sector lines — structural peer groups by factor geometry",
-        },
-        {
-            "id": "mech_quadrant",
-            "label": "Quadrant\nClassification",
-            "layer": "mechanism",
-            "tooltip": (
-                "Four-quadrant grid on PC1/PC2 plane\n"
-                "316 stocks tracked continuously across all three regimes\n"
-                "60.1% changed quadrant at least once — governance event at scale"
-            ),
-        },
+def _structural_edges() -> list[dict]:
+    edges = []
+
+    pc_rs = _lookup_procrustes("Post-COVID", "Rate Shock")
+    pc_d = _lookup_procrustes("Post-COVID", "Disinflation")
+    rs_d = _lookup_procrustes("Rate Shock", "Disinflation")
+
+    def transition_edge(src_id, tgt_id, row):
+        if row is None:
+            return {
+                "from": src_id,
+                "to": tgt_id,
+                "label": "",
+                "color": EDGE_COLORS["temporal"],
+                "width": 1.5,
+            }
+
+        disparity = _safe_float(row.get("Disparity"), 0.0)
+        common = int(row.get("Common Tickers", 0))
+        return {
+            "from": src_id,
+            "to": tgt_id,
+            "label": f"{disparity:.3f}",
+            "title": f"{disparity:.3f} | {common:,} common stocks",
+            "color": EDGE_COLORS["temporal"],
+            "width": 1.5 + disparity * 6,
+        }
+
+    edges += [
+        transition_edge("regime_postcovid", "regime_rateshock", pc_rs),
+        transition_edge("regime_postcovid", "regime_disinflation", pc_d),
+        transition_edge("regime_rateshock", "regime_disinflation", rs_d),
     ]
+
+    edges += [
+        {"from": "mech_pca", "to": "q1", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
+        {"from": "mech_pca", "to": "q2", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
+        {"from": "mech_pca", "to": "q3", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
+        {"from": "mech_pca", "to": "q4", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
+    ]
+
+    pc1_drivers = ["factor_ctd", "factor_roa", "factor_ey"]
+    pc2_drivers = ["factor_sp", "factor_btm", "factor_ey"]
+    pc3_drivers = ["factor_dta", "factor_gp", "factor_vol"]
+
+    for f in pc1_drivers:
+        edges.append({"from": f, "to": "mech_pca", "label": "PC1", "color": EDGE_COLORS["structural"], "width": 2})
+    for f in pc2_drivers:
+        edges.append({"from": f, "to": "mech_pca", "label": "PC2", "color": EDGE_COLORS["membership"], "width": 2})
+    for f in pc3_drivers:
+        edges.append({"from": f, "to": "mech_pca", "label": "PC3", "color": EDGE_COLORS["governance"], "width": 2})
+
+    edges += [
+        {"from": "mech_procrustes", "to": "regime_postcovid", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
+        {"from": "mech_procrustes", "to": "regime_rateshock", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
+        {"from": "mech_procrustes", "to": "regime_disinflation", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
+    ]
+
+    for period_id, period_name in [
+        ("regime_postcovid", "Post-COVID"),
+        ("regime_rateshock", "Rate Shock"),
+        ("regime_disinflation", "Disinflation"),
+    ]:
+        score = _crowding_score(period_name)
+        label = f"{score:.1f}" if score is not None else ""
+        width = 1.5 + (score / 25 if score is not None else 0)
+        edges.append({
+            "from": "mech_crowding",
+            "to": period_id,
+            "label": label,
+            "title": f"Crowding score: {score:.1f}" if score is not None else "Crowding unavailable",
+            "color": EDGE_COLORS["crowding"],
+            "width": width,
+        })
+
+    edges += [
+        {"from": "plat_esds", "to": "mech_pca", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
+        {"from": "plat_esds", "to": "mech_procrustes", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
+        {"from": "plat_esds", "to": "mech_crowding", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
+        {"from": "plat_esds", "to": "mech_kmeans", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
+        {"from": "plat_esds", "to": "mech_quadrant", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
+        {"from": "plat_esds", "to": "plat_barra", "label": "complements", "color": EDGE_COLORS["governance"], "width": 2},
+        {"from": "plat_esds", "to": "plat_narrative", "label": "Tier 1", "color": EDGE_COLORS["governance"], "width": 1.5},
+        {"from": "plat_esds", "to": "plat_chatbot", "label": "Tier 2", "color": EDGE_COLORS["governance"], "width": 1.5},
+    ]
+
+    return edges
 
 
 def _platform_nodes() -> list[dict]:
@@ -433,7 +569,7 @@ def _build_pyvis_network(height: str = "700px") -> Network:
             label=edge.get("label", ""),
             color=edge.get("color", EDGE_COLORS["default"]),
             width=edge.get("width", 1.5),
-            title=edge.get("label", ""),
+            title=edge.get("title", edge.get("label", "")),
         )
 
     return net
@@ -536,45 +672,76 @@ def _render_metrics_panel() -> None:
     col1, col2, col3 = st.columns(3)
 
     procrustes = st.session_state.get("procrustes_results")
+    migration_summary = st.session_state.get("migration_summary")
+    migration_pct = st.session_state.get("migration_pct")
 
     with col1:
-
         if procrustes is not None and len(procrustes) >= 3:
-
             row1 = procrustes.iloc[0]
             row2 = procrustes.iloc[1]
             row3 = procrustes.iloc[2]
 
-            st.metric(
-                "Procrustes — PC→RS",
-                f"{row1['Disparity']:.3f}",
-                delta=f"{row1['Common Tickers']} tickers"
-            )
+            st.metric("Procrustes — PC→RS", f"{row1['Disparity']:.3f}")
+            st.caption(f"{int(row1['Common Tickers']):,} overlapping stocks")
 
-            st.metric(
-                "Procrustes — PC→D",
-                f"{row2['Disparity']:.3f}",
-                delta=f"{row2['Common Tickers']} tickers"
-            )
+            st.metric("Procrustes — PC→D", f"{row2['Disparity']:.3f}")
+            st.caption(f"{int(row2['Common Tickers']):,} overlapping stocks")
 
-            st.metric(
-                "Procrustes — RS→D",
-                f"{row3['Disparity']:.3f}",
-                delta=f"{row3['Common Tickers']} tickers"
-            )
-
+            st.metric("Procrustes — RS→D", f"{row3['Disparity']:.3f}")
+            st.caption(f"{int(row3['Common Tickers']):,} overlapping stocks")
         else:
             st.info("Run Period Comparison to populate structural diagnostics.")
 
     with col2:
-        st.metric("Crowding — Post-COVID",   "28.3", delta="Normal")
-        st.metric("Crowding — Rate Shock",   "30.1", delta="Normal")
-        st.metric("Crowding — Disinflation", "67.9", delta="ELEVATED ▲", delta_color="inverse")
+        pc_crowd = _crowding_score("Post-COVID")
+        rs_crowd = _crowding_score("Rate Shock")
+        d_crowd = _crowding_score("Disinflation")
+
+        if pc_crowd is not None:
+            st.metric("Crowding — Post-COVID", f"{pc_crowd:.1f}")
+            st.caption("Live crowding score")
+        else:
+            st.metric("Crowding — Post-COVID", "N/A")
+
+        if rs_crowd is not None:
+            st.metric("Crowding — Rate Shock", f"{rs_crowd:.1f}")
+            st.caption("Live crowding score")
+        else:
+            st.metric("Crowding — Rate Shock", "N/A")
+
+        if d_crowd is not None:
+            st.metric("Crowding — Disinflation", f"{d_crowd:.1f}")
+            st.caption("Live crowding score")
+        else:
+            st.metric("Crowding — Disinflation", "N/A")
 
     with col3:
-        st.metric("Migration PC→RS",   "43.7%", delta="138 / 316 stocks")
-        st.metric("Migration RS→D",    "30.1%", delta="95 / 316 stocks")
-        st.metric("Changed quadrant",  "60.1%", delta="190 / 316 — governance scale")
+        pc_rs = _migration_row("Post-COVID → Rate Shock")
+        rs_d = _migration_row("Rate Shock → Disinflation")
+
+        if pc_rs is not None:
+            st.metric("Migration PC→RS", str(pc_rs["Migration Rate"]))
+            st.caption(
+                f"{int(pc_rs['Changed Quadrant']):,} / {int(pc_rs['Stocks Analyzed']):,} stocks"
+            )
+        else:
+            st.metric("Migration PC→RS", "N/A")
+
+        if rs_d is not None:
+            st.metric("Migration RS→D", str(rs_d["Migration Rate"]))
+            st.caption(
+                f"{int(rs_d['Changed Quadrant']):,} / {int(rs_d['Stocks Analyzed']):,} stocks"
+            )
+        else:
+            st.metric("Migration RS→D", "N/A")
+
+        if migration_pct is not None and migration_summary is not None and len(migration_summary) > 0:
+            tracked = int(migration_summary.iloc[0]["Stocks Analyzed"])
+            changed_any = int(round(tracked * float(migration_pct) / 100.0))
+            st.metric("Changed quadrant", f"{migration_pct:.1f}%")
+            st.caption(f"{changed_any:,} / {tracked:,} — governance scale")
+        else:
+            st.metric("Changed quadrant", "N/A")
 
 
 # ── Filter sidebar ────────────────────────────────────────────────────────────
