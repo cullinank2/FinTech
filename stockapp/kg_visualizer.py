@@ -773,7 +773,8 @@ def render_kg_tab() -> None:
             st.info(
                 "If this is a first-run import error, confirm that "
                 "`kg_schema.py` and `kg_builder.py` are in the same "
-                "directory as `app.py
+                "directory as `app.py`."
+            )
 
     _render_legend()
 
