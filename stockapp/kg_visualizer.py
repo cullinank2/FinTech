@@ -44,11 +44,7 @@ try:
 except Exception:
     KG_SCHEMA_AVAILABLE = False
 
-try:
-    from kg_builder import build_static_ontology_graph, KGResult
-    KG_BUILDER_AVAILABLE = True
-except Exception:
-    KG_BUILDER_AVAILABLE = False
+KG_BUILDER_AVAILABLE = False  # kg_builder wired in Phase 4
 
 
 # ── Visual design constants ───────────────────────────────────────────────────
