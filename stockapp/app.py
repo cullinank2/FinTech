@@ -1719,9 +1719,6 @@ def main():
 
         return
 
-Add 🧠 Knowledge Graph as third landing tab alongside Cluster Overview
-and Period Comparison. render_kg_tab() from kg_visualizer.py. Add pyvis
-to requirements.txt.
     stock_info = st.session_state.selected_stock
     pca_df = st.session_state.pca_df
     
