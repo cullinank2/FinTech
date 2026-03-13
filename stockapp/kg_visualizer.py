@@ -41,13 +41,13 @@ try:
         MECHANISM_NODES, EMPIRICAL_ANCHORS,
     )
     KG_SCHEMA_AVAILABLE = True
-except ImportError:
+except Exception:
     KG_SCHEMA_AVAILABLE = False
 
 try:
     from kg_builder import build_static_ontology_graph, KGResult
     KG_BUILDER_AVAILABLE = True
-except ImportError:
+except Exception:
     KG_BUILDER_AVAILABLE = False
 
 
