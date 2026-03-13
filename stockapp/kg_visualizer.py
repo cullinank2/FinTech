@@ -25,8 +25,6 @@ Pyvis install:
 
 from __future__ import annotations
 
-import os
-import tempfile
 from typing import Optional
 
 import streamlit as st
@@ -444,23 +442,8 @@ def _build_pyvis_network(height: str = "700px") -> Network:
 
 
 def _render_pyvis_to_html(net: Network) -> str:
-    """Write Pyvis network to a temp file and return the HTML string."""
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".html", delete=False, encoding="utf-8"
-    ) as f:
-        tmp_path = f.name
-
-    net.save_graph(tmp_path)
-
-    with open(tmp_path, "r", encoding="utf-8") as f:
-        html = f.read()
-
-    try:
-        os.unlink(tmp_path)
-    except OSError:
-        pass
-
-    return html
+    """Return PyVis graph HTML directly."""
+    return net.generate_html()
 
 
 # ── Legend builder ────────────────────────────────────────────────────────────
@@ -533,6 +516,13 @@ def _render_kg_filters() -> dict:
         "show_mechanisms": show_mechanisms,
         "show_platforms":  show_platforms,
     }
+
+
+@st.cache_data
+def _build_cached_graph_html() -> str:
+    """Build the PyVis graph once and cache the HTML."""
+    net = _build_pyvis_network(height="680px")
+    return _render_pyvis_to_html(net)
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
