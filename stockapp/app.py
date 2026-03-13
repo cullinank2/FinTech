@@ -61,6 +61,7 @@ from visualizations import (
     plot_crowding_score
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
+from kg_visualizer import render_kg_tab
 from period_analysis import (
     create_loading_comparison_chart,
     compute_procrustes_table,
@@ -1415,10 +1416,11 @@ def main():
         # Show overall cluster summary
         if st.session_state.pca_df is not None:
 
-            landing_tab1, landing_tab2 = st.tabs([
+            landing_tab1, landing_tab2, landing_tab3 = st.tabs([
                 "📊 Cluster Overview",
-                "📐 Period Comparison"
-            ])
+                "📐 Period Comparison",
+                "🧠 Knowledge Graph"
+            ]
 
             with landing_tab1:
                 # Apply GICS sector filter if selected on landing page
@@ -1712,9 +1714,14 @@ def main():
                                 - If a bar **shrinks toward zero**, that feature lost explanatory power in that regime.
                                 """)
 
+        with landing_tab3:
+                render_kg_tab()
+
         return
-    
-    # Get selected stock data
+
+Add 🧠 Knowledge Graph as third landing tab alongside Cluster Overview
+and Period Comparison. render_kg_tab() from kg_visualizer.py. Add pyvis
+to requirements.txt.
     stock_info = st.session_state.selected_stock
     pca_df = st.session_state.pca_df
     
