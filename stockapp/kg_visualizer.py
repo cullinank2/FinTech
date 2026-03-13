@@ -516,7 +516,7 @@ def _render_kg_filters() -> dict:
     }
 
 
-@st.cache_data
+@st.cache_data()
 def _build_cached_graph_html() -> str:
     """Build the PyVis graph once and cache the HTML."""
     net = _build_pyvis_network(height="680px")
