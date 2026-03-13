@@ -75,7 +75,7 @@ from narrative_engine import generate_narrative
 
 
 # =============================================================================
-# PAGE CONFIGURATION
+# PAGE CONFIGURATION 
 # =============================================================================
 
 st.set_page_config(**PAGE_CONFIG)
