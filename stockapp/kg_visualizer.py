@@ -44,7 +44,11 @@ try:
 except Exception:
     KG_SCHEMA_AVAILABLE = False
 
-KG_BUILDER_AVAILABLE = False  # kg_builder wired in Phase 4
+try:
+    from kg_builder import build_kg, KGResult
+    KG_BUILDER_AVAILABLE = True
+except Exception as _kg_builder_err:
+    KG_BUILDER_AVAILABLE = False
 
 
 # ── Visual design constants ───────────────────────────────────────────────────
@@ -440,6 +444,68 @@ def _render_pyvis_to_html(net: Network) -> str:
     return net.generate_html()
 
 
+@st.cache_data()
+def _build_equity_graph_html_from_pipeline() -> str:
+    """
+    Build equity-augmented KG by running PCA for each period directly.
+    Mirrors the pattern used by the crowding module in app.py.
+    Cached so it only runs once per session.
+    """
+    if not KG_BUILDER_AVAILABLE:
+        return _build_cached_graph_html()
+
+    try:
+        from period_analysis import _run_pca_for_period
+        from config import FEATURE_COLUMNS
+
+        raw_data = st.session_state.get("raw_data")
+        if raw_data is None or raw_data.empty:
+            return _build_cached_graph_html()
+
+        date_col = next(
+            (c for c in ["public_date", "date", "datadate"] if c in raw_data.columns),
+            None,
+        )
+        if date_col is None:
+            return _build_cached_graph_html()
+
+        features = [c for c in FEATURE_COLUMNS if c in raw_data.columns]
+
+        period_label_map = {
+            "Post-COVID":   ("2021-03-01", "2022-06-30"),
+            "Rate Shock":   ("2022-07-01", "2023-09-30"),
+            "Disinflation": ("2023-10-01", "2024-10-31"),
+        }
+
+        period_data = {}
+        for period_name, (start, end) in period_label_map.items():
+            mask = (raw_data[date_col] >= start) & (raw_data[date_col] <= end)
+            period_slice = raw_data[mask]
+            if len(period_slice) < 10:
+                continue
+            try:
+                _, scores_df, _, _ = _run_pca_for_period(
+                    period_slice, features, date_col, start, end
+                )
+                if scores_df is not None and not scores_df.empty:
+                    # Normalize column names for kg_builder
+                    if "Quadrant" in scores_df.columns and "quadrant" not in scores_df.columns:
+                        scores_df = scores_df.copy()
+                        scores_df["quadrant"] = scores_df["Quadrant"]
+                    period_data[period_name] = scores_df
+            except Exception:
+                continue
+
+        if not period_data:
+            return _build_cached_graph_html()
+
+        return _build_equity_graph_html(period_data, migration_df=None)
+
+    except Exception as exc:
+        st.warning(f"Live equity graph failed, showing static ontology: {exc}")
+        return _build_cached_graph_html()
+
+
 # ── Legend builder ────────────────────────────────────────────────────────────
 
 def _render_legend() -> None:
@@ -514,9 +580,147 @@ def _render_kg_filters() -> dict:
 
 @st.cache_data()
 def _build_cached_graph_html() -> str:
-    """Build the PyVis graph once and cache the HTML."""
+    """Build the static PyVis ontology graph once and cache the HTML."""
     net = _build_pyvis_network(height="680px")
     return _render_pyvis_to_html(net)
+
+
+def _build_equity_graph_html(period_data: dict, migration_df) -> str:
+    """
+    Build a PyVis graph that includes live equity nodes from the pipeline.
+    Called only when session state has loaded pipeline data.
+    Not cached — equity data is session-specific.
+    """
+    if not KG_BUILDER_AVAILABLE:
+        return _build_cached_graph_html()
+
+    try:
+        kg_result = build_kg(
+            period_data=period_data,
+            migration_df=migration_df,
+            include_equity_nodes=True,
+        )
+        G = kg_result.graph
+
+        net = Network(
+            height="680px",
+            width="100%",
+            bgcolor="#0d1117",
+            font_color="#e6edf3",
+            directed=True,
+        )
+        net.set_options("""
+        {
+          "physics": {
+            "enabled": true,
+            "solver": "forceAtlas2Based",
+            "forceAtlas2Based": {
+              "gravitationalConstant": -120,
+              "centralGravity": 0.005,
+              "springLength": 180,
+              "springConstant": 0.04,
+              "damping": 0.5,
+              "avoidOverlap": 0.5
+            },
+            "stabilization": { "enabled": true, "iterations": 250 }
+          },
+          "interaction": {
+            "hover": true,
+            "tooltipDelay": 200,
+            "navigationButtons": true,
+            "keyboard": { "enabled": true }
+          },
+          "edges": {
+            "smooth": { "enabled": true, "type": "dynamic" },
+            "arrows": { "to": { "enabled": true, "scaleFactor": 0.7 } },
+            "font": { "size": 10, "color": "#adb5bd", "face": "Courier New" }
+          },
+          "nodes": {
+            "font": { "size": 12, "color": "#e6edf3", "face": "Calibri" },
+            "borderWidth": 2,
+            "shadow": { "enabled": true, "size": 8, "x": 2, "y": 2 }
+          }
+        }
+        """)
+
+        # Node type → visual properties
+        node_type_style = {
+            "regime":           ("#00b4d8", 40),
+            "factor":           ("#90e0ef", 24),
+            "quadrant":         ("#f4a261", 30),
+            "axis":             ("#2ec4b6", 22),
+            "category":         ("#48cae4", 20),
+            "crowding":         ("#e63946", 28),
+            "transition":       ("#f4a261", 26),
+            "structural_break": ("#e63946", 34),
+            "early_warning":    ("#e63946", 32),
+            "stock":            ("#b7e4c7", 10),
+            "cluster":          ("#52b788", 18),
+            "default":          ("#adb5bd", 16),
+        }
+
+        for node_id, attrs in G.nodes(data=True):
+            ntype = attrs.get("node_type", "default")
+            color, size = node_type_style.get(ntype, node_type_style["default"])
+            label = attrs.get("label", str(node_id))
+            # Truncate long stock labels
+            if ntype == "stock" and len(label) > 6:
+                label = label[:6]
+            tooltip = "\n".join(
+                f"{k}: {v}" for k, v in attrs.items()
+                if k not in ("label", "node_type") and v is not None
+            )
+            net.add_node(
+                str(node_id),
+                label=label,
+                title=tooltip or label,
+                color={
+                    "background": color,
+                    "border": "#ffffff",
+                    "highlight": {"background": "#ffffff", "border": color},
+                    "hover":     {"background": "#ffffff", "border": color},
+                },
+                size=size,
+                shape="dot",
+                mass=1.5,
+            )
+
+        for src, tgt, attrs in G.edges(data=True):
+            etype = attrs.get("edge_type", "")
+            edge_color_map = {
+                "regime_transition":    "#f4a261",
+                "crowding_level":       "#e63946",
+                "factor_loading":       "#90e0ef",
+                "belongs_to_category":  "#48cae4",
+                "triggers_break":       "#e63946",
+                "triggers_warning":     "#e63946",
+                "quadrant_assignment":  "#b7e4c7",
+                "cluster_membership":   "#52b788",
+                "belongs_to":           "#52b788",
+                "migrates_to":          "#f4a261",
+            }
+            ecolor = edge_color_map.get(etype, "#495057")
+            width  = attrs.get("width", 1.0)
+            if etype == "regime_transition":
+                d = attrs.get("procrustes_disparity", 0)
+                width = 1.5 + d * 6
+            elif etype == "crowding_level":
+                width = 1.5 + attrs.get("score", 0) / 25
+            net.add_edge(
+                str(src), str(tgt),
+                label=attrs.get("label", ""),
+                color=ecolor,
+                width=width,
+                title=attrs.get("label", etype),
+            )
+
+        return net.generate_html()
+
+    except Exception as exc:
+        # Fallback to static graph on any error
+        import streamlit as _st
+        _st.warning(f"Equity graph build failed, showing static ontology: {exc}")
+        return _build_cached_graph_html()
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
@@ -550,18 +754,26 @@ def render_kg_tab() -> None:
     st.markdown("---")
 
     # ── Graph ─────────────────────────────────────────────────────────────────
+    view_mode = st.radio(
+        "Graph view",
+        ["Static Ontology", "Live Equity Nodes"],
+        horizontal=True,
+        help="Static Ontology: framework architecture only. Live Equity Nodes: adds ~1,738 tickers, clusters, and quadrant assignments from the pipeline.",
+    )
+
     with st.spinner("Building structural knowledge graph…"):
         try:
-            html = _build_cached_graph_html()
+            if view_mode == "Live Equity Nodes" and KG_BUILDER_AVAILABLE:
+                html = _build_equity_graph_html_from_pipeline()
+            else:
+                html = _build_cached_graph_html()
             components.html(html, height=700, scrolling=False)
         except Exception as exc:
             st.error(f"Knowledge graph render error: {exc}")
             st.info(
                 "If this is a first-run import error, confirm that "
                 "`kg_schema.py` and `kg_builder.py` are in the same "
-                "directory as `app.py` and that `pyvis` is in `requirements.txt`."
-            )
-            return
+                "directory as `app.py
 
     _render_legend()
 
