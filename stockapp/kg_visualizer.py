@@ -371,6 +371,41 @@ def _structural_edges() -> list[dict]:
     return edges
 
 
+def _mechanism_nodes() -> list[dict]:
+    return [
+        {
+            "id": "mech_pca",
+            "label": "PCA\nStructural\nCoordinate System",
+            "layer": "mechanism",
+            "tooltip": "Principal component geometry defining factor space structure",
+        },
+        {
+            "id": "mech_procrustes",
+            "label": "Procrustes\nDisparity",
+            "layer": "mechanism",
+            "tooltip": "Rotation-invariant distance between factor spaces across regimes",
+        },
+        {
+            "id": "mech_crowding",
+            "label": "Geometric\nCrowding",
+            "layer": "mechanism",
+            "tooltip": "Spatial compression signal within PCA factor space",
+        },
+        {
+            "id": "mech_kmeans",
+            "label": "KMeans\nClustering",
+            "layer": "mechanism",
+            "tooltip": "Structural peer groups based on factor geometry",
+        },
+        {
+            "id": "mech_quadrant",
+            "label": "Quadrant\nClassification",
+            "layer": "mechanism",
+            "tooltip": "PC1 / PC2 quadrant classification of securities",
+        },
+    ]
+
+
 def _platform_nodes() -> list[dict]:
     return [
         {
@@ -415,71 +450,6 @@ def _platform_nodes() -> list[dict]:
             ),
         },
     ]
-
-
-# ── Edge definitions for the static ontology ─────────────────────────────────
-
-def _structural_edges() -> list[dict]:
-    edges = []
-
-    # Regime temporal chain
-    edges += [
-        {"from": "regime_postcovid",  "to": "regime_rateshock",    "label": "Procrustes 0.342", "color": EDGE_COLORS["temporal"],   "width": 3},
-        {"from": "regime_postcovid",  "to": "regime_disinflation", "label": "Procrustes 0.459", "color": EDGE_COLORS["temporal"],   "width": 4},
-        {"from": "regime_rateshock",  "to": "regime_disinflation", "label": "Procrustes 0.186", "color": EDGE_COLORS["temporal"],   "width": 1.5},
-    ]
-
-    # PCA produces quadrant axes
-    edges += [
-        {"from": "mech_pca", "to": "q1", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_pca", "to": "q2", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_pca", "to": "q3", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_pca", "to": "q4", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-    ]
-
-    # Key factor → PCA loading relationships (dominant drivers only)
-    pc1_drivers = ["factor_ctd", "factor_roa", "factor_ey"]
-    pc2_drivers = ["factor_sp", "factor_btm", "factor_ey"]
-    pc3_drivers = ["factor_dta", "factor_gp", "factor_vol"]
-
-    for f in pc1_drivers:
-        edges.append({"from": f, "to": "mech_pca", "label": "PC1", "color": EDGE_COLORS["structural"], "width": 2})
-    for f in pc2_drivers:
-        edges.append({"from": f, "to": "mech_pca", "label": "PC2", "color": EDGE_COLORS["membership"],  "width": 2})
-    for f in pc3_drivers:
-        edges.append({"from": f, "to": "mech_pca", "label": "PC3", "color": EDGE_COLORS["governance"],  "width": 2})
-
-    # Procrustes compares regimes
-    edges += [
-        {"from": "mech_procrustes", "to": "regime_postcovid",   "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_procrustes", "to": "regime_rateshock",   "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_procrustes", "to": "regime_disinflation","label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-    ]
-
-    # Crowding scores per regime
-    edges += [
-        {"from": "mech_crowding", "to": "regime_postcovid",    "label": "28.3 Normal",   "color": EDGE_COLORS["crowding"], "width": 1.5},
-        {"from": "mech_crowding", "to": "regime_rateshock",    "label": "30.1 Normal",   "color": EDGE_COLORS["crowding"], "width": 1.5},
-        {"from": "mech_crowding", "to": "regime_disinflation", "label": "67.9 ELEVATED", "color": EDGE_COLORS["crowding"], "width": 3},
-    ]
-
-    # ESDS mechanisms
-    edges += [
-        {"from": "plat_esds", "to": "mech_pca",        "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_procrustes", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_crowding",   "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_kmeans",     "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_quadrant",   "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-    ]
-
-    # ESDS complements incumbents
-    edges += [
-        {"from": "plat_esds",  "to": "plat_barra",    "label": "complements", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds",  "to": "plat_narrative","label": "Tier 1",      "color": EDGE_COLORS["governance"], "width": 1.5},
-        {"from": "plat_esds",  "to": "plat_chatbot",  "label": "Tier 2",      "color": EDGE_COLORS["governance"], "width": 1.5},
-    ]
-
-    return edges
 
 
 # ── Pyvis graph builder ───────────────────────────────────────────────────────
