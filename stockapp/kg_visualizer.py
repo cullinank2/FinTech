@@ -535,10 +535,36 @@ def _render_metrics_panel() -> None:
     """Three-column empirical anchors strip above the graph."""
     col1, col2, col3 = st.columns(3)
 
+    procrustes = st.session_state.get("procrustes_results")
+
     with col1:
-        st.metric("Procrustes — PC→RS",   "0.342", delta="322 tickers | EXCEEDS 0.30")
-        st.metric("Procrustes — PC→D",    "0.459", delta="316 tickers | EXCEEDS 0.30")
-        st.metric("Procrustes — RS→D",    "0.186", delta="1,590 tickers | continuity")
+
+        if procrustes is not None and len(procrustes) >= 3:
+
+            row1 = procrustes.iloc[0]
+            row2 = procrustes.iloc[1]
+            row3 = procrustes.iloc[2]
+
+            st.metric(
+                "Procrustes — PC→RS",
+                f"{row1['Disparity']:.3f}",
+                delta=f"{row1['Common Tickers']} tickers"
+            )
+
+            st.metric(
+                "Procrustes — PC→D",
+                f"{row2['Disparity']:.3f}",
+                delta=f"{row2['Common Tickers']} tickers"
+            )
+
+            st.metric(
+                "Procrustes — RS→D",
+                f"{row3['Disparity']:.3f}",
+                delta=f"{row3['Common Tickers']} tickers"
+            )
+
+        else:
+            st.info("Run Period Comparison to populate structural diagnostics.")
 
     with col2:
         st.metric("Crowding — Post-COVID",   "28.3", delta="Normal")
