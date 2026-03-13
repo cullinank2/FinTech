@@ -1715,7 +1715,7 @@ def main():
                                 """)
 
         with landing_tab3:
-                st.info("🧠 Knowledge Graph coming soon.")
+                render_kg_tab()
 
         return
     
