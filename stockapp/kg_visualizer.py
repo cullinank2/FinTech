@@ -25,8 +25,6 @@ Pyvis install:
 
 from __future__ import annotations
 
-from typing import Optional
-
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -558,8 +556,7 @@ def render_kg_tab() -> None:
     # ── Graph ─────────────────────────────────────────────────────────────────
     with st.spinner("Building structural knowledge graph…"):
         try:
-            net  = _build_pyvis_network(height="680px")
-            html = _render_pyvis_to_html(net)
+            html = _build_cached_graph_html()
             components.html(html, height=700, scrolling=False)
         except Exception as exc:
             st.error(f"Knowledge graph render error: {exc}")
