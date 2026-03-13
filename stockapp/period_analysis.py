@@ -12,6 +12,7 @@ Drop this file into stockapp/ alongside utils.py, visualizations.py, etc.
 """
 
 import numpy as np
+import streamlit as st
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -250,7 +251,12 @@ def compute_procrustes_table(df: pd.DataFrame, features: list,
                 'Interpretation': interp
             })
 
-    return pd.DataFrame(results)
+    results_df = pd.DataFrame(results)
+
+    # Store results globally for Knowledge Graph
+    st.session_state["procrustes_results"] = results_df
+
+    return results_df
 
 
 def create_procrustes_heatmap(procrustes_df: pd.DataFrame) -> go.Figure:
