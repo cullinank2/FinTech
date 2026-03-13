@@ -1,663 +1,1032 @@
 """
-kg_builder.py  —  ESDS Knowledge Graph: Phase 2
-================================================
-Constructs a live NetworkX knowledge graph from ESDS pipeline outputs.
-Imports the Phase 1 ontology (kg_schema.py) and populates it with:
-  - Static institutional nodes (factors, regimes, quadrants, mechanisms)
-  - Dynamic equity nodes (tickers, clusters, sector memberships)
-  - All typed edges (factor loadings, Procrustes transitions, crowding
-    scores, quadrant assignments, cluster memberships, migrations)
+kg_schema.py
+------------
+Phase 1: ESDS Knowledge Graph Ontology
 
-Usage (standalone validation):
-    python kg_builder.py
+Defines all node types, edge types, and their properties as Python dataclasses.
+This is the vocabulary of the KG — no graph construction happens here.
 
-Usage (from app.py or period_analysis.py):
-    from kg_builder import build_kg, KGResult
-    result = build_kg(period_data_dict, migration_df)
+Design principles:
+  - Every node property maps to a real field in utils.py, period_analysis.py,
+  
+    config.py, or an Appendix B empirical anchor.
+  - No invented abstractions. If it isn't computed by the existing pipeline,
+    it is not a property here.
+  - Dataclasses are immutable (frozen=True) to enforce governance integrity.
+  - The two-tier AI distinction is encoded structurally:
+      Tier 1 (Narrative Engine): uses deterministic KG path traversal only.
+      Tier 2 (Chatbot): receives a serialized KG subgraph as context.
 
-Dependencies:
-    networkx, pandas, numpy  (all already in ESDS environment)
-    kg_schema               (Phase 1 — must be in same directory)
+Node ID conventions:
+  - MarketRegime:       "regime:{name}"          e.g. "regime:Post-COVID"
+  - Factor:             "factor:{code}"          e.g. "factor:earnings_yield"
+  - FactorAxis:         "axis:PC{n}"             e.g. "axis:PC1"
+  - FactorCategory:     "category:{name}"        e.g. "category:Value"
+  - Quadrant:           "quadrant:{id}"          e.g. "quadrant:Q4"
+  - Cluster:            "cluster:{regime}:{id}"  e.g. "cluster:Disinflation:0"
+  - Stock:              "stock:{ticker}"         e.g. "stock:GE"
+  - FactorSpace:        "space:{regime}"         e.g. "space:Rate Shock"
+  - CrowdingScore:      "crowding:{regime}"      e.g. "crowding:Disinflation"
+  - RegimeTransition:   "transition:{A}__{B}"    e.g. "transition:Post-COVID__Rate Shock"
+  - StructuralBreak:    "break:{A}__{B}"         e.g. "break:Post-COVID__Disinflation"
+  - InstabilitySignal:  "signal:{regime}"        e.g. "signal:Disinflation"
+  - EarlyWarning:       "warning:{regime}"       e.g. "warning:Disinflation"
+
+Source references:
+  config.py       — FEATURE_COLUMNS, FACTOR_CATEGORIES, QUADRANTS, N_COMPONENTS
+  utils.py        — compute_pca_and_clusters(), determine_quadrant(),
+                    compute_crowding_scores()
+  period_analysis.py — _run_pca_for_period(), compute_procrustes_table(),
+                       compute_quadrant_migration(), SUB_PERIODS
+  narrative_engine.py — generate_narrative() four-section output
+  Appendix B      — all numeric ground-truth values embedded below
 """
 
 from __future__ import annotations
-
-import sys
-import warnings
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Optional
+from typing import Optional, List, Dict, Tuple
+from enum import Enum
 
-# Ensure kg_schema resolves regardless of kernel/app working directory
-try:
-    sys.path.insert(0, str(Path(__file__).parent))
-except NameError:
-    # __file__ not defined in Jupyter/IPython kernels — use cwd instead
-    import os
-    sys.path.insert(0, os.getcwd())
 
-import networkx as nx
-import numpy as np
-import pandas as pd
+# =============================================================================
+# ENUMERATIONS
+# =============================================================================
 
-# ── Phase 1 ontology import ───────────────────────────────────────────────────
-try:
-    from kg_schema import (
-        KGNode, KGEdge, NodeType, EdgeType,
-        REGIME_NODES, FACTOR_NODES, QUADRANT_NODES, MECHANISM_NODES,
-        GOVERNANCE_NODES, MARKET_CONTEXT_NODES, ALL_STATIC_NODES,
-        EMPIRICAL_ANCHORS,
-        PROCRUSTES_PAIRS, CROWDING_SCORES,
-        PC1_VARIANCE, PC2_VARIANCE, PC3_VARIANCE,
-    )
-except ImportError as e:
-    sys.exit(
-        f"[kg_builder] Cannot import kg_schema: {e}\n"
-        "  Ensure kg_schema.py is in the same directory as kg_builder.py."
-    )
+class RegimeName(str, Enum):
+    """
+    The three macro regimes defined in period_analysis.py::SUB_PERIODS.
+    Date ranges are the authoritative Appendix A / period_analysis definitions.
+    """
+    POST_COVID   = "Post-COVID"    # 2021-03-31 → 2022-06-30
+    RATE_SHOCK   = "Rate Shock"    # 2022-07-31 → 2023-09-30
+    DISINFLATION = "Disinflation"  # 2023-10-31 → 2024-10-31
 
-# ── Config: quadrant label mapping ───────────────────────────────────────────
-QUADRANT_LABEL_MAP: dict[str, str] = {
-    "Q1: Profitable Value":      "Q1",
-    "Q2: Value Traps/Distressed":"Q2",
-    "Q3: Struggling Growth":     "Q3",
-    "Q4: Quality Growth":        "Q4",
+
+class QuadrantID(str, Enum):
+    """
+    Four quadrants defined in config.py::QUADRANTS.
+    Assignment rule: determine_quadrant(pc1, pc2) in utils.py.
+    """
+    Q1 = "Q1"   # PC1 >= 0, PC2 >= 0 → Profitable Value
+    Q2 = "Q2"   # PC1 <  0, PC2 >= 0 → Value Traps / Distressed
+    Q3 = "Q3"   # PC1 <  0, PC2 <  0 → Struggling Growth
+    Q4 = "Q4"   # PC1 >= 0, PC2 <  0 → Quality Growth
+
+
+class FactorCategoryName(str, Enum):
+    """Six factor categories from config.py::FACTOR_CATEGORIES."""
+    VALUE            = "Value"
+    QUALITY          = "Quality"
+    FINANCIAL_STR    = "Financial Strength"
+    MOMENTUM         = "Momentum"
+    RISK_VOLATILITY  = "Risk/Volatility"
+    LIQUIDITY        = "Liquidity"
+
+
+class RiskLevel(str, Enum):
+    """
+    Crowding risk thresholds from utils.py::compute_crowding_scores().
+    Normal < 50 | Elevated 50-69 | High >= 70
+    """
+    NORMAL   = "Normal"    # score < 50
+    ELEVATED = "Elevated"  # score 50-69
+    HIGH     = "High"      # score >= 70
+
+
+class StructuralBreakSeverity(str, Enum):
+    """
+    Procrustes disparity thresholds from Appendix A / period_analysis.py.
+    <0.05 negligible | 0.05-0.15 detectable | 0.15-0.30 meaningful | >0.30 major
+    """
+    NEGLIGIBLE  = "Negligible"   # < 0.05
+    DETECTABLE  = "Detectable"   # 0.05 – 0.14
+    MEANINGFUL  = "Meaningful"   # 0.15 – 0.29
+    MAJOR       = "Major"        # >= 0.30  ← recalibration trigger
+
+
+class AITier(str, Enum):
+    """
+    Two-tier AI governance distinction — critical for institutional framing.
+    Tier 1: deterministic Narrative Engine (governance artifact, reportable).
+    Tier 2: configurable Chatbot (practitioner tool, session-specific).
+    """
+    TIER_1_NARRATIVE = "Tier1_NarrativeEngine"
+    TIER_2_CHATBOT   = "Tier2_Chatbot"
+
+
+# =============================================================================
+# ── LAYER 1: MARKET CONTEXT NODES ───────────────────────────────────────────
+# =============================================================================
+
+@dataclass(frozen=True)
+class MarketRegimeNode:
+    """
+    One of three macro regimes.
+    Source: period_analysis.py::SUB_PERIODS
+    Appendix B: universe counts 1,648 / 1,665 / 1,676 per regime.
+    """
+    node_id:        str            # "regime:{name}"
+    name:           RegimeName
+    start_date:     str            # ISO date string, e.g. "2021-03-31"
+    end_date:       str
+    universe_count: int            # total tickers in period
+    # Populated after KG build:
+    crowding_score: Optional[float] = None   # from CrowdingScoreNode
+    is_break_from_prior: bool = False        # True if Procrustes > 0.30 vs prior
+
+
+@dataclass(frozen=True)
+class FactorSpaceNode:
+    """
+    The PCA coordinate system for a specific regime.
+    Represents the geometric structure of the equity universe in that period.
+    Source: period_analysis.py::_run_pca_for_period()
+    """
+    node_id:          str          # "space:{regime}"
+    regime:           RegimeName
+    n_components:     int = 3      # config.py::N_COMPONENTS
+    pc1_variance_pct: float = 0.0  # Appendix B: 28.3% (full-sample)
+    pc2_variance_pct: float = 0.0  # Appendix B: 14.4%
+    pc3_variance_pct: float = 0.0  # Appendix B: 12.0%
+    combined_variance_pct: float = 0.0  # Appendix B: 54.7%
+
+
+# =============================================================================
+# ── LAYER 2: FACTOR SYSTEM NODES ────────────────────────────────────────────
+# =============================================================================
+
+@dataclass(frozen=True)
+class FactorNode:
+    """
+    One of the 11 individual signals from config.py::FEATURE_COLUMNS.
+    Individual signals are deliberately NOT composited — this is an ESDS
+    design principle (Appendix A: 'preserved individual factors').
+    """
+    node_id:       str                  # "factor:{code}"
+    code:          str                  # e.g. "earnings_yield"
+    display_name:  str                  # e.g. "Earnings Yield (V)"
+    category:      FactorCategoryName
+    data_source:   str                  # "WRDS/Compustat" or "Yahoo Finance"
+    description:   str = ""
+
+
+@dataclass(frozen=True)
+class FactorAxisNode:
+    """
+    A principal component axis — PC1, PC2, or PC3.
+    Source: config.py::PC1_INTERPRETATION, PC2_INTERPRETATION, PC3_INTERPRETATION
+    Note: axis interpretation can rotate across regimes (Appendix B key finding).
+    """
+    node_id:            str        # "axis:PC{n}"
+    pc_number:          int        # 1, 2, or 3
+    name:               str        # "Profitability & Operational Quality"
+    variance_explained: float      # full-sample % variance (config.py)
+    high_meaning:       str        # plain-English positive-loading pole
+    low_meaning:        str        # plain-English negative-loading pole
+
+
+@dataclass(frozen=True)
+class FactorCategoryNode:
+    """
+    A domain grouping of factors from config.py::FACTOR_CATEGORIES.
+    Used for peer context and narrative generation in narrative_engine.py.
+    """
+    node_id:  str                  # "category:{name}"
+    name:     FactorCategoryName
+    members:  Tuple[str, ...]      # factor codes (immutable)
+
+
+# =============================================================================
+# ── LAYER 3: MARKET GEOMETRY NODES ──────────────────────────────────────────
+# =============================================================================
+
+@dataclass(frozen=True)
+class QuadrantNode:
+    """
+    One of the four structural quadrants.
+    Assignment: determine_quadrant(pc1, pc2) in utils.py.
+    Source: config.py::QUADRANTS
+    """
+    node_id:      str          # "quadrant:{Q1|Q2|Q3|Q4}"
+    quadrant_id:  QuadrantID
+    name:         str          # e.g. "Quality Growth"
+    pc1_sign:     str          # "positive" or "negative"
+    pc2_sign:     str          # "positive" or "negative"
+    description:  str
+
+
+@dataclass(frozen=True)
+class ClusterNode:
+    """
+    One KMeans cluster (K=4, random_state=42) within a given regime.
+    Source: utils.py::compute_pca_and_clusters() → KMeans(n_clusters=4)
+    Properties are populated during KG build from per-period PCA runs.
+    """
+    node_id:           str          # "cluster:{regime}:{cluster_id}"
+    regime:            RegimeName
+    cluster_id:        int          # 0, 1, 2, or 3
+    centroid_pc1:      float = 0.0
+    centroid_pc2:      float = 0.0
+    centroid_pc3:      float = 0.0
+    member_count:      int   = 0
+    pct_of_universe:   float = 0.0  # % of period universe in this cluster
+
+
+# =============================================================================
+# ── LAYER 4: SECURITY LAYER NODES ───────────────────────────────────────────
+# =============================================================================
+
+@dataclass(frozen=True)
+class StockNode:
+    """
+    An individual equity in the ESDS universe (~1,738 U.S. equities).
+    Per-regime scores are populated during KG build.
+    Source: utils.py::compute_pca_and_clusters() result DataFrame
+    """
+    node_id:     str           # "stock:{ticker}"
+    ticker:      str
+    permno:      str           # CRSP PERMNO (unique identifier)
+    gics_sector: Optional[str] = None
+    # Full-sample (time-averaged) PCA position:
+    pc1:         float = 0.0
+    pc2:         float = 0.0
+    pc3:         float = 0.0
+    quadrant_id: Optional[QuadrantID] = None
+    cluster_id:  Optional[int]        = None
+
+
+@dataclass(frozen=True)
+class StockRegimePositionNode:
+    """
+    A stock's PCA position within a specific regime sub-period.
+    Separate from StockNode to allow regime-conditioned comparisons.
+    Source: period_analysis.py::_run_pca_for_period() → scores_df
+    This node enables the quadrant migration analysis.
+    """
+    node_id:     str           # "position:{ticker}:{regime}"
+    ticker:      str
+    regime:      RegimeName
+    pc1:         float
+    pc2:         float
+    pc3:         float
+    quadrant_id: QuadrantID
+    cluster_id:  int
+
+
+# =============================================================================
+# ── LAYER 5: STRUCTURAL METRICS & EVENTS ────────────────────────────────────
+# =============================================================================
+
+@dataclass(frozen=True)
+class CrowdingScoreNode:
+    """
+    Factor Crowding Score for one regime.
+    Formula: 0.6 * Concentration + 0.4 * (100 - Dispersion_Normalized)
+    Source: utils.py::compute_crowding_scores()
+    Appendix B ground truth:
+      Post-COVID:   score=22, largest_cluster_pct=37.0, dispersion=2.63 → Normal
+      Rate Shock:   score=30, largest_cluster_pct=51.7, dispersion=2.51 → Normal
+      Disinflation: score=68, largest_cluster_pct=47.1, dispersion=2.37 → Elevated
+    """
+    node_id:              str         # "crowding:{regime}"
+    regime:               RegimeName
+    score:                float       # 0–100
+    risk_level:           RiskLevel
+    largest_cluster_pct:  float       # % of universe in biggest cluster
+    centroid_dispersion:  float       # mean pairwise centroid distance in PC1/PC2
+    dispersion_normalized: float      # 0–100 normalized across periods
+    # Thresholds from utils.py::risk_label():
+    THRESHOLD_ELEVATED:   float = field(default=50.0, compare=False)
+    THRESHOLD_HIGH:       float = field(default=70.0, compare=False)
+
+
+@dataclass(frozen=True)
+class RegimeTransitionNode:
+    """
+    The transition between two adjacent regime periods.
+    Carries Procrustes disparity score and quadrant migration rate.
+    Source: period_analysis.py::compute_procrustes_table(),
+            compute_quadrant_migration()
+    Appendix B ground truth (authoritative):
+      Post-COVID → Rate Shock:   disparity=0.277, migration_pct=55.0, n=1,620
+      Post-COVID → Disinflation: disparity=0.397, migration_pct=N/A,  n=1,591
+      Rate Shock → Disinflation: disparity=0.207, migration_pct=30.4, n=1,636
+    """
+    node_id:            str          # "transition:{A}__{B}"
+    regime_from:        RegimeName
+    regime_to:          RegimeName
+    procrustes_disparity: float      # Appendix B authoritative value
+    common_ticker_count:  int        # intersection of regime universes
+    migration_pct:        float      # % stocks that changed quadrant
+    stocks_changed:       int        # raw count
+    stocks_analyzed:      int        # denominator
+    severity:             StructuralBreakSeverity
+    interpretation:       str        # from period_analysis.py color-coded labels
+
+
+@dataclass(frozen=True)
+class StructuralBreakNode:
+    """
+    Fired when Procrustes disparity exceeds the 0.30 major threshold.
+    Triggers recalibration recommendation per Appendix A governance rules.
+    Source: period_analysis.py::compute_procrustes_table() → '🔴 Major regime change'
+    In current data: only Post-COVID → Disinflation (0.397) crosses this threshold.
+    """
+    node_id:             str         # "break:{A}__{B}"
+    transition_node_id:  str         # FK → RegimeTransitionNode
+    disparity:           float       # must be >= 0.30 to exist
+    severity:            StructuralBreakSeverity = StructuralBreakSeverity.MAJOR
+    recalibration_flag:  bool = True
+
+
+@dataclass(frozen=True)
+class InstabilitySignalNode:
+    """
+    Intermediate warning: elevated but sub-break Procrustes + rising crowding.
+    Represents the 0.15–0.29 'meaningful structural change' zone.
+    In current data: Post-COVID → Rate Shock (0.277) sits here.
+    Source: Appendix A threshold definitions + utils.py crowding thresholds.
+    """
+    node_id:                str         # "signal:{transition_id}"
+    transition_node_id:     str         # FK → RegimeTransitionNode
+    procrustes_disparity:   float       # 0.15 – 0.29
+    crowding_score_current: float       # from CrowdingScoreNode
+    crowding_delta:         float       # change from prior regime
+    signal_components:      Tuple[str, ...] = ()  # which signals triggered
+
+
+@dataclass(frozen=True)
+class EarlyWarningNode:
+    """
+    Composite alert combining multiple structural signals.
+    Monitors: rising Procrustes + cluster compression + quadrant migration
+              + factor axis rotation.
+    Source: Appendix A 'Early Warning Engine' specification.
+    In current data: Disinflation crowding score of 68 → Elevated alert.
+    """
+    node_id:              str         # "warning:{regime}"
+    regime:               RegimeName
+    triggered:            bool
+    crowding_elevated:    bool
+    procrustes_elevated:  bool
+    migration_elevated:   bool
+    composite_risk_level: RiskLevel
+    alert_description:    str
+
+
+# =============================================================================
+# ── LAYER 6: ANALYTICS LAYER NODES ──────────────────────────────────────────
+# =============================================================================
+
+@dataclass(frozen=True)
+class PCAModelNode:
+    """
+    Metadata about the PCA model for a specific regime.
+    Source: period_analysis.py::_run_pca_for_period() → pca_model
+    """
+    node_id:         str         # "pca_model:{regime}"
+    regime:          RegimeName
+    n_components:    int = 3     # config.py::N_COMPONENTS
+    random_state:    int = 42    # from period_analysis.py
+    n_features:      int = 11    # len(FEATURE_COLUMNS)
+    universe_size:   int = 0     # tickers used in this period's PCA fit
+
+
+@dataclass(frozen=True)
+class KMeansModelNode:
+    """
+    Metadata about the KMeans clustering model for a specific regime.
+    Source: utils.py::compute_pca_and_clusters() → KMeans(n_clusters=4, random_state=42)
+    """
+    node_id:      str         # "kmeans_model:{regime}"
+    regime:       RegimeName
+    n_clusters:   int = 4     # config.py::N_CLUSTERS
+    random_state: int = 42
+    n_init:       int = 10
+
+
+@dataclass(frozen=True)
+class NarrativeOutputNode:
+    """
+    The four-section narrative output from narrative_engine.py.
+    Tier 1 only — deterministic, versioned, governance artifact.
+    Each section maps to a generate_*() function in narrative_engine.py.
+    NOT used by the Tier 2 chatbot (which receives raw KG subgraph context).
+    """
+    node_id:        str         # "narrative:{ticker}:{regime}"
+    ticker:         str
+    regime:         RegimeName
+    ai_tier:        AITier = AITier.TIER_1_NARRATIVE
+    # Section outputs from narrative_engine.generate_narrative():
+    summary:        str = ""    # generate_summary()
+    factors:        str = ""    # generate_factor_highlights()
+    trajectory:     str = ""    # generate_trajectory_narrative()
+    peers:          str = ""    # generate_peer_context()
+    version:        str = ""    # e.g. "1.0.0" for governance versioning
+
+
+# =============================================================================
+# ── EDGE TYPES ───────────────────────────────────────────────────────────────
+# =============================================================================
+
+@dataclass(frozen=True)
+class LoadsOnEdge:
+    """
+    Factor → FactorAxis (within a given regime).
+    Property: loading value from PCA components matrix.
+    Source: period_analysis.py::_run_pca_for_period() → loadings_df
+    Key finding (Appendix B): Earnings Yield sign reverses (+0.211 → −0.315)
+    from Post-COVID to Disinflation — structural opposition to BM / Sales-to-Price.
+    """
+    edge_id:       str       # "loads_on:{factor}__{axis}__{regime}"
+    factor_id:     str       # FK → FactorNode
+    axis_id:       str       # FK → FactorAxisNode
+    regime:        RegimeName
+    loading_value: float     # signed loading from pca.components_.T
+    is_dominant:   bool      # True if |loading| is in top 3 for this axis/regime
+    sign_reversed_from_prior: bool = False  # True for EY in Rate Shock, Disinflation
+
+
+@dataclass(frozen=True)
+class OccupiesQuadrantEdge:
+    """
+    Stock → Quadrant (within a given regime).
+    Derived from StockRegimePositionNode.quadrant_id.
+    Source: determine_quadrant() in utils.py / _assign_quadrant() in period_analysis.py
+    """
+    edge_id:    str
+    stock_id:   str          # FK → StockNode
+    quadrant_id: str         # FK → QuadrantNode
+    regime:     RegimeName
+    pc1:        float        # stock's PC1 score in this regime
+    pc2:        float        # stock's PC2 score in this regime
+
+
+@dataclass(frozen=True)
+class MigratedToEdge:
+    """
+    StockRegimePosition(A) → StockRegimePosition(B).
+    Exists only if quadrant changed between regimes.
+    Source: period_analysis.py::compute_quadrant_migration() → 'Any Change'
+    Appendix B: 68% of tracked universe changed quadrant at least once.
+    """
+    edge_id:          str
+    position_from_id: str    # FK → StockRegimePositionNode (regime A)
+    position_to_id:   str    # FK → StockRegimePositionNode (regime B)
+    regime_from:      RegimeName
+    regime_to:        RegimeName
+    quadrant_from:    QuadrantID
+    quadrant_to:      QuadrantID
+    pc1_delta:        float  # PC1(B) - PC1(A)
+    pc2_delta:        float  # PC2(B) - PC2(A)
+
+
+@dataclass(frozen=True)
+class BelongsToClusterEdge:
+    """
+    Stock → Cluster (within a given regime).
+    Source: utils.py::compute_pca_and_clusters() → result_df['cluster']
+    Used for crowding analysis: spatial concentration in PCA factor space.
+    """
+    edge_id:          str
+    stock_id:         str    # FK → StockNode
+    cluster_id:       str    # FK → ClusterNode
+    regime:           RegimeName
+    pc_distance_from_centroid: float = 0.0  # Euclidean distance in PC1/PC2/PC3 space
+
+
+@dataclass(frozen=True)
+class PeersWithEdge:
+    """
+    Stock ↔ Stock (symmetric, within a given regime and quadrant).
+    Structural peers: same quadrant in same regime.
+    Source: utils.py::get_stocks_in_same_quadrant()
+    Used by: generate_peer_context() in narrative_engine.py (Tier 1)
+    Note: this is GICS-agnostic structural peering — a key ESDS differentiator.
+    """
+    edge_id:           str
+    stock_a_id:        str    # FK → StockNode
+    stock_b_id:        str    # FK → StockNode
+    regime:            RegimeName
+    quadrant_id:       QuadrantID
+    pc_distance:       float  # Euclidean distance in PC1/PC2 space
+    same_cluster:      bool
+    same_gics_sector:  bool
+
+
+@dataclass(frozen=True)
+class TransitionsToEdge:
+    """
+    MarketRegime → MarketRegime.
+    Carries the Procrustes structural distance between the two regimes.
+    Source: period_analysis.py::compute_procrustes_table()
+    Appendix B ground truth embedded in RegimeTransitionNode above.
+    """
+    edge_id:             str
+    regime_from_id:      str   # FK → MarketRegimeNode
+    regime_to_id:        str   # FK → MarketRegimeNode
+    transition_node_id:  str   # FK → RegimeTransitionNode (full data)
+    procrustes_disparity: float
+    severity:            StructuralBreakSeverity
+
+
+@dataclass(frozen=True)
+class TriggersEdge:
+    """
+    StructuralMetric → StructuralEvent.
+    e.g. CrowdingScore(Disinflation, 68) → EarlyWarning(Disinflation)
+         RegimeTransition(PC→DI, 0.397) → StructuralBreak
+    Source: Appendix A threshold definitions.
+    """
+    edge_id:      str
+    source_id:    str   # FK → CrowdingScoreNode or RegimeTransitionNode
+    target_id:    str   # FK → EarlyWarningNode or StructuralBreakNode
+    threshold:    float
+    observed_value: float
+    exceeded:     bool
+
+
+@dataclass(frozen=True)
+class GeneratedByEdge:
+    """
+    NarrativeOutput → Stock + Regime.
+    Governance traceability: which data inputs produced which narrative.
+    Tier 1 only — each narrative output is versioned and auditable.
+    Source: narrative_engine.py::generate_narrative()
+    """
+    edge_id:         str
+    narrative_id:    str   # FK → NarrativeOutputNode
+    stock_id:        str   # FK → StockNode
+    regime_id:       str   # FK → MarketRegimeNode
+    ai_tier:         AITier = AITier.TIER_1_NARRATIVE
+    narrative_version: str = ""
+
+
+# =============================================================================
+# GROUND TRUTH CONSTANTS  (Appendix B — single source of empirical truth)
+# =============================================================================
+
+APPENDIX_B_PROCRUSTES: Dict[Tuple[str, str], Dict] = {
+    ("Post-COVID", "Rate Shock"):   {
+        "disparity": 0.277,
+        "common_tickers": 1620,
+        "severity": StructuralBreakSeverity.MEANINGFUL,
+        "interpretation": "Meaningful structural change — approaching major threshold",
+    },
+    ("Post-COVID", "Disinflation"): {
+        "disparity": 0.397,
+        "common_tickers": 1591,
+        "severity": StructuralBreakSeverity.MAJOR,
+        "interpretation": "Major regime change — recalibration trigger crossed",
+    },
+    ("Rate Shock", "Disinflation"): {
+        "disparity": 0.207,
+        "common_tickers": 1636,
+        "severity": StructuralBreakSeverity.MEANINGFUL,
+        "interpretation": "Meaningful structural change — adjacent-period normalization",
+    },
 }
 
-# ── Factor → PC contribution weights (from Appendix B ground truth) ──────────
-# Format: factor_id -> {PC1_loading, PC2_loading, PC3_loading}
-# Sign conventions: Earnings Yield reverses to negative on PC2 in Disinflation
-FACTOR_PC_WEIGHTS: dict[str, dict[str, dict[str, float]]] = {
-    "post_covid": {
-        "book_to_market":        {"PC1": +0.42, "PC2": +0.38, "PC3": -0.15},
-        "earnings_yield":        {"PC1": +0.38, "PC2": +0.35, "PC3": -0.10},
-        "sales_to_price":        {"PC1": +0.40, "PC2": +0.32, "PC3": -0.08},
-        "debt_to_assets":        {"PC1": -0.28, "PC2": -0.05, "PC3": -0.25},
-        "gross_profitability":   {"PC1": -0.30, "PC2": +0.10, "PC3": +0.36},
-        "asset_turnover":        {"PC1": -0.18, "PC2": +0.12, "PC3": +0.38},
-        "accruals":              {"PC1": +0.12, "PC2": -0.55, "PC3": +0.15},
-        "net_stock_issuance":    {"PC1": +0.08, "PC2": -0.48, "PC3": +0.12},
-        "return_on_equity":      {"PC1": -0.25, "PC2": +0.22, "PC3": +0.42},
-        "revenue_growth":        {"PC1": -0.20, "PC2": +0.18, "PC3": +0.35},
-        "price_momentum":        {"PC1": -0.15, "PC2": -0.10, "PC3": +0.28},
+APPENDIX_B_CROWDING: Dict[str, Dict] = {
+    "Post-COVID": {
+        "score": 22.0,
+        "risk_level": RiskLevel.NORMAL,
+        "largest_cluster_pct": 37.0,
+        "centroid_dispersion": 2.63,
+        "n_stocks": 1648,
     },
-    "rate_shock": {
-        "book_to_market":        {"PC1": +0.45, "PC2": +0.40, "PC3": -0.12},
-        "earnings_yield":        {"PC1": +0.41, "PC2": +0.38, "PC3": -0.08},
-        "sales_to_price":        {"PC1": +0.43, "PC2": +0.35, "PC3": -0.06},
-        "debt_to_assets":        {"PC1": -0.30, "PC2": -0.08, "PC3": -0.22},
-        "gross_profitability":   {"PC1": -0.32, "PC2": +0.12, "PC3": +0.34},
-        "asset_turnover":        {"PC1": -0.20, "PC2": +0.14, "PC3": +0.36},
-        "accruals":              {"PC1": +0.10, "PC2": -0.52, "PC3": +0.18},
-        "net_stock_issuance":    {"PC1": +0.06, "PC2": -0.46, "PC3": +0.14},
-        "return_on_equity":      {"PC1": -0.28, "PC2": +0.20, "PC3": +0.44},
-        "revenue_growth":        {"PC1": -0.22, "PC2": +0.16, "PC3": +0.38},
-        "price_momentum":        {"PC1": -0.18, "PC2": -0.08, "PC3": +0.30},
+    "Rate Shock": {
+        "score": 30.0,
+        "risk_level": RiskLevel.NORMAL,
+        "largest_cluster_pct": 51.7,
+        "centroid_dispersion": 2.51,
+        "n_stocks": 1665,
     },
-    "disinflation": {
-        "book_to_market":        {"PC1": +0.44, "PC2": +0.35, "PC3": -0.14},
-        "earnings_yield":        {"PC1": +0.39, "PC2": -0.28, "PC3": -0.09},  # sign reversal on PC2
-        "sales_to_price":        {"PC1": +0.42, "PC2": +0.33, "PC3": -0.07},
-        "debt_to_assets":        {"PC1": -0.31, "PC2": -0.07, "PC3": -0.24},
-        "gross_profitability":   {"PC1": -0.31, "PC2": +0.15, "PC3": +0.35},
-        "asset_turnover":        {"PC1": -0.19, "PC2": +0.16, "PC3": +0.37},
-        "accruals":              {"PC1": +0.11, "PC2": -0.50, "PC3": +0.20},
-        "net_stock_issuance":    {"PC1": +0.07, "PC2": -0.44, "PC3": +0.16},
-        "return_on_equity":      {"PC1": -0.27, "PC2": +0.22, "PC3": +0.46},
-        "revenue_growth":        {"PC1": -0.21, "PC2": +0.20, "PC3": +0.40},
-        "price_momentum":        {"PC1": -0.16, "PC2": -0.06, "PC3": +0.32},
+    "Disinflation": {
+        "score": 68.0,
+        "risk_level": RiskLevel.ELEVATED,
+        "largest_cluster_pct": 47.1,
+        "centroid_dispersion": 2.37,
+        "n_stocks": 1676,
     },
 }
 
-# ── Result container ──────────────────────────────────────────────────────────
-@dataclass
-class KGResult:
-    """Returned by build_kg(); provides graph + summary statistics."""
-    graph: nx.DiGraph
-    n_nodes: int = 0
-    n_edges: int = 0
-    n_tickers: int = 0
-    n_clusters: int = 0
-    regime_coverage: list[str] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
+APPENDIX_B_MIGRATION: Dict[Tuple[str, str], Dict] = {
+    ("Post-COVID", "Rate Shock"):   {
+        "migration_pct": 55.0,
+        "stocks_changed": 875,
+        "stocks_analyzed": 1591,
+    },
+    ("Rate Shock", "Disinflation"): {
+        "migration_pct": 30.4,
+        "stocks_changed": 484,
+        "stocks_analyzed": 1591,
+    },
+}
 
-    def summary(self) -> str:
-        lines = [
-            "── ESDS Knowledge Graph (Phase 2) ──────────────────────────────",
-            f"  Nodes          : {self.n_nodes:,}",
-            f"  Edges          : {self.n_edges:,}",
-            f"  Tickers        : {self.n_tickers:,}",
-            f"  Clusters       : {self.n_clusters:,}",
-            f"  Regimes wired  : {', '.join(self.regime_coverage)}",
-        ]
-        if self.warnings:
-            lines.append(f"  Warnings       : {len(self.warnings)}")
-            for w in self.warnings[:5]:
-                lines.append(f"    ⚠  {w}")
-        lines.append("─" * 64)
-        return "\n".join(lines)
+APPENDIX_B_MIGRATION_ANY = {
+    "pct": 68.0,
+    "changed": 1082,
+    "total": 1591,
+    "description": "68% of tracked universe changed quadrant at least once across all three regimes",
+}
 
+APPENDIX_B_PC_VARIANCE = {
+    "PC1": 28.3,
+    "PC2": 14.4,
+    "PC3": 12.0,
+    "combined": 54.7,
+}
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
-
-def _add_node(G: nx.DiGraph, node: KGNode) -> None:
-    """Add a KGNode to the graph, converting dataclass to dict attrs."""
-    G.add_node(node.id, **{
-        "label":       node.label,
-        "node_type":   node.node_type.value,
-        "description": node.description,
-        **node.properties,
-    })
-
-
-def _add_edge(G: nx.DiGraph, edge: KGEdge) -> None:
-    """Add a KGEdge to the graph."""
-    G.add_edge(edge.source, edge.target, **{
-        "edge_type": edge.edge_type.value,
-        **edge.properties,
-    })
-
-
-def _safe_float(val: Any, default: float = 0.0) -> float:
-    try:
-        return float(val)
-    except (TypeError, ValueError):
-        return default
-
-
-# ── Phase A: populate static ontology nodes ───────────────────────────────────
-
-def _wire_static_nodes(G: nx.DiGraph) -> None:
-    """Add all 35 static nodes from Phase 1 schema."""
-    for node in ALL_STATIC_NODES:
-        _add_node(G, node)
+# Key factor loading observations from Appendix B (structural events)
+APPENDIX_B_LOADING_EVENTS = {
+    "earnings_yield_sign_reversal": {
+        "factor": "earnings_yield",
+        "axis": "PC2",
+        "Post-COVID": +0.211,
+        "Rate Shock": -0.364,
+        "Disinflation": -0.315,
+        "note": "EY reverses to negative loading — structurally opposed to BM and SP in PC2",
+    },
+    "debt_assets_sign_reversal": {
+        "factor": "debt_assets",
+        "axis": "PC3",
+        "Post-COVID": -0.248,
+        "Rate Shock": +0.719,
+        "Disinflation": +0.770,
+        "note": "Most dramatic PC3 structural event — sign reversal at Post-COVID→Rate Shock boundary",
+    },
+    "cash_debt_PC1_trajectory": {
+        "factor": "cash_debt",
+        "axis": "PC1",
+        "Post-COVID": +0.329,
+        "Rate Shock": +0.427,
+        "Disinflation": +0.387,
+        "note": "Cash-to-Debt loading on PC1 rises then partially retreats — balance sheet quality signal",
+    },
+}
 
 
-# ── Phase B: wire static structural edges ─────────────────────────────────────
+# =============================================================================
+# CANONICAL NODE CATALOG  (static instances — populated once, referenced always)
+# =============================================================================
 
-def _wire_structural_edges(G: nx.DiGraph) -> None:
-    """
-    Wire edges between static nodes:
-      - Regime → PC variance nodes
-      - Factor → Domain nodes
-      - Mechanism → Regime nodes (operates_in)
-      - Procrustes pair edges (regime_transition)
-      - Crowding score edges (crowding_level)
-    """
-    # ── Regime → PC variance explained ──
-    regime_pc_variance = {
-        "regime_post_covid": {
-            "pc1_axis": PC1_VARIANCE,
-            "pc2_axis": PC2_VARIANCE,
-            "pc3_axis": PC3_VARIANCE,
-        },
-        "regime_rate_shock": {
-            "pc1_axis": PC1_VARIANCE,
-            "pc2_axis": PC2_VARIANCE,
-            "pc3_axis": PC3_VARIANCE,
-        },
-        "regime_disinflation": {
-            "pc1_axis": PC1_VARIANCE,
-            "pc2_axis": PC2_VARIANCE,
-            "pc3_axis": PC3_VARIANCE,
-        },
-    }
-    for regime_id, pc_map in regime_pc_variance.items():
-        for pc_id, variance in pc_map.items():
-            if G.has_node(regime_id) and G.has_node(pc_id):
-                _add_edge(G, KGEdge(
-                    source=regime_id, target=pc_id,
-                    edge_type=EdgeType.STRUCTURAL_RELATIONSHIP,
-                    properties={"variance_explained": variance, "label": "pca_coordinate"},
-                ))
+# ── Market Regimes ────────────────────────────────────────────────────────────
+REGIME_NODES: Dict[str, MarketRegimeNode] = {
+    "Post-COVID": MarketRegimeNode(
+        node_id="regime:Post-COVID",
+        name=RegimeName.POST_COVID,
+        start_date="2021-03-31",
+        end_date="2022-06-30",
+        universe_count=1648,
+        crowding_score=22.0,
+        is_break_from_prior=False,
+    ),
+    "Rate Shock": MarketRegimeNode(
+        node_id="regime:Rate Shock",
+        name=RegimeName.RATE_SHOCK,
+        start_date="2022-07-31",
+        end_date="2023-09-30",
+        universe_count=1665,
+        crowding_score=30.0,
+        is_break_from_prior=False,  # Procrustes 0.277 — meaningful but < 0.30
+    ),
+    "Disinflation": MarketRegimeNode(
+        node_id="regime:Disinflation",
+        name=RegimeName.DISINFLATION,
+        start_date="2023-10-31",
+        end_date="2024-10-31",
+        universe_count=1676,
+        crowding_score=68.0,
+        is_break_from_prior=True,   # Procrustes 0.397 → major break from Post-COVID
+    ),
+}
 
-    # ── Factor → PC loading (per regime) ──
-    factor_id_map = {
-        "book_to_market":     "factor_book_to_market",
-        "earnings_yield":     "factor_earnings_yield",
-        "sales_to_price":     "factor_sales_to_price",
-        "debt_to_assets":     "factor_debt_to_assets",
-        "gross_profitability":"factor_gross_profitability",
-        "asset_turnover":     "factor_asset_turnover",
-        "accruals":           "factor_accruals",
-        "net_stock_issuance": "factor_net_stock_issuance",
-        "return_on_equity":   "factor_return_on_equity",
-        "revenue_growth":     "factor_revenue_growth",
-        "price_momentum":     "factor_price_momentum",
-    }
-    regime_key_map = {
-        "regime_post_covid":    "post_covid",
-        "regime_rate_shock":    "rate_shock",
-        "regime_disinflation":  "disinflation",
-    }
-    pc_node_map = {"PC1": "pc1_axis", "PC2": "pc2_axis", "PC3": "pc3_axis"}
+# ── Factor Axes ───────────────────────────────────────────────────────────────
+AXIS_NODES: Dict[str, FactorAxisNode] = {
+    "PC1": FactorAxisNode(
+        node_id="axis:PC1",
+        pc_number=1,
+        name="Profitability & Operational Quality",
+        variance_explained=APPENDIX_B_PC_VARIANCE["PC1"],
+        high_meaning="Operationally profitable, financially strong, stable cash position",
+        low_meaning="Lower profitability, weaker operations, volatile, cash-constrained",
+    ),
+    "PC2": FactorAxisNode(
+        node_id="axis:PC2",
+        pc_number=2,
+        name="Valuation Style",
+        variance_explained=APPENDIX_B_PC_VARIANCE["PC2"],
+        high_meaning="Deep value — high book-to-market, sales-to-price, earnings yield",
+        low_meaning="Growth premium — trading above fundamental value metrics",
+    ),
+    "PC3": FactorAxisNode(
+        node_id="axis:PC3",
+        pc_number=3,
+        name="Leverage & Asset Intensity",
+        variance_explained=APPENDIX_B_PC_VARIANCE["PC3"],
+        high_meaning="Leveraged, asset-intensive, higher debt-to-assets",
+        low_meaning="Asset-light, conservative, lower leverage, cleaner balance sheets",
+    ),
+}
 
-    for regime_node_id, regime_key in regime_key_map.items():
-        weights = FACTOR_PC_WEIGHTS.get(regime_key, {})
-        for factor_key, pc_loadings in weights.items():
-            factor_node_id = factor_id_map.get(factor_key)
-            if factor_node_id and G.has_node(factor_node_id):
-                for pc_label, loading in pc_loadings.items():
-                    pc_node_id = pc_node_map.get(pc_label)
-                    if pc_node_id and G.has_node(pc_node_id):
-                        _add_edge(G, KGEdge(
-                            source=factor_node_id, target=pc_node_id,
-                            edge_type=EdgeType.FACTOR_LOADING,
-                            properties={
-                                "regime": regime_node_id,
-                                "loading": loading,
-                                "abs_loading": abs(loading),
-                                "direction": "positive" if loading > 0 else "negative",
-                                "label": f"{factor_key}→{pc_label}",
-                            },
-                        ))
+# ── Quadrants ─────────────────────────────────────────────────────────────────
+QUADRANT_NODES: Dict[str, QuadrantNode] = {
+    "Q1": QuadrantNode(
+        node_id="quadrant:Q1",
+        quadrant_id=QuadrantID.Q1,
+        name="Profitable Value",
+        pc1_sign="positive",
+        pc2_sign="positive",
+        description="Strong profitability trading at value prices — rare combination",
+    ),
+    "Q2": QuadrantNode(
+        node_id="quadrant:Q2",
+        quadrant_id=QuadrantID.Q2,
+        name="Value Traps / Distressed",
+        pc1_sign="negative",
+        pc2_sign="positive",
+        description="Cheap on traditional metrics but weak operational quality",
+    ),
+    "Q3": QuadrantNode(
+        node_id="quadrant:Q3",
+        quadrant_id=QuadrantID.Q3,
+        name="Struggling Growth",
+        pc1_sign="negative",
+        pc2_sign="negative",
+        description="Growth premium valuation with below-average operational quality",
+    ),
+    "Q4": QuadrantNode(
+        node_id="quadrant:Q4",
+        quadrant_id=QuadrantID.Q4,
+        name="Quality Growth",
+        pc1_sign="positive",
+        pc2_sign="negative",
+        description="High operational quality commanding a growth-oriented premium",
+    ),
+}
 
-    # ── Procrustes regime-transition edges ──
-    for pair in PROCRUSTES_PAIRS:
-        src = pair["source_regime"]
-        tgt = pair["target_regime"]
-        if G.has_node(src) and G.has_node(tgt):
-            interpretation = pair.get("interpretation", "")
-            _add_edge(G, KGEdge(
-                source=src, target=tgt,
-                edge_type=EdgeType.REGIME_TRANSITION,
-                properties={
-                    "procrustes_score":   pair["procrustes_score"],
-                    "common_tickers":     pair["common_tickers"],
-                    "interpretation":     interpretation,
-                    "label": f"procrustes_{pair['procrustes_score']}",
-                    "is_major_break": pair["procrustes_score"] >= 0.40,
-                },
-            ))
+# ── Factors ───────────────────────────────────────────────────────────────────
+FACTOR_NODES: Dict[str, FactorNode] = {
+    "earnings_yield": FactorNode(
+        node_id="factor:earnings_yield",
+        code="earnings_yield",
+        display_name="Earnings Yield (V)",
+        category=FactorCategoryName.VALUE,
+        data_source="WRDS/Compustat",
+        description="Earnings per share / price. Reverses sign on PC2 in Rate Shock and Disinflation regimes.",
+    ),
+    "bm": FactorNode(
+        node_id="factor:bm",
+        code="bm",
+        display_name="Book-to-Market (V)",
+        category=FactorCategoryName.VALUE,
+        data_source="WRDS/Compustat",
+        description="Book value / market cap. Dominant positive PC2 loader — stable across regimes.",
+    ),
+    "sales_to_price": FactorNode(
+        node_id="factor:sales_to_price",
+        code="sales_to_price",
+        display_name="Sales-to-Price (V)",
+        category=FactorCategoryName.VALUE,
+        data_source="WRDS/Compustat",
+        description="Sales / market cap. Stable positive PC2 loader across all three regimes.",
+    ),
+    "roe": FactorNode(
+        node_id="factor:roe",
+        code="roe",
+        display_name="Return on Equity (Q)",
+        category=FactorCategoryName.QUALITY,
+        data_source="WRDS/Compustat",
+        description="Net income / equity. Core PC1 driver — positive loader across all regimes.",
+    ),
+    "roa": FactorNode(
+        node_id="factor:roa",
+        code="roa",
+        display_name="Return on Assets (Q)",
+        category=FactorCategoryName.QUALITY,
+        data_source="WRDS/Compustat",
+        description="Net income / assets. Dominant positive PC1 loader (+0.55 full-sample).",
+    ),
+    "gprof": FactorNode(
+        node_id="factor:gprof",
+        code="gprof",
+        display_name="Gross Profitability (Q)",
+        category=FactorCategoryName.QUALITY,
+        data_source="WRDS/Compustat",
+        description="Gross profit / assets. PC1 positive; sign reverses on PC3 at Post-COVID→Rate Shock.",
+    ),
+    "debt_assets": FactorNode(
+        node_id="factor:debt_assets",
+        code="debt_assets",
+        display_name="Debt-to-Assets (FS)",
+        category=FactorCategoryName.FINANCIAL_STR,
+        data_source="WRDS/Compustat",
+        description="Total debt / assets. Most dramatic structural event: PC3 sign reversal −0.248 → +0.719.",
+    ),
+    "cash_debt": FactorNode(
+        node_id="factor:cash_debt",
+        code="cash_debt",
+        display_name="Cash-to-Debt (FS)",
+        category=FactorCategoryName.FINANCIAL_STR,
+        data_source="WRDS/Compustat",
+        description="Cash / debt. PC1 loading rises Post-COVID→Rate Shock (+0.329→+0.427). Stepped pattern in time-series.",
+    ),
+    "momentum_12m": FactorNode(
+        node_id="factor:momentum_12m",
+        code="momentum_12m",
+        display_name="12-Mo. Momentum (R)",
+        category=FactorCategoryName.MOMENTUM,
+        data_source="Yahoo Finance",
+        description="12-month price return. Behavioral complement signal — not composited.",
+    ),
+    "vol_60d_ann": FactorNode(
+        node_id="factor:vol_60d_ann",
+        code="vol_60d_ann",
+        display_name="60-Day Volatility (R)",
+        category=FactorCategoryName.RISK_VOLATILITY,
+        data_source="Yahoo Finance",
+        description="Annualized 60-day return volatility. PC3 positive loader (+0.52 full-sample).",
+    ),
+    "addv_63d": FactorNode(
+        node_id="factor:addv_63d",
+        code="addv_63d",
+        display_name="Liquidity (R)",
+        category=FactorCategoryName.LIQUIDITY,
+        data_source="Yahoo Finance",
+        description="63-day average daily dollar volume. Negative PC3 loader (−0.48 full-sample).",
+    ),
+}
 
-    # ── Crowding score edges (regime → crowding_mechanism) ──
-    crowding_node_id = "mechanism_crowding"
-    for cs in CROWDING_SCORES:
-        regime_id = cs["regime"]
-        if G.has_node(regime_id) and G.has_node(crowding_node_id):
-            _add_edge(G, KGEdge(
-                source=regime_id, target=crowding_node_id,
-                edge_type=EdgeType.CROWDING_LEVEL,
-                properties={
-                    "score":             cs["score"],
-                    "label":             cs["label"],
-                    "is_elevated":       cs["score"] >= 60,
-                    "label_str": f"crowding_{cs['label'].lower().replace(' ', '_')}",
-                },
-            ))
-
-
-# ── Phase C: dynamic equity nodes from pipeline data ─────────────────────────
-
-def _wire_equity_nodes(
-    G: nx.DiGraph,
-    period_data: dict[str, pd.DataFrame],
-    result: KGResult,
-) -> None:
-    """
-    Build dynamic Stock and Cluster nodes from period pipeline DataFrames.
-
-    Expected DataFrame columns (from ESDS utils.py output):
-        ticker, gics_sector, quadrant, cluster_label,
-        pc1_score, pc2_score, [pc3_score]
-
-    period_data: dict mapping regime key → processed DataFrame
-        keys should be: 'Post-COVID', 'Rate Shock', 'Disinflation'
-    """
-    regime_key_map = {
-        "Post-COVID":   "regime_post_covid",
-        "Rate Shock":   "regime_rate_shock",
-        "Disinflation": "regime_disinflation",
-    }
-
-    ticker_seen: set[str] = set()
-    cluster_seen: set[str] = set()
-    n_clusters = 0
-
-    for period_label, df in period_data.items():
-        regime_node_id = regime_key_map.get(period_label)
-        if regime_node_id is None:
-            result.warnings.append(
-                f"Unknown period label '{period_label}' — skipping equity wiring."
-            )
-            continue
-        if df is None or df.empty:
-            result.warnings.append(f"Empty DataFrame for period '{period_label}' — skipping.")
-            continue
-
-        required_cols = {"ticker", "quadrant"}
-        missing = required_cols - set(df.columns)
-        if missing:
-            result.warnings.append(
-                f"Period '{period_label}' DataFrame missing columns: {missing} — skipping."
-            )
-            continue
-
-        result.regime_coverage.append(period_label)
-
-        for _, row in df.iterrows():
-            ticker = str(row.get("ticker", "")).strip().upper()
-            if not ticker:
-                continue
-
-            # ── Stock node (once per ticker globally) ──
-            if ticker not in ticker_seen:
-                sector = str(row.get("gics_sector", "Unknown"))
-                G.add_node(
-                    f"stock_{ticker}",
-                    label=ticker,
-                    node_type=NodeType.STOCK.value,
-                    gics_sector=sector,
-                    description=f"Equity: {ticker} ({sector})",
-                )
-                ticker_seen.add(ticker)
-
-            stock_node_id = f"stock_{ticker}"
-
-            # ── Quadrant assignment edge (stock → quadrant, per regime) ──
-            raw_quadrant = str(row.get("quadrant", ""))
-            q_key = QUADRANT_LABEL_MAP.get(raw_quadrant, raw_quadrant)
-            quadrant_node_id = f"quadrant_{q_key.lower().replace(': ', '_').replace(' ', '_')}"
-            if not G.has_node(quadrant_node_id):
-                quadrant_node_id = f"quadrant_{q_key}"  # fallback
-
-            if G.has_node(quadrant_node_id):
-                _add_edge(G, KGEdge(
-                    source=stock_node_id, target=quadrant_node_id,
-                    edge_type=EdgeType.QUADRANT_ASSIGNMENT,
-                    properties={
-                        "regime": regime_node_id,
-                        "period": period_label,
-                        "pc1_score": _safe_float(row.get("pc1_score")),
-                        "pc2_score": _safe_float(row.get("pc2_score")),
-                        "pc3_score": _safe_float(row.get("pc3_score", 0.0)),
-                    },
-                ))
-
-            # ── Cluster node + membership edge ──
-            cluster_label = row.get("cluster_label") or row.get("cluster")
-            if cluster_label is not None:
-                cluster_node_id = f"cluster_{period_label.lower().replace(' ', '_')}_{cluster_label}"
-                if cluster_node_id not in cluster_seen:
-                    G.add_node(
-                        cluster_node_id,
-                        label=f"{period_label} Cluster {cluster_label}",
-                        node_type=NodeType.CLUSTER.value,
-                        regime=regime_node_id,
-                        period=period_label,
-                        cluster_id=str(cluster_label),
-                        description=f"KMeans cluster {cluster_label} in {period_label}",
-                    )
-                    # Cluster belongs_to regime
-                    if G.has_node(regime_node_id):
-                        _add_edge(G, KGEdge(
-                            source=cluster_node_id, target=regime_node_id,
-                            edge_type=EdgeType.BELONGS_TO,
-                            properties={"label": "cluster_in_regime"},
-                        ))
-                    cluster_seen.add(cluster_node_id)
-                    n_clusters += 1
-
-                _add_edge(G, KGEdge(
-                    source=stock_node_id, target=cluster_node_id,
-                    edge_type=EdgeType.CLUSTER_MEMBERSHIP,
-                    properties={
-                        "regime": regime_node_id,
-                        "period": period_label,
-                    },
-                ))
-
-    result.n_tickers = len(ticker_seen)
-    result.n_clusters = n_clusters
-
-
-# ── Phase D: quadrant migration edges ─────────────────────────────────────────
-
-def _wire_migration_edges(
-    G: nx.DiGraph,
-    migration_df: Optional[pd.DataFrame],
-    result: KGResult,
-) -> None:
-    """
-    Add MIGRATES_TO edges between quadrant nodes based on migration_df.
-
-    migration_df: long-form DataFrame with columns:
-        ticker, period_from, period_to, quadrant_from, quadrant_to
-    OR wide-form with columns:
-        ticker, Post-COVID, Rate Shock, Disinflation
-    """
-    if migration_df is None or migration_df.empty:
-        result.warnings.append("No migration_df provided — migration edges skipped.")
-        return
-
-    # ── Detect long vs. wide format ──
-    has_long = {"period_from", "period_to", "quadrant_from", "quadrant_to"}.issubset(
-        migration_df.columns
+# ── Factor Categories ─────────────────────────────────────────────────────────
+CATEGORY_NODES: Dict[str, FactorCategoryNode] = {
+    cat: FactorCategoryNode(
+        node_id=f"category:{cat}",
+        name=FactorCategoryName(cat),
+        members=tuple(members),
     )
-    has_wide = {"Post-COVID", "Rate Shock", "Disinflation"}.issubset(migration_df.columns)
+    for cat, members in {
+        "Value":            ["earnings_yield", "bm", "sales_to_price"],
+        "Quality":          ["roe", "roa", "gprof"],
+        "Financial Strength": ["debt_assets", "cash_debt"],
+        "Momentum":         ["momentum_12m"],
+        "Risk/Volatility":  ["vol_60d_ann"],
+        "Liquidity":        ["addv_63d"],
+    }.items()
+}
 
-    if has_long:
-        _wire_migration_long(G, migration_df, result)
-    elif has_wide:
-        _wire_migration_wide(G, migration_df, result)
-    else:
-        result.warnings.append(
-            "migration_df columns not recognized — expected long or wide format. "
-            f"Got: {list(migration_df.columns)[:8]}"
-        )
-
-
-def _quadrant_node_id(label: str) -> str:
-    """Normalize quadrant label to node id."""
-    short = QUADRANT_LABEL_MAP.get(label, label)
-    return f"quadrant_{short.lower()}"
-
-
-def _wire_migration_long(
-    G: nx.DiGraph,
-    df: pd.DataFrame,
-    result: KGResult,
-) -> None:
-    grouped = df.groupby(["quadrant_from", "quadrant_to"]).size().reset_index(name="count")
-    for _, row in grouped.iterrows():
-        src = _quadrant_node_id(row["quadrant_from"])
-        tgt = _quadrant_node_id(row["quadrant_to"])
-        if G.has_node(src) and G.has_node(tgt):
-            _add_edge(G, KGEdge(
-                source=src, target=tgt,
-                edge_type=EdgeType.MIGRATES_TO,
-                properties={"count": int(row["count"]), "label": "quadrant_migration"},
-            ))
-
-
-def _wire_migration_wide(
-    G: nx.DiGraph,
-    df: pd.DataFrame,
-    result: KGResult,
-) -> None:
-    period_cols = ["Post-COVID", "Rate Shock", "Disinflation"]
-    available = [c for c in period_cols if c in df.columns]
-    for i in range(len(available) - 1):
-        col_from = available[i]
-        col_to = available[i + 1]
-        sub = df[[col_from, col_to]].dropna()
-        grouped = sub.groupby([col_from, col_to]).size().reset_index(name="count")
-        for _, row in grouped.iterrows():
-            src = _quadrant_node_id(row[col_from])
-            tgt = _quadrant_node_id(row[col_to])
-            if G.has_node(src) and G.has_node(tgt):
-                _add_edge(G, KGEdge(
-                    source=src, target=tgt,
-                    edge_type=EdgeType.MIGRATES_TO,
-                    properties={
-                        "count":       int(row["count"]),
-                        "from_period": col_from,
-                        "to_period":   col_to,
-                        "label":       "quadrant_migration",
-                    },
-                ))
-
-
-# ── Master build function ─────────────────────────────────────────────────────
-
-def build_kg(
-    period_data: Optional[dict[str, pd.DataFrame]] = None,
-    migration_df: Optional[pd.DataFrame] = None,
-    include_equity_nodes: bool = True,
-) -> KGResult:
-    """
-    Build the ESDS Knowledge Graph.
-
-    Parameters
-    ----------
-    period_data : dict[str, pd.DataFrame], optional
-        Mapping of period label → processed DataFrame from ESDS pipeline.
-        Keys: 'Post-COVID', 'Rate Shock', 'Disinflation'
-        If None, builds schema-only graph (static nodes + structural edges).
-
-    migration_df : pd.DataFrame, optional
-        Migration data in long or wide format (see _wire_migration_edges).
-
-    include_equity_nodes : bool
-        If False, skip dynamic stock/cluster nodes (useful for fast structural
-        queries or when period_data is unavailable).
-
-    Returns
-    -------
-    KGResult
-        Container with graph, statistics, and any build warnings.
-    """
-    G = nx.DiGraph(
-        name="ESDS_Knowledge_Graph",
-        version="2.0",
-        description="Equity Structural Diagnostics System — full knowledge graph",
-        empirical_source="Appendix B (authoritative ground truth)",
+# ── Crowding Score Nodes ──────────────────────────────────────────────────────
+CROWDING_NODES: Dict[str, CrowdingScoreNode] = {
+    regime: CrowdingScoreNode(
+        node_id=f"crowding:{regime}",
+        regime=RegimeName(regime),
+        score=data["score"],
+        risk_level=data["risk_level"],
+        largest_cluster_pct=data["largest_cluster_pct"],
+        centroid_dispersion=data["centroid_dispersion"],
+        dispersion_normalized=0.0,  # populated during KG build (cross-period normalization)
     )
+    for regime, data in APPENDIX_B_CROWDING.items()
+}
 
-    result = KGResult(graph=G)
+# ── Regime Transition Nodes ───────────────────────────────────────────────────
+TRANSITION_NODES: Dict[Tuple[str, str], RegimeTransitionNode] = {
+    ("Post-COVID", "Rate Shock"): RegimeTransitionNode(
+        node_id="transition:Post-COVID__Rate Shock",
+        regime_from=RegimeName.POST_COVID,
+        regime_to=RegimeName.RATE_SHOCK,
+        procrustes_disparity=0.277,
+        common_ticker_count=1620,
+        migration_pct=55.0,
+        stocks_changed=875,
+        stocks_analyzed=1591,
+        severity=StructuralBreakSeverity.MEANINGFUL,
+        interpretation="Meaningful structural change — approaching but below major threshold",
+    ),
+    ("Post-COVID", "Disinflation"): RegimeTransitionNode(
+        node_id="transition:Post-COVID__Disinflation",
+        regime_from=RegimeName.POST_COVID,
+        regime_to=RegimeName.DISINFLATION,
+        procrustes_disparity=0.397,
+        common_ticker_count=1591,
+        migration_pct=68.0,    # any-change across all periods
+        stocks_changed=1082,
+        stocks_analyzed=1591,
+        severity=StructuralBreakSeverity.MAJOR,
+        interpretation="Major regime change — Procrustes 0.397 exceeds 0.30 recalibration threshold",
+    ),
+    ("Rate Shock", "Disinflation"): RegimeTransitionNode(
+        node_id="transition:Rate Shock__Disinflation",
+        regime_from=RegimeName.RATE_SHOCK,
+        regime_to=RegimeName.DISINFLATION,
+        procrustes_disparity=0.207,
+        common_ticker_count=1636,
+        migration_pct=30.4,
+        stocks_changed=484,
+        stocks_analyzed=1591,
+        severity=StructuralBreakSeverity.MEANINGFUL,
+        interpretation="Meaningful structural change — adjacent-period normalization, larger universe overlap",
+    ),
+}
 
-    # Phase A: static ontology nodes
-    _wire_static_nodes(G)
+# ── Structural Break Node (only one in current data) ─────────────────────────
+STRUCTURAL_BREAK_NODES: Dict[str, StructuralBreakNode] = {
+    "Post-COVID__Disinflation": StructuralBreakNode(
+        node_id="break:Post-COVID__Disinflation",
+        transition_node_id="transition:Post-COVID__Disinflation",
+        disparity=0.397,
+        severity=StructuralBreakSeverity.MAJOR,
+        recalibration_flag=True,
+    ),
+}
 
-    # Phase B: structural edges between static nodes
-    _wire_structural_edges(G)
+# ── Early Warning Node (Disinflation — Elevated crowding) ────────────────────
+EARLY_WARNING_NODES: Dict[str, EarlyWarningNode] = {
+    "Disinflation": EarlyWarningNode(
+        node_id="warning:Disinflation",
+        regime=RegimeName.DISINFLATION,
+        triggered=True,
+        crowding_elevated=True,      # score 68 → Elevated (>=50 threshold)
+        procrustes_elevated=True,    # 0.397 major break from Post-COVID
+        migration_elevated=True,     # 68% any-change migration rate
+        composite_risk_level=RiskLevel.ELEVATED,
+        alert_description=(
+            "Disinflation regime shows elevated crowding (score 68), "
+            "a major structural break from Post-COVID (Procrustes 0.397), "
+            "and high quadrant migration (68% of tracked universe). "
+            "Recalibration of factor model recommended."
+        ),
+    ),
+}
 
-    # Phase C: dynamic equity nodes (optional)
-    if include_equity_nodes and period_data:
-        _wire_equity_nodes(G, period_data, result)
 
-    # Phase D: migration edges (optional)
-    if migration_df is not None:
-        _wire_migration_edges(G, migration_df, result)
+# =============================================================================
+# SCHEMA VALIDATION
+# =============================================================================
 
-    # Final statistics
-    result.n_nodes = G.number_of_nodes()
-    result.n_edges = G.number_of_edges()
-
-    return result
-
-
-# ── Query helpers (importable by app.py) ─────────────────────────────────────
-
-def get_ticker_regimes(G: nx.DiGraph, ticker: str) -> dict[str, str]:
+def validate_schema() -> Dict[str, int]:
     """
-    Return {period_label: quadrant} for a given ticker across all regimes.
-    Returns empty dict if ticker not in graph.
+    Count all canonical nodes and verify internal consistency.
+    Run this to confirm the schema is self-consistent before building the graph.
     """
-    stock_id = f"stock_{ticker.upper()}"
-    if stock_id not in G:
-        return {}
-    result = {}
-    for _, tgt, data in G.out_edges(stock_id, data=True):
-        if data.get("edge_type") == EdgeType.QUADRANT_ASSIGNMENT.value:
-            period = data.get("period", "Unknown")
-            quadrant_label = G.nodes[tgt].get("label", tgt)
-            result[period] = quadrant_label
-    return result
-
-
-def get_regime_crowding(G: nx.DiGraph, regime_id: str) -> Optional[dict]:
-    """
-    Return crowding score dict for a regime, or None if not found.
-    regime_id: 'regime_post_covid' | 'regime_rate_shock' | 'regime_disinflation'
-    """
-    crowding_node = "mechanism_crowding"
-    if not G.has_edge(regime_id, crowding_node):
-        return None
-    return dict(G[regime_id][crowding_node])
-
-
-def get_procrustes_chain(G: nx.DiGraph) -> list[dict]:
-    """
-    Return list of all regime-transition edges with Procrustes scores,
-    sorted by score descending (largest structural break first).
-    """
-    transitions = []
-    for src, tgt, data in G.edges(data=True):
-        if data.get("edge_type") == EdgeType.REGIME_TRANSITION.value:
-            transitions.append({
-                "from": G.nodes[src].get("label", src),
-                "to":   G.nodes[tgt].get("label", tgt),
-                "procrustes_score": data.get("procrustes_score", 0.0),
-                "common_tickers":   data.get("common_tickers", 0),
-                "interpretation":   data.get("interpretation", ""),
-                "is_major_break":   data.get("is_major_break", False),
-            })
-    return sorted(transitions, key=lambda x: x["procrustes_score"], reverse=True)
-
-
-def get_structural_summary(G: nx.DiGraph) -> dict:
-    """
-    High-level structural summary for dashboard or narrative engine consumption.
-    """
-    node_type_counts: dict[str, int] = {}
-    for _, attrs in G.nodes(data=True):
-        nt = attrs.get("node_type", "unknown")
-        node_type_counts[nt] = node_type_counts.get(nt, 0) + 1
-
-    edge_type_counts: dict[str, int] = {}
-    for _, _, attrs in G.edges(data=True):
-        et = attrs.get("edge_type", "unknown")
-        edge_type_counts[et] = edge_type_counts.get(et, 0) + 1
-
-    return {
-        "total_nodes":       G.number_of_nodes(),
-        "total_edges":       G.number_of_edges(),
-        "node_type_counts":  node_type_counts,
-        "edge_type_counts":  edge_type_counts,
-        "procrustes_chain":  get_procrustes_chain(G),
-        "empirical_anchors": EMPIRICAL_ANCHORS,
+    counts = {
+        "MarketRegimeNode":      len(REGIME_NODES),
+        "FactorAxisNode":        len(AXIS_NODES),
+        "QuadrantNode":          len(QUADRANT_NODES),
+        "FactorNode":            len(FACTOR_NODES),
+        "FactorCategoryNode":    len(CATEGORY_NODES),
+        "CrowdingScoreNode":     len(CROWDING_NODES),
+        "RegimeTransitionNode":  len(TRANSITION_NODES),
+        "StructuralBreakNode":   len(STRUCTURAL_BREAK_NODES),
+        "EarlyWarningNode":      len(EARLY_WARNING_NODES),
+        # Dynamic nodes (populated during build, not catalogued here):
+        # StockNode, StockRegimePositionNode, ClusterNode,
+        # PCAModelNode, KMeansModelNode, NarrativeOutputNode
     }
+    total_static = sum(counts.values())
 
+    # Consistency checks
+    assert len(FACTOR_NODES) == 11, \
+        f"Expected 11 factors (FEATURE_COLUMNS), got {len(FACTOR_NODES)}"
+    assert len(QUADRANT_NODES) == 4, \
+        f"Expected 4 quadrants, got {len(QUADRANT_NODES)}"
+    assert len(REGIME_NODES) == 3, \
+        f"Expected 3 regimes, got {len(REGIME_NODES)}"
+    assert len(AXIS_NODES) == 3, \
+        f"Expected 3 PC axes (N_COMPONENTS=3), got {len(AXIS_NODES)}"
+    assert len(CROWDING_NODES) == 3, \
+        f"Expected one crowding score per regime, got {len(CROWDING_NODES)}"
+    assert len(TRANSITION_NODES) == 3, \
+        f"Expected 3 pairwise transitions (C(3,2)), got {len(TRANSITION_NODES)}"
 
-# ── Standalone validation ─────────────────────────────────────────────────────
+    # Verify all factor categories account for all 11 features
+    all_categorized = [f for node in CATEGORY_NODES.values() for f in node.members]
+    assert len(all_categorized) == 11, \
+        f"Category members should total 11, got {len(all_categorized)}"
+    assert set(all_categorized) == set(FACTOR_NODES.keys()), \
+        "Category members do not match FACTOR_NODES keys"
+
+    # Verify Appendix B values embedded correctly
+    assert TRANSITION_NODES[("Post-COVID", "Disinflation")].procrustes_disparity == 0.397
+    assert CROWDING_NODES["Disinflation"].score == 68.0
+    assert CROWDING_NODES["Disinflation"].risk_level == RiskLevel.ELEVATED
+
+    counts["TOTAL_STATIC_NODES"] = total_static
+    return counts
+
 
 if __name__ == "__main__":
-    print("\n[kg_builder] Phase 2 validation — schema-only build (no period data)\n")
-
-    result = build_kg(period_data=None, migration_df=None)
-    print(result.summary())
-
-    summary = get_structural_summary(result.graph)
-    print("\nNode type breakdown:")
-    for nt, count in sorted(summary["node_type_counts"].items(), key=lambda x: -x[1]):
-        print(f"  {nt:<30} {count:>4}")
-
-    print("\nEdge type breakdown:")
-    for et, count in sorted(summary["edge_type_counts"].items(), key=lambda x: -x[1]):
-        print(f"  {et:<35} {count:>4}")
-
-    print("\nProcrustes chain (largest break first):")
-    for t in summary["procrustes_chain"]:
-        flag = " ← MAJOR BREAK" if t["is_major_break"] else ""
-        print(f"  {t['from']:<20} → {t['to']:<20}  score={t['procrustes_score']:.3f}  "
-              f"n={t['common_tickers']:,}{flag}")
-
-    # Assertions
-    assert result.n_nodes >= 25, f"Expected ≥25 nodes, got {result.n_nodes}"
-    assert result.n_edges > 0,   "Expected structural edges to be wired"
-    assert len(summary["procrustes_chain"]) == 3, "Expected exactly 3 Procrustes transitions"
-
-    print("\n✓ All Phase 2 assertions passed")
-    print(f"✓ {result.n_nodes} nodes, {result.n_edges} edges in schema-only build")
-    print("\nPhase 2 complete. Ready for Phase 3 (kg_visualizer.py).")
+    counts = validate_schema()
+    print("=== kg_schema.py — Schema Validation ===\n")
+    for name, count in counts.items():
+        if name == "TOTAL_STATIC_NODES":
+            print(f"\n  {'─'*36}")
+        print(f"  {name:<30} {count}")
+    print("\n  All assertions passed. Schema is self-consistent.")
+    print(f"\n  Dynamic nodes (populated during kg_builder.py):")
+    print(f"  {'StockNode':<30} ~1,738 (full universe)")
+    print(f"  {'StockRegimePositionNode':<30} ~1,738 × 3 regimes")
+    print(f"  {'ClusterNode':<30} 4 clusters × 3 regimes = 12")
+    print(f"  {'PCAModelNode':<30} 3 (one per regime)")
+    print(f"  {'KMeansModelNode':<30} 3 (one per regime)")
+    print(f"  {'NarrativeOutputNode':<30} 1 per stock queried (Tier 1 only)")
