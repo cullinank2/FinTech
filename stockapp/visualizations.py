@@ -1502,3 +1502,4 @@ def plot_crowding_score(crowding_df: pd.DataFrame):
     )
 
     return fig
+ 
