@@ -1420,7 +1420,7 @@ def main():
                 "📊 Cluster Overview",
                 "📐 Period Comparison",
                 "🧠 Knowledge Graph"
-            ]
+            ])
 
             with landing_tab1:
                 # Apply GICS sector filter if selected on landing page
@@ -1718,7 +1718,8 @@ def main():
                 render_kg_tab()
 
         return
-
+    
+    # Get selected stock data
     stock_info = st.session_state.selected_stock
     pca_df = st.session_state.pca_df
     
