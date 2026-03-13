@@ -96,6 +96,7 @@ def _safe_float(value, default=None):
         return default
 
 
+@st.cache_data(show_spinner=False)
 def _get_procrustes_map() -> dict:
     df = st.session_state.get("procrustes_results")
     if df is None or len(df) == 0:
@@ -129,7 +130,10 @@ def _get_migration_map() -> dict:
 
 
 def _get_crowding_map() -> dict:
-    df = st.session_state.get("crowding_df") or st.session_state.get("crowding_results")
+    df = st.session_state.get("crowding_df")
+    if df is None:
+        df = st.session_state.get("crowding_results")
+
     if df is None or len(df) == 0:
         return {}
 
@@ -146,7 +150,11 @@ def _crowding_score(period_name: str):
     row = crowding.get(period_name)
     if row is None:
         return None
-    return _safe_float(row.get("crowding_score"))
+    return _safe_float(
+    row.get("crowding_score")
+    or row.get("score")
+    or row.get("Crowding Score")
+)
 
 
 def _migration_row(transition: str):
@@ -202,8 +210,11 @@ def _regime_nodes() -> list[dict]:
             "tooltip": (
                 "Post-COVID regime\n"
                 f"{pc_rs_text}\n"
-                f"Crowding score: {pc_crowd:.1f}" if pc_crowd is not None else "Crowding score: unavailable"
-            ) + "\n" + pc_mig_text,
+                f"Crowding score: {pc_crowd:.1f}\n" if pc_crowd is not None else
+                "Post-COVID regime\n"
+                f"{pc_rs_text}\n"
+                "Crowding score: unavailable\n"
+            ) + pc_mig_text,
         },
         {
             "id": "regime_rateshock",
@@ -212,8 +223,11 @@ def _regime_nodes() -> list[dict]:
             "tooltip": (
                 "Rate Shock regime\n"
                 f"{rs_d_text}\n"
-                f"Crowding score: {rs_crowd:.1f}" if rs_crowd is not None else "Crowding score: unavailable"
-            ) + "\n" + rs_mig_text,
+                f"Crowding score: {rs_crowd:.1f}\n" if rs_crowd is not None else
+                "Rate Shock regime\n"
+                f"{rs_d_text}\n"
+                "Crowding score: unavailable\n"
+            ) + rs_mig_text,
         },
         {
             "id": "regime_disinflation",
@@ -222,11 +236,14 @@ def _regime_nodes() -> list[dict]:
             "tooltip": (
                 "Disinflation regime\n"
                 f"{pc_d_text}\n"
-                f"Crowding score: {d_crowd:.1f}" if d_crowd is not None else "Crowding score: unavailable"
+                f"Crowding score: {d_crowd:.1f}"
+                if d_crowd is not None else
+                "Disinflation regime\n"
+                f"{pc_d_text}\n"
+                "Crowding score: unavailable"
             ),
         },
     ]
-
 
 def _factor_nodes() -> list[dict]:
     factors = [
@@ -651,14 +668,21 @@ def _render_metrics_panel() -> None:
             row2 = procrustes.iloc[1]
             row3 = procrustes.iloc[2]
 
-            st.metric("Procrustes — PC→RS", f"{row1['Disparity']:.3f}")
-            st.caption(f"{int(row1['Common Tickers']):,} overlapping stocks")
-
-            st.metric("Procrustes — PC→D", f"{row2['Disparity']:.3f}")
-            st.caption(f"{int(row2['Common Tickers']):,} overlapping stocks")
-
-            st.metric("Procrustes — RS→D", f"{row3['Disparity']:.3f}")
-            st.caption(f"{int(row3['Common Tickers']):,} overlapping stocks")
+            st.metric(
+                "Procrustes — PC→RS",
+                f"{row1['Disparity']:.3f}",
+                delta=f"{int(row1['Common Tickers']):,} overlapping stocks"
+            )
+            st.metric(
+                "Procrustes — PC→D",
+                f"{row2['Disparity']:.3f}",
+                delta=f"{int(row2['Common Tickers']):,} overlapping stocks"
+            )
+            st.metric(
+                "Procrustes — RS→D",
+                f"{row3['Disparity']:.3f}",
+                delta=f"{int(row3['Common Tickers']):,} overlapping stocks"
+            )
         else:
             st.info("Run Period Comparison to populate structural diagnostics.")
 
@@ -668,20 +692,32 @@ def _render_metrics_panel() -> None:
         d_crowd = _crowding_score("Disinflation")
 
         if pc_crowd is not None:
-            st.metric("Crowding — Post-COVID", f"{pc_crowd:.1f}")
-            st.caption("Live crowding score")
+            st.metric(
+                "Crowding — Post-COVID",
+                f"{pc_crowd:.1f}",
+                delta="Normal" if pc_crowd < 50 else "Elevated" if pc_crowd < 70 else "High Risk",
+                delta_color="normal" if pc_crowd < 70 else "inverse"
+            )
         else:
             st.metric("Crowding — Post-COVID", "N/A")
 
         if rs_crowd is not None:
-            st.metric("Crowding — Rate Shock", f"{rs_crowd:.1f}")
-            st.caption("Live crowding score")
+            st.metric(
+                "Crowding — Rate Shock",
+                f"{rs_crowd:.1f}",
+                delta="Normal" if rs_crowd < 50 else "Elevated" if rs_crowd < 70 else "High Risk",
+                delta_color="normal" if rs_crowd < 70 else "inverse"
+            )
         else:
             st.metric("Crowding — Rate Shock", "N/A")
 
         if d_crowd is not None:
-            st.metric("Crowding — Disinflation", f"{d_crowd:.1f}")
-            st.caption("Live crowding score")
+            st.metric(
+                "Crowding — Disinflation",
+                f"{d_crowd:.1f}",
+                delta="Normal" if d_crowd < 50 else "Elevated" if d_crowd < 70 else "High Risk",
+                delta_color="normal" if d_crowd < 70 else "inverse"
+            )
         else:
             st.metric("Crowding — Disinflation", "N/A")
 
@@ -690,17 +726,19 @@ def _render_metrics_panel() -> None:
         rs_d = _migration_row("Rate Shock → Disinflation")
 
         if pc_rs is not None:
-            st.metric("Migration PC→RS", str(pc_rs["Migration Rate"]))
-            st.caption(
-                f"{int(pc_rs['Changed Quadrant']):,} / {int(pc_rs['Stocks Analyzed']):,} stocks"
+            st.metric(
+                "Migration PC→RS",
+                str(pc_rs["Migration Rate"]),
+                delta=f"{int(pc_rs['Changed Quadrant']):,} / {int(pc_rs['Stocks Analyzed']):,} stocks"
             )
         else:
             st.metric("Migration PC→RS", "N/A")
 
         if rs_d is not None:
-            st.metric("Migration RS→D", str(rs_d["Migration Rate"]))
-            st.caption(
-                f"{int(rs_d['Changed Quadrant']):,} / {int(rs_d['Stocks Analyzed']):,} stocks"
+            st.metric(
+                "Migration RS→D",
+                str(rs_d["Migration Rate"]),
+                delta=f"{int(rs_d['Changed Quadrant']):,} / {int(rs_d['Stocks Analyzed']):,} stocks"
             )
         else:
             st.metric("Migration RS→D", "N/A")
@@ -708,11 +746,13 @@ def _render_metrics_panel() -> None:
         if migration_pct is not None and migration_summary is not None and len(migration_summary) > 0:
             tracked = int(migration_summary.iloc[0]["Stocks Analyzed"])
             changed_any = int(round(tracked * float(migration_pct) / 100.0))
-            st.metric("Changed quadrant", f"{migration_pct:.1f}%")
-            st.caption(f"{changed_any:,} / {tracked:,} — governance scale")
+            st.metric(
+                "Changed quadrant",
+                f"{migration_pct:.1f}%",
+                delta=f"{changed_any:,} / {tracked:,} — governance scale"
+            )
         else:
             st.metric("Changed quadrant", "N/A")
-
 
 # ── Filter sidebar ────────────────────────────────────────────────────────────
 

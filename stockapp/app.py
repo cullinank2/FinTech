@@ -1543,6 +1543,8 @@ def main():
                             if all_period_rows:
                                 combined_period_df = pd.concat(all_period_rows, ignore_index=True)
                                 crowding_df = compute_crowding_scores(combined_period_df)
+                                st.session_state["crowding_df"] = crowding_df
+                                st.session_state["crowding_results"] = crowding_df
 
                                 if not crowding_df.empty:
                                     # Metric cards — one per regime
