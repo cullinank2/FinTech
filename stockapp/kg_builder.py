@@ -29,7 +29,12 @@ from pathlib import Path
 from typing import Any, Optional
 
 # Ensure kg_schema resolves regardless of kernel/app working directory
-sys.path.insert(0, str(Path(__file__).parent))
+try:
+    sys.path.insert(0, str(Path(__file__).parent))
+except NameError:
+    # __file__ not defined in Jupyter/IPython kernels — use cwd instead
+    import os
+    sys.path.insert(0, os.getcwd())
 
 import networkx as nx
 import numpy as np
