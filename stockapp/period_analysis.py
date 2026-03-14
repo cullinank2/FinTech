@@ -203,10 +203,13 @@ def compute_procrustes_table(df: pd.DataFrame, features: list,
     """
     # Collect scores for each period
     period_scores = {}
+    period_loadings_raw = {}
     for label, (start, end) in SUB_PERIODS.items():
-        _, scores_df, _, _ = _run_pca_for_period(df, features, date_col, start, end)
+        _, scores_df, loadings_df, _ = _run_pca_for_period(df, features, date_col, start, end)
         if scores_df is not None:
             period_scores[label] = scores_df.set_index('ticker')[['PC1', 'PC2', 'PC3']]
+        if loadings_df is not None:
+            period_loadings_raw[label] = loadings_df
 
     results = []
     keys = list(period_scores.keys())
@@ -255,6 +258,10 @@ def compute_procrustes_table(df: pd.DataFrame, features: list,
 
     # Store results globally for Knowledge Graph
     st.session_state["procrustes_results"] = results_df
+    st.session_state["period_loadings"] = {
+        label.split('\n')[0]: loadings_df
+        for label, loadings_df in period_loadings_raw.items()
+    }
 
     return results_df
 
