@@ -123,7 +123,7 @@ class MarketRegimeNode:
     """
     One of three macro regimes.
     Source: period_analysis.py::SUB_PERIODS
-    Appendix B: universe counts 1,648 / 1,665 / 1,676 per regime.
+    Universe size is determined dynamically during graph construction.
     """
     node_id:        str            # "regime:{name}"
     name:           RegimeName
@@ -145,10 +145,10 @@ class FactorSpaceNode:
     node_id:          str          # "space:{regime}"
     regime:           RegimeName
     n_components:     int = 3      # config.py::N_COMPONENTS
-    pc1_variance_pct: float = 0.0  # Appendix B: 28.3% (full-sample)
-    pc2_variance_pct: float = 0.0  # Appendix B: 14.4%
-    pc3_variance_pct: float = 0.0  # Appendix B: 12.0%
-    combined_variance_pct: float = 0.0  # Appendix B: 54.7%
+    pc1_variance_pct: float = 0.0  # populated dynamically from PCA results
+    pc2_variance_pct: float = 0.0  # populated dynamically from PCA results
+    pc3_variance_pct: float = 0.0  # populated dynamically from PCA results
+    combined_variance_pct: float = 0.0  # populated dynamically from PCA results
 
 
 # =============================================================================
@@ -284,9 +284,7 @@ class CrowdingScoreNode:
     Formula: 0.6 * Concentration + 0.4 * (100 - Dispersion_Normalized)
     Source: utils.py::compute_crowding_scores()
     Appendix B ground truth:
-      Post-COVID:   score=22, largest_cluster_pct=37.0, dispersion=2.63 → Normal
-      Rate Shock:   score=30, largest_cluster_pct=51.7, dispersion=2.51 → Normal
-      Disinflation: score=68, largest_cluster_pct=47.1, dispersion=2.37 → Elevated
+    Values are populated dynamically from utils.py::compute_crowding_scores().
     """
     node_id:              str         # "crowding:{regime}"
     regime:               RegimeName
@@ -308,9 +306,10 @@ class RegimeTransitionNode:
     Source: period_analysis.py::compute_procrustes_table(),
             compute_quadrant_migration()
     Appendix B ground truth (authoritative):
-      Post-COVID → Rate Shock:   disparity=0.277, migration_pct=55.0, n=1,620
-      Post-COVID → Disinflation: disparity=0.397, migration_pct=N/A,  n=1,591
-      Rate Shock → Disinflation: disparity=0.207, migration_pct=30.4, n=1,636
+    Values are populated dynamically from:
+    period_analysis.py::compute_procrustes_table()
+    and
+    period_analysis.py::compute_quadrant_migration().
     """
     node_id:            str          # "transition:{A}__{B}"
     regime_from:        RegimeName
@@ -330,7 +329,7 @@ class StructuralBreakNode:
     Fired when Procrustes disparity exceeds the 0.30 major threshold.
     Triggers recalibration recommendation per Appendix A governance rules.
     Source: period_analysis.py::compute_procrustes_table() → '🔴 Major regime change'
-    In current data: only Post-COVID → Disinflation (0.397) crosses this threshold.
+    Break nodes are created dynamically when disparity >= 0.30.
     """
     node_id:             str         # "break:{A}__{B}"
     transition_node_id:  str         # FK → RegimeTransitionNode
@@ -344,7 +343,8 @@ class InstabilitySignalNode:
     """
     Intermediate warning: elevated but sub-break Procrustes + rising crowding.
     Represents the 0.15–0.29 'meaningful structural change' zone.
-    In current data: Post-COVID → Rate Shock (0.277) sits here.
+    Signals are generated dynamically when disparity falls within
+the 0.15–0.29 meaningful structural change range.
     Source: Appendix A threshold definitions + utils.py crowding thresholds.
     """
     node_id:                str         # "signal:{transition_id}"
@@ -362,7 +362,8 @@ class EarlyWarningNode:
     Monitors: rising Procrustes + cluster compression + quadrant migration
               + factor axis rotation.
     Source: Appendix A 'Early Warning Engine' specification.
-    In current data: Disinflation crowding score of 68 → Elevated alert.
+    Early warnings are generated dynamically based on crowding,
+migration, and Procrustes thresholds.
     """
     node_id:              str         # "warning:{regime}"
     regime:               RegimeName
@@ -468,7 +469,8 @@ class MigratedToEdge:
     StockRegimePosition(A) → StockRegimePosition(B).
     Exists only if quadrant changed between regimes.
     Source: period_analysis.py::compute_quadrant_migration() → 'Any Change'
-    Appendix B: 68% of tracked universe changed quadrant at least once.
+    Migration statistics are computed dynamically using
+    period_analysis.py::compute_quadrant_migration().
     """
     edge_id:          str
     position_from_id: str    # FK → StockRegimePositionNode (regime A)
@@ -563,401 +565,31 @@ class GeneratedByEdge:
 
 
 # =============================================================================
-# GROUND TRUTH CONSTANTS  (Appendix B — single source of empirical truth)
+# NOTE
 # =============================================================================
-
-APPENDIX_B_PROCRUSTES: Dict[Tuple[str, str], Dict] = {
-    ("Post-COVID", "Rate Shock"):   {
-        "disparity": 0.277,
-        "common_tickers": 1620,
-        "severity": StructuralBreakSeverity.MEANINGFUL,
-        "interpretation": "Meaningful structural change — approaching major threshold",
-    },
-    ("Post-COVID", "Disinflation"): {
-        "disparity": 0.397,
-        "common_tickers": 1591,
-        "severity": StructuralBreakSeverity.MAJOR,
-        "interpretation": "Major regime change — recalibration trigger crossed",
-    },
-    ("Rate Shock", "Disinflation"): {
-        "disparity": 0.207,
-        "common_tickers": 1636,
-        "severity": StructuralBreakSeverity.MEANINGFUL,
-        "interpretation": "Meaningful structural change — adjacent-period normalization",
-    },
-}
-
-APPENDIX_B_CROWDING: Dict[str, Dict] = {
-    "Post-COVID": {
-        "score": 22.0,
-        "risk_level": RiskLevel.NORMAL,
-        "largest_cluster_pct": 37.0,
-        "centroid_dispersion": 2.63,
-        "n_stocks": 1648,
-    },
-    "Rate Shock": {
-        "score": 30.0,
-        "risk_level": RiskLevel.NORMAL,
-        "largest_cluster_pct": 51.7,
-        "centroid_dispersion": 2.51,
-        "n_stocks": 1665,
-    },
-    "Disinflation": {
-        "score": 68.0,
-        "risk_level": RiskLevel.ELEVATED,
-        "largest_cluster_pct": 47.1,
-        "centroid_dispersion": 2.37,
-        "n_stocks": 1676,
-    },
-}
-
-APPENDIX_B_MIGRATION: Dict[Tuple[str, str], Dict] = {
-    ("Post-COVID", "Rate Shock"):   {
-        "migration_pct": 55.0,
-        "stocks_changed": 875,
-        "stocks_analyzed": 1591,
-    },
-    ("Rate Shock", "Disinflation"): {
-        "migration_pct": 30.4,
-        "stocks_changed": 484,
-        "stocks_analyzed": 1591,
-    },
-}
-
-APPENDIX_B_MIGRATION_ANY = {
-    "pct": 68.0,
-    "changed": 1082,
-    "total": 1591,
-    "description": "68% of tracked universe changed quadrant at least once across all three regimes",
-}
-
-APPENDIX_B_PC_VARIANCE = {
-    "PC1": 28.3,
-    "PC2": 14.4,
-    "PC3": 12.0,
-    "combined": 54.7,
-}
-
-# Key factor loading observations from Appendix B (structural events)
-APPENDIX_B_LOADING_EVENTS = {
-    "earnings_yield_sign_reversal": {
-        "factor": "earnings_yield",
-        "axis": "PC2",
-        "Post-COVID": +0.211,
-        "Rate Shock": -0.364,
-        "Disinflation": -0.315,
-        "note": "EY reverses to negative loading — structurally opposed to BM and SP in PC2",
-    },
-    "debt_assets_sign_reversal": {
-        "factor": "debt_assets",
-        "axis": "PC3",
-        "Post-COVID": -0.248,
-        "Rate Shock": +0.719,
-        "Disinflation": +0.770,
-        "note": "Most dramatic PC3 structural event — sign reversal at Post-COVID→Rate Shock boundary",
-    },
-    "cash_debt_PC1_trajectory": {
-        "factor": "cash_debt",
-        "axis": "PC1",
-        "Post-COVID": +0.329,
-        "Rate Shock": +0.427,
-        "Disinflation": +0.387,
-        "note": "Cash-to-Debt loading on PC1 rises then partially retreats — balance sheet quality signal",
-    },
-}
+# Empirical statistics such as Procrustes disparity, crowding scores,
+# migration percentages, and PCA variance explained are generated
+# dynamically by the ESDS analytics pipeline.
+#
+# These values are computed in:
+#   period_analysis.py
+#   utils.py
+#
+# and inserted into the knowledge graph during graph construction
+# inside kg_builder.py.
 
 
 # =============================================================================
-# CANONICAL NODE CATALOG  (static instances — populated once, referenced always)
+# RUNTIME NODE CREATION
 # =============================================================================
-
-# ── Market Regimes ────────────────────────────────────────────────────────────
-REGIME_NODES: Dict[str, MarketRegimeNode] = {
-    "Post-COVID": MarketRegimeNode(
-        node_id="regime:Post-COVID",
-        name=RegimeName.POST_COVID,
-        start_date="2021-03-31",
-        end_date="2022-06-30",
-        universe_count=1648,
-        crowding_score=22.0,
-        is_break_from_prior=False,
-    ),
-    "Rate Shock": MarketRegimeNode(
-        node_id="regime:Rate Shock",
-        name=RegimeName.RATE_SHOCK,
-        start_date="2022-07-31",
-        end_date="2023-09-30",
-        universe_count=1665,
-        crowding_score=30.0,
-        is_break_from_prior=False,  # Procrustes 0.277 — meaningful but < 0.30
-    ),
-    "Disinflation": MarketRegimeNode(
-        node_id="regime:Disinflation",
-        name=RegimeName.DISINFLATION,
-        start_date="2023-10-31",
-        end_date="2024-10-31",
-        universe_count=1676,
-        crowding_score=68.0,
-        is_break_from_prior=True,   # Procrustes 0.397 → major break from Post-COVID
-    ),
-}
-
-# ── Factor Axes ───────────────────────────────────────────────────────────────
-AXIS_NODES: Dict[str, FactorAxisNode] = {
-    "PC1": FactorAxisNode(
-        node_id="axis:PC1",
-        pc_number=1,
-        name="Profitability & Operational Quality",
-        variance_explained=APPENDIX_B_PC_VARIANCE["PC1"],
-        high_meaning="Operationally profitable, financially strong, stable cash position",
-        low_meaning="Lower profitability, weaker operations, volatile, cash-constrained",
-    ),
-    "PC2": FactorAxisNode(
-        node_id="axis:PC2",
-        pc_number=2,
-        name="Valuation Style",
-        variance_explained=APPENDIX_B_PC_VARIANCE["PC2"],
-        high_meaning="Deep value — high book-to-market, sales-to-price, earnings yield",
-        low_meaning="Growth premium — trading above fundamental value metrics",
-    ),
-    "PC3": FactorAxisNode(
-        node_id="axis:PC3",
-        pc_number=3,
-        name="Leverage & Asset Intensity",
-        variance_explained=APPENDIX_B_PC_VARIANCE["PC3"],
-        high_meaning="Leveraged, asset-intensive, higher debt-to-assets",
-        low_meaning="Asset-light, conservative, lower leverage, cleaner balance sheets",
-    ),
-}
-
-# ── Quadrants ─────────────────────────────────────────────────────────────────
-QUADRANT_NODES: Dict[str, QuadrantNode] = {
-    "Q1": QuadrantNode(
-        node_id="quadrant:Q1",
-        quadrant_id=QuadrantID.Q1,
-        name="Profitable Value",
-        pc1_sign="positive",
-        pc2_sign="positive",
-        description="Strong profitability trading at value prices — rare combination",
-    ),
-    "Q2": QuadrantNode(
-        node_id="quadrant:Q2",
-        quadrant_id=QuadrantID.Q2,
-        name="Value Traps / Distressed",
-        pc1_sign="negative",
-        pc2_sign="positive",
-        description="Cheap on traditional metrics but weak operational quality",
-    ),
-    "Q3": QuadrantNode(
-        node_id="quadrant:Q3",
-        quadrant_id=QuadrantID.Q3,
-        name="Struggling Growth",
-        pc1_sign="negative",
-        pc2_sign="negative",
-        description="Growth premium valuation with below-average operational quality",
-    ),
-    "Q4": QuadrantNode(
-        node_id="quadrant:Q4",
-        quadrant_id=QuadrantID.Q4,
-        name="Quality Growth",
-        pc1_sign="positive",
-        pc2_sign="negative",
-        description="High operational quality commanding a growth-oriented premium",
-    ),
-}
-
-# ── Factors ───────────────────────────────────────────────────────────────────
-FACTOR_NODES: Dict[str, FactorNode] = {
-    "earnings_yield": FactorNode(
-        node_id="factor:earnings_yield",
-        code="earnings_yield",
-        display_name="Earnings Yield (V)",
-        category=FactorCategoryName.VALUE,
-        data_source="WRDS/Compustat",
-        description="Earnings per share / price. Reverses sign on PC2 in Rate Shock and Disinflation regimes.",
-    ),
-    "bm": FactorNode(
-        node_id="factor:bm",
-        code="bm",
-        display_name="Book-to-Market (V)",
-        category=FactorCategoryName.VALUE,
-        data_source="WRDS/Compustat",
-        description="Book value / market cap. Dominant positive PC2 loader — stable across regimes.",
-    ),
-    "sales_to_price": FactorNode(
-        node_id="factor:sales_to_price",
-        code="sales_to_price",
-        display_name="Sales-to-Price (V)",
-        category=FactorCategoryName.VALUE,
-        data_source="WRDS/Compustat",
-        description="Sales / market cap. Stable positive PC2 loader across all three regimes.",
-    ),
-    "roe": FactorNode(
-        node_id="factor:roe",
-        code="roe",
-        display_name="Return on Equity (Q)",
-        category=FactorCategoryName.QUALITY,
-        data_source="WRDS/Compustat",
-        description="Net income / equity. Core PC1 driver — positive loader across all regimes.",
-    ),
-    "roa": FactorNode(
-        node_id="factor:roa",
-        code="roa",
-        display_name="Return on Assets (Q)",
-        category=FactorCategoryName.QUALITY,
-        data_source="WRDS/Compustat",
-        description="Net income / assets. Dominant positive PC1 loader (+0.55 full-sample).",
-    ),
-    "gprof": FactorNode(
-        node_id="factor:gprof",
-        code="gprof",
-        display_name="Gross Profitability (Q)",
-        category=FactorCategoryName.QUALITY,
-        data_source="WRDS/Compustat",
-        description="Gross profit / assets. PC1 positive; sign reverses on PC3 at Post-COVID→Rate Shock.",
-    ),
-    "debt_assets": FactorNode(
-        node_id="factor:debt_assets",
-        code="debt_assets",
-        display_name="Debt-to-Assets (FS)",
-        category=FactorCategoryName.FINANCIAL_STR,
-        data_source="WRDS/Compustat",
-        description="Total debt / assets. Most dramatic structural event: PC3 sign reversal −0.248 → +0.719.",
-    ),
-    "cash_debt": FactorNode(
-        node_id="factor:cash_debt",
-        code="cash_debt",
-        display_name="Cash-to-Debt (FS)",
-        category=FactorCategoryName.FINANCIAL_STR,
-        data_source="WRDS/Compustat",
-        description="Cash / debt. PC1 loading rises Post-COVID→Rate Shock (+0.329→+0.427). Stepped pattern in time-series.",
-    ),
-    "momentum_12m": FactorNode(
-        node_id="factor:momentum_12m",
-        code="momentum_12m",
-        display_name="12-Mo. Momentum (R)",
-        category=FactorCategoryName.MOMENTUM,
-        data_source="Yahoo Finance",
-        description="12-month price return. Behavioral complement signal — not composited.",
-    ),
-    "vol_60d_ann": FactorNode(
-        node_id="factor:vol_60d_ann",
-        code="vol_60d_ann",
-        display_name="60-Day Volatility (R)",
-        category=FactorCategoryName.RISK_VOLATILITY,
-        data_source="Yahoo Finance",
-        description="Annualized 60-day return volatility. PC3 positive loader (+0.52 full-sample).",
-    ),
-    "addv_63d": FactorNode(
-        node_id="factor:addv_63d",
-        code="addv_63d",
-        display_name="Liquidity (R)",
-        category=FactorCategoryName.LIQUIDITY,
-        data_source="Yahoo Finance",
-        description="63-day average daily dollar volume. Negative PC3 loader (−0.48 full-sample).",
-    ),
-}
-
-# ── Factor Categories ─────────────────────────────────────────────────────────
-CATEGORY_NODES: Dict[str, FactorCategoryNode] = {
-    cat: FactorCategoryNode(
-        node_id=f"category:{cat}",
-        name=FactorCategoryName(cat),
-        members=tuple(members),
-    )
-    for cat, members in {
-        "Value":            ["earnings_yield", "bm", "sales_to_price"],
-        "Quality":          ["roe", "roa", "gprof"],
-        "Financial Strength": ["debt_assets", "cash_debt"],
-        "Momentum":         ["momentum_12m"],
-        "Risk/Volatility":  ["vol_60d_ann"],
-        "Liquidity":        ["addv_63d"],
-    }.items()
-}
-
-# ── Crowding Score Nodes ──────────────────────────────────────────────────────
-CROWDING_NODES: Dict[str, CrowdingScoreNode] = {
-    regime: CrowdingScoreNode(
-        node_id=f"crowding:{regime}",
-        regime=RegimeName(regime),
-        score=data["score"],
-        risk_level=data["risk_level"],
-        largest_cluster_pct=data["largest_cluster_pct"],
-        centroid_dispersion=data["centroid_dispersion"],
-        dispersion_normalized=0.0,  # populated during KG build (cross-period normalization)
-    )
-    for regime, data in APPENDIX_B_CROWDING.items()
-}
-
-# ── Regime Transition Nodes ───────────────────────────────────────────────────
-TRANSITION_NODES: Dict[Tuple[str, str], RegimeTransitionNode] = {
-    ("Post-COVID", "Rate Shock"): RegimeTransitionNode(
-        node_id="transition:Post-COVID__Rate Shock",
-        regime_from=RegimeName.POST_COVID,
-        regime_to=RegimeName.RATE_SHOCK,
-        procrustes_disparity=0.277,
-        common_ticker_count=1620,
-        migration_pct=55.0,
-        stocks_changed=875,
-        stocks_analyzed=1591,
-        severity=StructuralBreakSeverity.MEANINGFUL,
-        interpretation="Meaningful structural change — approaching but below major threshold",
-    ),
-    ("Post-COVID", "Disinflation"): RegimeTransitionNode(
-        node_id="transition:Post-COVID__Disinflation",
-        regime_from=RegimeName.POST_COVID,
-        regime_to=RegimeName.DISINFLATION,
-        procrustes_disparity=0.397,
-        common_ticker_count=1591,
-        migration_pct=68.0,    # any-change across all periods
-        stocks_changed=1082,
-        stocks_analyzed=1591,
-        severity=StructuralBreakSeverity.MAJOR,
-        interpretation="Major regime change — Procrustes 0.397 exceeds 0.30 recalibration threshold",
-    ),
-    ("Rate Shock", "Disinflation"): RegimeTransitionNode(
-        node_id="transition:Rate Shock__Disinflation",
-        regime_from=RegimeName.RATE_SHOCK,
-        regime_to=RegimeName.DISINFLATION,
-        procrustes_disparity=0.207,
-        common_ticker_count=1636,
-        migration_pct=30.4,
-        stocks_changed=484,
-        stocks_analyzed=1591,
-        severity=StructuralBreakSeverity.MEANINGFUL,
-        interpretation="Meaningful structural change — adjacent-period normalization, larger universe overlap",
-    ),
-}
-
-# ── Structural Break Node (only one in current data) ─────────────────────────
-STRUCTURAL_BREAK_NODES: Dict[str, StructuralBreakNode] = {
-    "Post-COVID__Disinflation": StructuralBreakNode(
-        node_id="break:Post-COVID__Disinflation",
-        transition_node_id="transition:Post-COVID__Disinflation",
-        disparity=0.397,
-        severity=StructuralBreakSeverity.MAJOR,
-        recalibration_flag=True,
-    ),
-}
-
-# ── Early Warning Node (Disinflation — Elevated crowding) ────────────────────
-EARLY_WARNING_NODES: Dict[str, EarlyWarningNode] = {
-    "Disinflation": EarlyWarningNode(
-        node_id="warning:Disinflation",
-        regime=RegimeName.DISINFLATION,
-        triggered=True,
-        crowding_elevated=True,      # score 68 → Elevated (>=50 threshold)
-        procrustes_elevated=True,    # 0.397 major break from Post-COVID
-        migration_elevated=True,     # 68% any-change migration rate
-        composite_risk_level=RiskLevel.ELEVATED,
-        alert_description=(
-            "Disinflation regime shows elevated crowding (score 68), "
-            "a major structural break from Post-COVID (Procrustes 0.397), "
-            "and high quadrant migration (68% of tracked universe). "
-            "Recalibration of factor model recommended."
-        ),
-    ),
-}
+# Concrete node instances are NOT defined in this schema file.
+#
+# The ESDS Knowledge Graph is populated dynamically from live
+# analytics outputs during graph construction in:
+#
+#     kg_builder.py
+#
+# This schema defines only the ontology structure.
 
 
 # =============================================================================
@@ -966,67 +598,36 @@ EARLY_WARNING_NODES: Dict[str, EarlyWarningNode] = {
 
 def validate_schema() -> Dict[str, int]:
     """
-    Count all canonical nodes and verify internal consistency.
-    Run this to confirm the schema is self-consistent before building the graph.
+    Validate that ontology classes and enums exist.
+
+    This file defines only the ESDS knowledge graph schema.
+    Node instances are created dynamically in kg_builder.py.
     """
-    counts = {
-        "MarketRegimeNode":      len(REGIME_NODES),
-        "FactorAxisNode":        len(AXIS_NODES),
-        "QuadrantNode":          len(QUADRANT_NODES),
-        "FactorNode":            len(FACTOR_NODES),
-        "FactorCategoryNode":    len(CATEGORY_NODES),
-        "CrowdingScoreNode":     len(CROWDING_NODES),
-        "RegimeTransitionNode":  len(TRANSITION_NODES),
-        "StructuralBreakNode":   len(STRUCTURAL_BREAK_NODES),
-        "EarlyWarningNode":      len(EARLY_WARNING_NODES),
-        # Dynamic nodes (populated during build, not catalogued here):
-        # StockNode, StockRegimePositionNode, ClusterNode,
-        # PCAModelNode, KMeansModelNode, NarrativeOutputNode
+
+    checks = {
+        "RegimeName": len(RegimeName),
+        "QuadrantID": len(QuadrantID),
+        "FactorCategoryName": len(FactorCategoryName),
+        "RiskLevel": len(RiskLevel),
+        "StructuralBreakSeverity": len(StructuralBreakSeverity),
+        "AITier": len(AITier),
     }
-    total_static = sum(counts.values())
 
-    # Consistency checks
-    assert len(FACTOR_NODES) == 11, \
-        f"Expected 11 factors (FEATURE_COLUMNS), got {len(FACTOR_NODES)}"
-    assert len(QUADRANT_NODES) == 4, \
-        f"Expected 4 quadrants, got {len(QUADRANT_NODES)}"
-    assert len(REGIME_NODES) == 3, \
-        f"Expected 3 regimes, got {len(REGIME_NODES)}"
-    assert len(AXIS_NODES) == 3, \
-        f"Expected 3 PC axes (N_COMPONENTS=3), got {len(AXIS_NODES)}"
-    assert len(CROWDING_NODES) == 3, \
-        f"Expected one crowding score per regime, got {len(CROWDING_NODES)}"
-    assert len(TRANSITION_NODES) == 3, \
-        f"Expected 3 pairwise transitions (C(3,2)), got {len(TRANSITION_NODES)}"
+    assert checks["RegimeName"] == 3
+    assert checks["QuadrantID"] == 4
 
-    # Verify all factor categories account for all 11 features
-    all_categorized = [f for node in CATEGORY_NODES.values() for f in node.members]
-    assert len(all_categorized) == 11, \
-        f"Category members should total 11, got {len(all_categorized)}"
-    assert set(all_categorized) == set(FACTOR_NODES.keys()), \
-        "Category members do not match FACTOR_NODES keys"
+    checks["TOTAL_ENUMS"] = sum(checks.values())
 
-    # Verify Appendix B values embedded correctly
-    assert TRANSITION_NODES[("Post-COVID", "Disinflation")].procrustes_disparity == 0.397
-    assert CROWDING_NODES["Disinflation"].score == 68.0
-    assert CROWDING_NODES["Disinflation"].risk_level == RiskLevel.ELEVATED
-
-    counts["TOTAL_STATIC_NODES"] = total_static
-    return counts
-
+    return checks
 
 if __name__ == "__main__":
+
     counts = validate_schema()
-    print("=== kg_schema.py — Schema Validation ===\n")
+
+    print("=== ESDS Knowledge Graph Schema ===\n")
+
     for name, count in counts.items():
-        if name == "TOTAL_STATIC_NODES":
-            print(f"\n  {'─'*36}")
-        print(f"  {name:<30} {count}")
-    print("\n  All assertions passed. Schema is self-consistent.")
-    print(f"\n  Dynamic nodes (populated during kg_builder.py):")
-    print(f"  {'StockNode':<30} ~1,738 (full universe)")
-    print(f"  {'StockRegimePositionNode':<30} ~1,738 × 3 regimes")
-    print(f"  {'ClusterNode':<30} 4 clusters × 3 regimes = 12")
-    print(f"  {'PCAModelNode':<30} 3 (one per regime)")
-    print(f"  {'KMeansModelNode':<30} 3 (one per regime)")
-    print(f"  {'NarrativeOutputNode':<30} 1 per stock queried (Tier 1 only)")
+        print(f"{name:<25} {count}")
+
+    print("\nSchema validation successful.")
+    print("Node instances will be created dynamically in kg_builder.py.")
