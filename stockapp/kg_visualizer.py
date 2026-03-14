@@ -171,7 +171,10 @@ def _lookup_procrustes(a: str, b: str):
     """Return procrustes row for a pair, or None."""
     key = id(st.session_state.get("procrustes_results"))
     pm  = _cached_procrustes_map(key)
-    return pm.get((a, b)) or pm.get((b, a))
+    result = pm.get((a, b))
+    if result is None:
+        result = pm.get((b, a))
+    return result
 
 
 def _crowding_score_live(period_name: str):
