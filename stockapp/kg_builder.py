@@ -39,7 +39,7 @@ Source references:
   period_analysis.py — _run_pca_for_period(), compute_procrustes_table(),
                        compute_quadrant_migration(), SUB_PERIODS
   narrative_engine.py — generate_narrative() four-section output
-  Appendix B      — all numeric ground-truth values embedded below
+  Appendix B      — empirical reference values used during development
 """
 
 from __future__ import annotations
