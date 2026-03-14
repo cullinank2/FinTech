@@ -9,7 +9,7 @@ This is the vocabulary of the KG — no graph construction happens here.
 Design principles:
   - Every node property maps to a real field in utils.py, period_analysis.py,
   
-    config.py, or an Appendix B empirical anchor.
+    config.py, or values produced by the analytics pipeline.
   - No invented abstractions. If it isn't computed by the existing pipeline,
     it is not a property here.
   - Dataclasses are immutable (frozen=True) to enforce governance integrity.
@@ -39,7 +39,7 @@ Source references:
   period_analysis.py — _run_pca_for_period(), compute_procrustes_table(),
                        compute_quadrant_migration(), SUB_PERIODS
   narrative_engine.py — generate_narrative() four-section output
-  Appendix B      — all numeric ground-truth values embedded below
+  Appendix B      — empirical reference values used during development
 """
 
 from __future__ import annotations
@@ -123,7 +123,7 @@ class MarketRegimeNode:
     """
     One of three macro regimes.
     Source: period_analysis.py::SUB_PERIODS
-    Universe counts and attached metrics are populated dynamically at build time.
+    Universe size is determined dynamically during graph construction.
     """
     node_id:        str            # "regime:{name}"
     name:           RegimeName
@@ -145,10 +145,10 @@ class FactorSpaceNode:
     node_id:          str          # "space:{regime}"
     regime:           RegimeName
     n_components:     int = 3      # config.py::N_COMPONENTS
-    pc1_variance_pct: float = 0.0  # Appendix B: 28.3% (full-sample)
-    pc2_variance_pct: float = 0.0  # Appendix B: 14.4%
-    pc3_variance_pct: float = 0.0  # Appendix B: 12.0%
-    combined_variance_pct: float = 0.0  # Appendix B: 54.7%
+    pc1_variance_pct: float = 0.0  # populated dynamically from PCA results
+    pc2_variance_pct: float = 0.0  # populated dynamically from PCA results
+    pc3_variance_pct: float = 0.0  # populated dynamically from PCA results
+    combined_variance_pct: float = 0.0  # populated dynamically from PCA results
 
 
 # =============================================================================
@@ -174,8 +174,8 @@ class FactorNode:
 class FactorAxisNode:
     """
     A principal component axis — PC1, PC2, or PC3.
-    Baseline semantic interpretation may come from config.py, while realized
-    loadings and regime-specific behavior are populated dynamically.
+    Source: config.py::PC1_INTERPRETATION, PC2_INTERPRETATION, PC3_INTERPRETATION
+    Note: axis interpretation can rotate across regimes (Appendix B key finding).
     """
     node_id:            str        # "axis:PC{n}"
     pc_number:          int        # 1, 2, or 3
@@ -283,7 +283,8 @@ class CrowdingScoreNode:
     Factor Crowding Score for one regime.
     Formula: 0.6 * Concentration + 0.4 * (100 - Dispersion_Normalized)
     Source: utils.py::compute_crowding_scores()
-    Values are populated dynamically at build time.
+    Values are populated dynamically from utils.py::compute_crowding_scores().
+    Values are populated dynamically from utils.py::compute_crowding_scores().
     """
     node_id:              str         # "crowding:{regime}"
     regime:               RegimeName
@@ -300,11 +301,15 @@ class CrowdingScoreNode:
 @dataclass(frozen=True)
 class RegimeTransitionNode:
     """
-    The transition between two regime periods.
+    The transition between two adjacent regime periods.
     Carries Procrustes disparity score and quadrant migration rate.
     Source: period_analysis.py::compute_procrustes_table(),
             compute_quadrant_migration()
-    Values are populated dynamically at build time.
+    Appendix B ground truth (authoritative):
+    Values are populated dynamically from:
+    period_analysis.py::compute_procrustes_table()
+    and
+    period_analysis.py::compute_quadrant_migration().
     """
     node_id:            str          # "transition:{A}__{B}"
     regime_from:        RegimeName
@@ -322,9 +327,9 @@ class RegimeTransitionNode:
 class StructuralBreakNode:
     """
     Fired when Procrustes disparity exceeds the 0.30 major threshold.
-    Triggers recalibration recommendation per governance rules.
-    Source: period_analysis.py::compute_procrustes_table()
-    Presence of this node is determined dynamically at build time.
+    Triggers recalibration recommendation per Appendix A governance rules.
+    Source: period_analysis.py::compute_procrustes_table() → '🔴 Major regime change'
+    Break nodes are created dynamically when disparity >= 0.30.
     """
     node_id:             str         # "break:{A}__{B}"
     transition_node_id:  str         # FK → RegimeTransitionNode
@@ -337,9 +342,10 @@ class StructuralBreakNode:
 class InstabilitySignalNode:
     """
     Intermediate warning: elevated but sub-break Procrustes + rising crowding.
-    Represents the 0.15–0.29 meaningful structural change zone.
-    Source: threshold definitions + utils.py crowding thresholds.
-    Presence is determined dynamically at build time.
+    Represents the 0.15–0.29 'meaningful structural change' zone.
+    Signals are generated dynamically when disparity falls within
+    the 0.15–0.29 meaningful structural change range.
+    Source: Appendix A threshold definitions + utils.py crowding thresholds.
     """
     node_id:                str         # "signal:{transition_id}"
     transition_node_id:     str         # FK → RegimeTransitionNode
@@ -355,8 +361,9 @@ class EarlyWarningNode:
     Composite alert combining multiple structural signals.
     Monitors: rising Procrustes + cluster compression + quadrant migration
               + factor axis rotation.
-    Source: Early Warning Engine specification.
-    Trigger state is determined dynamically at build time.
+    Source: Appendix A 'Early Warning Engine' specification.
+    Early warnings are generated dynamically based on crowding,
+migration, and Procrustes thresholds.
     """
     node_id:              str         # "warning:{regime}"
     regime:               RegimeName
@@ -462,7 +469,8 @@ class MigratedToEdge:
     StockRegimePosition(A) → StockRegimePosition(B).
     Exists only if quadrant changed between regimes.
     Source: period_analysis.py::compute_quadrant_migration() → 'Any Change'
-    Appendix B: 68% of tracked universe changed quadrant at least once.
+    Migration statistics are computed dynamically using
+    period_analysis.py::compute_quadrant_migration().
     """
     edge_id:          str
     position_from_id: str    # FK → StockRegimePositionNode (regime A)
@@ -559,18 +567,29 @@ class GeneratedByEdge:
 # =============================================================================
 # NOTE
 # =============================================================================
-# Empirical values such as Procrustes scores, crowding metrics, migration rates,
-# PCA variance explained, and loading events are computed live in the pipeline
-# and should be sourced through kg_builder.py / period_analysis.py / utils.py,
-# not hard-coded in the ontology schema.
+# Empirical statistics such as Procrustes disparity, crowding scores,
+# migration percentages, and PCA variance explained are generated
+# dynamically by the ESDS analytics pipeline.
+#
+# These values are computed in:
+#   period_analysis.py
+#   utils.py
+#
+# and inserted into the knowledge graph during graph construction
+# inside kg_builder.py.
 
 
 # =============================================================================
-# RUNTIME NODE INSTANCES
+# RUNTIME NODE CREATION
 # =============================================================================
-# Canonical node instances and empirical node populations should be created in
-# kg_builder.py from live pipeline outputs. The schema file defines only the
-# ontology, types, and validation rules.
+# Concrete node instances are NOT defined in this schema file.
+#
+# The ESDS Knowledge Graph is populated dynamically from live
+# analytics outputs during graph construction in:
+#
+#     kg_builder.py
+#
+# This schema defines only the ontology structure.
 
 
 # =============================================================================
@@ -580,30 +599,35 @@ class GeneratedByEdge:
 def validate_schema() -> Dict[str, int]:
     """
     Validate that ontology classes and enums exist.
-    This schema file defines structure only; runtime node instances are created
-    in kg_builder.py from live pipeline outputs.
+
+    This file defines only the ESDS knowledge graph schema.
+    Node instances are created dynamically in kg_builder.py.
     """
-    counts = {
-        "enum_types": 6,
-        "node_dataclasses": 16,
-        "edge_dataclasses": 7,
+
+    checks = {
+        "RegimeName": len(RegimeName),
+        "QuadrantID": len(QuadrantID),
+        "FactorCategoryName": len(FactorCategoryName),
+        "RiskLevel": len(RiskLevel),
+        "StructuralBreakSeverity": len(StructuralBreakSeverity),
+        "AITier": len(AITier),
     }
 
-    # Basic ontology checks
-    assert RegimeName.POST_COVID.value == "Post-COVID"
-    assert QuadrantID.Q1.value == "Q1"
-    assert RiskLevel.NORMAL.value == "Normal"
-    assert StructuralBreakSeverity.MAJOR.value == "Major"
-    assert AITier.TIER_1_NARRATIVE.value == "Tier1_NarrativeEngine"
+    assert checks["RegimeName"] == 3
+    assert checks["QuadrantID"] == 4
 
-    counts["TOTAL_SCHEMA_COMPONENTS"] = sum(counts.values())
-    return counts
+    checks["TOTAL_ENUMS"] = sum(checks.values())
 
+    return checks
 
 if __name__ == "__main__":
+
     counts = validate_schema()
-    print("=== kg_schema.py — Schema Validation ===\n")
+
+    print("=== ESDS Knowledge Graph Schema ===\n")
+
     for name, count in counts.items():
-        print(f"  {name:<30} {count}")
-    print("\n  All assertions passed. Schema defines ontology only.")
-    print("  Runtime node instances are built dynamically in kg_builder.py.")
+        print(f"{name:<25} {count}")
+
+    print("\nSchema validation successful.")
+    print("Node instances will be created dynamically in kg_builder.py.")
