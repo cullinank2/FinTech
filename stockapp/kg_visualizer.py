@@ -2,25 +2,19 @@
 kg_visualizer.py  —  ESDS Knowledge Graph: Phase 3
 ====================================================
 Renders the ESDS knowledge graph as an interactive Pyvis network
-in a dedicated Streamlit tab alongside Cluster Overview and Period Comparison.
-
-Default view: Static ontology — regimes, factors, mechanisms, quadrants,
-and the structural relationships that define the ESDS architecture.
-No ticker nodes are shown unless the user explicitly requests them.
-
-Usage (from app.py):
-    from kg_visualizer import render_kg_tab
+in a dedicated Streamlit tab.
 
 Architecture:
-    - Imports kg_schema (Phase 1) for node/edge type definitions
-    - Imports kg_builder (Phase 2) for live graph construction
-    - Pyvis renders to a temporary HTML file, served via st.components.v1.html
-    - Node color and size encode layer / node type
-    - Edge width and style encode relationship strength
-    - Interactive controls: zoom, pan, hover tooltips, filter sidebar
+    - kg_schema  (Phase 1): node/edge type definitions + catalog dicts
+    - kg_builder (Phase 2): live graph construction from session state
+    - kg_visualizer (Phase 3): Pyvis rendering + Streamlit UI
 
-Pyvis install:
-    pip install pyvis  (add to requirements.txt)
+All empirical data (Procrustes scores, crowding scores, PC variance,
+migration rates, universe count, factor loadings) flows from:
+  PRIMARY:  st.session_state (live pipeline outputs)
+  FALLBACK: Appendix B constants in kg_schema (when pipeline hasn't run)
+
+No hard-coded Appendix B values appear in this file.
 """
 
 from __future__ import annotations
@@ -34,607 +28,505 @@ try:
 except ImportError:
     PYVIS_AVAILABLE = False
 
+# ── Schema import ─────────────────────────────────────────────────────────────
 try:
     from kg_schema import (
         NodeType, EdgeType,
-        REGIME_NODES, FACTOR_NODES, QUADRANT_NODES,
-        MECHANISM_NODES, EMPIRICAL_ANCHORS,
+        REGIME_NODES, FACTOR_NODES, QUADRANT_NODES, MECHANISM_NODES,
+        PLATFORM_NODES, AXIS_NODES, CATEGORY_NODES,
+        APPENDIX_B_PROCRUSTES, APPENDIX_B_CROWDING, APPENDIX_B_PC_VARIANCE,
+        PROCRUSTES_MEANINGFUL, CROWDING_THRESHOLD_ELEVATED, CROWDING_THRESHOLD_HIGH,
+        SHORT_PERIOD_MAP,
     )
     KG_SCHEMA_AVAILABLE = True
-except Exception:
+except Exception as _schema_err:
     KG_SCHEMA_AVAILABLE = False
+    print(f"[kg_visualizer] kg_schema import failed: {_schema_err}")
 
+# ── Builder import ────────────────────────────────────────────────────────────
 try:
-    from kg_builder import build_kg, KGResult
+    from kg_builder import (
+        build_kg, build_static_ontology_graph, KGResult,
+        _safe_float,                # single definition lives in kg_builder
+        _get_procrustes_row, _get_crowding_row, _get_migration_row,
+        _get_pc_variance, _get_universe_count, _get_live_factor_axis_map,
+    )
     KG_BUILDER_AVAILABLE = True
 except Exception as _kg_builder_err:
     KG_BUILDER_AVAILABLE = False
-
-
-# ── Visual design constants ───────────────────────────────────────────────────
-
-# Node colors by layer (hex, no #)
-LAYER_COLORS = {
-    "regime":     "#00b4d8",   # teal-blue  — macro context
-    "factor":     "#90e0ef",   # light teal — factor signals
-    "quadrant":   "#f4a261",   # amber      — quadrant positions
-    "mechanism":  "#e63946",   # red        — structural mechanisms
-    "metric":     "#2ec4b6",   # green-teal — empirical metrics
-    "platform":   "#6d6875",   # purple     — institutional layer
-    "default":    "#adb5bd",   # grey       — fallback
-}
-
-# Node sizes by type
-LAYER_SIZES = {
-    "regime":     40,
-    "factor":     24,
-    "quadrant":   30,
-    "mechanism":  36,
-    "metric":     20,
-    "platform":   32,
-    "default":    18,
-}
-
-# Edge colors by relationship class
-EDGE_COLORS = {
-    "structural":   "#00b4d8",
-    "temporal":     "#f4a261",
-    "crowding":     "#e63946",
-    "membership":   "#90e0ef",
-    "governance":   "#6d6875",
-    "default":      "#495057",
-}
-
-# ── Live diagnostics helpers ─────────────────────────────────────────────────
-
-def _safe_float(value, default=None):
-    try:
-        if value is None:
+    print(f"[kg_visualizer] kg_builder import failed: {_kg_builder_err}")
+    # Minimal fallback so the rest of the file won't crash on name errors
+    def _safe_float(val, default=0.0):
+        try:
+            return float(str(val).replace('%','').replace(',','').strip())
+        except Exception:
             return default
-        return float(str(value).replace("%", "").replace(",", "").strip())
-    except Exception:
-        return default
 
+
+# =============================================================================
+# VISUAL DESIGN CONSTANTS
+# =============================================================================
+
+LAYER_COLORS = {
+    "regime":           "#00b4d8",
+    "factor":           "#90e0ef",
+    "quadrant":         "#f4a261",
+    "mechanism":        "#e63946",
+    "platform":         "#6d6875",
+    "axis":             "#2ec4b6",
+    "category":         "#48cae4",
+    "crowding":         "#e63946",
+    "transition":       "#f4a261",
+    "structural_break": "#e63946",
+    "early_warning":    "#e63946",
+    "stock":            "#b7e4c7",
+    "cluster":          "#52b788",
+    "default":          "#adb5bd",
+}
+
+LAYER_SIZES = {
+    "regime":    40,
+    "factor":    24,
+    "quadrant":  30,
+    "mechanism": 36,
+    "platform":  32,
+    "axis":      22,
+    "category":  20,
+    "stock":     10,
+    "cluster":   18,
+    "default":   18,
+}
+
+EDGE_COLORS = {
+    "regime_transition":   "#f4a261",
+    "crowding_level":      "#e63946",
+    "factor_loading":      "#90e0ef",
+    "belongs_to_category": "#48cae4",
+    "triggers_break":      "#e63946",
+    "triggers_warning":    "#e63946",
+    "quadrant_assignment": "#b7e4c7",
+    "cluster_membership":  "#52b788",
+    "belongs_to":          "#52b788",
+    "migrates_to":         "#f4a261",
+    "governs":             "#6d6875",
+    "complements":         "#6d6875",
+    "default":             "#495057",
+}
+
+_PYVIS_OPTIONS = """
+{
+  "physics": {
+    "enabled": true,
+    "solver": "forceAtlas2Based",
+    "forceAtlas2Based": {
+      "gravitationalConstant": -120,
+      "centralGravity": 0.005,
+      "springLength": 180,
+      "springConstant": 0.04,
+      "damping": 0.5,
+      "avoidOverlap": 0.5
+    },
+    "stabilization": { "enabled": true, "iterations": 250, "updateInterval": 25 }
+  },
+  "interaction": {
+    "hover": true,
+    "tooltipDelay": 200,
+    "navigationButtons": true,
+    "keyboard": { "enabled": true }
+  },
+  "edges": {
+    "smooth": { "enabled": true, "type": "dynamic" },
+    "arrows": { "to": { "enabled": true, "scaleFactor": 0.7 } },
+    "font": { "size": 10, "color": "#adb5bd", "face": "Courier New" }
+  },
+  "nodes": {
+    "font": { "size": 12, "color": "#e6edf3", "face": "Calibri" },
+    "borderWidth": 2,
+    "shadow": { "enabled": true, "size": 8, "x": 2, "y": 2 }
+  }
+}
+"""
+
+
+# =============================================================================
+# SESSION STATE ACCESSORS
+# =============================================================================
 
 @st.cache_data(show_spinner=False)
-def _get_procrustes_map() -> dict:
+def _cached_procrustes_map(_key) -> dict:
+    """Cached extraction of procrustes_results into (A,B)->row map."""
     df = st.session_state.get("procrustes_results")
-    if df is None or len(df) == 0:
+    if df is None or df.empty:
         return {}
-
     out = {}
     for _, row in df.iterrows():
-        a = row.get("Period A")
-        b = row.get("Period B")
+        a = str(row.get("Period A", "")).strip()
+        b = str(row.get("Period B", "")).strip()
         if a and b:
             out[(a, b)] = row
     return out
 
 
 def _lookup_procrustes(a: str, b: str):
-    pro_map = _get_procrustes_map()
-    return pro_map.get((a, b)) or pro_map.get((b, a))
+    """Return procrustes row for a pair, or None."""
+    key = id(st.session_state.get("procrustes_results"))
+    pm  = _cached_procrustes_map(key)
+    return pm.get((a, b)) or pm.get((b, a))
 
 
-def _get_migration_map() -> dict:
+def _crowding_score_live(period_name: str):
+    """Return live crowding score float or None."""
+    for key in ["crowding_df", "crowding_results"]:
+        df = st.session_state.get(key)
+        if df is not None and not df.empty:
+            for _, row in df.iterrows():
+                p = str(row.get("period", row.get("Period", ""))).strip()
+                if p == period_name:
+                    return _safe_float(
+                        row.get("crowding_score") or row.get("score"), None
+                    )
+    return None
+
+
+def _migration_row_live(transition_str: str):
+    """Return migration summary row for a transition string like 'Post-COVID -> Rate Shock'."""
     df = st.session_state.get("migration_summary")
-    if df is None or len(df) == 0:
-        return {}
-
-    out = {}
-    for _, row in df.iterrows():
-        key = row.get("Transition")
-        if key:
-            out[key] = row
-    return out
-
-
-def _get_crowding_map() -> dict:
-    df = st.session_state.get("crowding_df")
-    if df is None:
-        df = st.session_state.get("crowding_results")
-
-    if df is None or len(df) == 0:
-        return {}
-
-    out = {}
-    for _, row in df.iterrows():
-        period = row.get("period") or row.get("Period")
-        if period:
-            out[period] = row
-    return out
-
-
-def _crowding_score(period_name: str):
-    crowding = _get_crowding_map()
-    row = crowding.get(period_name)
-    if row is None:
+    if df is None or df.empty:
         return None
-    return _safe_float(
-    row.get("crowding_score")
-    or row.get("score")
-    or row.get("Crowding Score")
-)
+    for _, row in df.iterrows():
+        t = str(row.get("Transition", "")).replace("→", "->").strip()
+        if t == transition_str:
+            return row
+    return None
 
 
-def _migration_row(transition: str):
-    return _get_migration_map().get(transition)
+def _pc_variance_live() -> dict:
+    """Return {PC1: float, PC2: float, PC3: float} from live pca_model or Appendix B."""
+    pca_model = st.session_state.get("pca_model")
+    if pca_model is not None:
+        try:
+            ratios = pca_model.explained_variance_ratio_
+            return {f"PC{i+1}": round(float(ratios[i]) * 100, 1)
+                    for i in range(min(len(ratios), 3))}
+        except Exception:
+            pass
+    return {k: v for k, v in APPENDIX_B_PC_VARIANCE.items() if k.startswith("PC")}
 
 
-# ── Node definitions for the static ontology ─────────────────────────────────
-
-def _regime_nodes() -> list[dict]:
-    pc_rs = _lookup_procrustes("Post-COVID", "Rate Shock")
-    pc_d = _lookup_procrustes("Post-COVID", "Disinflation")
-    rs_d = _lookup_procrustes("Rate Shock", "Disinflation")
-
-    pc_rs_mig = _migration_row("Post-COVID → Rate Shock")
-    rs_d_mig = _migration_row("Rate Shock → Disinflation")
-
-    pc_crowd = _crowding_score("Post-COVID")
-    rs_crowd = _crowding_score("Rate Shock")
-    d_crowd = _crowding_score("Disinflation")
-
-    pc_rs_text = (
-        f"Procrustes vs Rate Shock: {pc_rs['Disparity']:.3f} "
-        f"({int(pc_rs['Common Tickers']):,} common stocks)"
-        if pc_rs is not None else "Procrustes vs Rate Shock: unavailable"
-    )
-    pc_d_text = (
-        f"Procrustes vs Disinflation: {pc_d['Disparity']:.3f} "
-        f"({int(pc_d['Common Tickers']):,} common stocks)"
-        if pc_d is not None else "Procrustes vs Disinflation: unavailable"
-    )
-    rs_d_text = (
-        f"Procrustes vs Disinflation: {rs_d['Disparity']:.3f} "
-        f"({int(rs_d['Common Tickers']):,} common stocks)"
-        if rs_d is not None else "Procrustes vs Disinflation: unavailable"
-    )
-
-    pc_mig_text = (
-        f"Migration to Rate Shock: {pc_rs_mig['Migration Rate']} "
-        f"({int(pc_rs_mig['Changed Quadrant']):,}/{int(pc_rs_mig['Stocks Analyzed']):,} stocks)"
-        if pc_rs_mig is not None else "Migration to Rate Shock: unavailable"
-    )
-    rs_mig_text = (
-        f"Migration to Disinflation: {rs_d_mig['Migration Rate']} "
-        f"({int(rs_d_mig['Changed Quadrant']):,}/{int(rs_d_mig['Stocks Analyzed']):,} stocks)"
-        if rs_d_mig is not None else "Migration to Disinflation: unavailable"
-    )
-
-    return [
-        {
-            "id": "regime_postcovid",
-            "label": "Post-COVID\n(Mar 2021–Jun 2022)",
-            "layer": "regime",
-            "tooltip": (
-                "Post-COVID regime\n"
-                f"{pc_rs_text}\n"
-                f"Crowding score: {pc_crowd:.1f}\n" if pc_crowd is not None else
-                "Post-COVID regime\n"
-                f"{pc_rs_text}\n"
-                "Crowding score: unavailable\n"
-            ) + pc_mig_text,
-        },
-        {
-            "id": "regime_rateshock",
-            "label": "Rate Shock\n(Jul 2022–Sep 2023)",
-            "layer": "regime",
-            "tooltip": (
-                "Rate Shock regime\n"
-                f"{rs_d_text}\n"
-                f"Crowding score: {rs_crowd:.1f}\n" if rs_crowd is not None else
-                "Rate Shock regime\n"
-                f"{rs_d_text}\n"
-                "Crowding score: unavailable\n"
-            ) + rs_mig_text,
-        },
-        {
-            "id": "regime_disinflation",
-            "label": "Disinflation\n(Oct 2023–Oct 2024)",
-            "layer": "regime",
-            "tooltip": (
-                "Disinflation regime\n"
-                f"{pc_d_text}\n"
-                f"Crowding score: {d_crowd:.1f}"
-                if d_crowd is not None else
-                "Disinflation regime\n"
-                f"{pc_d_text}\n"
-                "Crowding score: unavailable"
-            ),
-        },
-    ]
-
-def _factor_nodes() -> list[dict]:
-    factors = [
-        ("factor_ey",  "Earnings\nYield",        "Fundamental: sign reversal in Disinflation (PC2 flip: +0.211 → −0.364)"),
-        ("factor_btm", "Book-to-\nMarket",        "Fundamental: stable value anchor across regimes (PC2: +0.571 → +0.507 → +0.478)"),
-        ("factor_sp",  "Sales-to-\nPrice",        "Fundamental: strongest PC2 driver all three regimes"),
-        ("factor_roa", "ROA",                     "Profitability: primary PC1 signal"),
-        ("factor_gp",  "Gross\nProfitability",    "Profitability: reverses sign on PC3 in Rate Shock / Disinflation"),
-        ("factor_ctd", "Cash-to-\nDebt",          "Quality: top PC1 driver (0.387–0.427); near-zero on PC3 in later regimes"),
-        ("factor_dta", "Debt-to-\nAssets",        "Leverage: dominant PC3 driver; flips sign Post-COVID → Rate Shock (−0.466 → +0.723)"),
-        ("factor_mom", "12-Mo\nMomentum",         "Behavioral: included as structural complement"),
-        ("factor_vol", "60-Day\nVolatility",      "Behavioral: dominant PC3 in Post-COVID (+0.572); attenuates in later regimes"),
-        ("factor_liq", "Liquidity",               "Behavioral: complement signal"),
-        ("factor_pe",  "P/E Ratio",               "Behavioral: complement signal"),
-    ]
-    return [
-        {
-            "id": fid,
-            "label": label,
-            "layer": "factor",
-            "tooltip": tip,
-        }
-        for fid, label, tip in factors
-    ]
+def _universe_count_live() -> int:
+    """Return live universe count from pca_df or Appendix B fallback."""
+    pca_df = st.session_state.get("pca_df")
+    if pca_df is not None and not pca_df.empty:
+        return len(pca_df)
+    try:
+        from kg_schema import APPENDIX_B_UNIVERSE_COUNT
+        return APPENDIX_B_UNIVERSE_COUNT
+    except Exception:
+        return 0
 
 
-def _quadrant_nodes() -> list[dict]:
-    return [
-        {
-            "id": "q1",
-            "label": "Q1\nValue Trap",
-            "layer": "quadrant",
-            "tooltip": "PC1 < 0, PC2 > 0 — low profitability, value-tilted",
-        },
-        {
-            "id": "q2",
-            "label": "Q2\nDistressed\nGrowth",
-            "layer": "quadrant",
-            "tooltip": "PC1 < 0, PC2 < 0 — low profitability, growth-tilted",
-        },
-        {
-            "id": "q3",
-            "label": "Q3\nQuality\nValue",
-            "layer": "quadrant",
-            "tooltip": "PC1 > 0, PC2 > 0 — high profitability, value-tilted",
-        },
-        {
-            "id": "q4",
-            "label": "Q4\nQuality\nGrowth",
-            "layer": "quadrant",
-            "tooltip": "PC1 > 0, PC2 < 0 — high profitability, growth-tilted (e.g. GE: PC1 0.412, PC2 −0.659)",
-        },
-    ]
+def _factor_loading_tooltip(factor_code: str) -> str:
+    """
+    Build a tooltip for a factor node using live pca_loadings from session state.
+    Falls back to generic category description if loadings not available.
+    """
+    loadings = st.session_state.get("pca_loadings")
+    lines = []
+    if loadings:
+        for pc in ["PC1", "PC2", "PC3"]:
+            pc_data  = loadings.get(pc, {})
+            pos_dict = pc_data.get("positive", {})
+            neg_dict = pc_data.get("negative", {})
+            val = pos_dict.get(factor_code) or neg_dict.get(factor_code)
+            if val is not None:
+                sign = "+" if val >= 0 else ""
+                lines.append(f"{pc}: {sign}{val:.3f}")
+    if lines:
+        return f"Live loadings:\n" + "\n".join(lines)
+    # Fallback: use display name from factor node in schema
+    node = FACTOR_NODES.get(factor_code) if KG_SCHEMA_AVAILABLE else None
+    if node:
+        return f"{node.display_name} | {node.category.value} | {node.data_source}"
+    return factor_code
 
 
-def _structural_edges() -> list[dict]:
-    edges = []
+# =============================================================================
+# PYVIS GRAPH BUILDER — delegates to kg_builder for the actual graph
+# =============================================================================
 
-    pc_rs = _lookup_procrustes("Post-COVID", "Rate Shock")
-    pc_d = _lookup_procrustes("Post-COVID", "Disinflation")
-    rs_d = _lookup_procrustes("Rate Shock", "Disinflation")
-
-    def transition_edge(src_id, tgt_id, row):
-        if row is None:
-            return {
-                "from": src_id,
-                "to": tgt_id,
-                "label": "",
-                "color": EDGE_COLORS["temporal"],
-                "width": 1.5,
-            }
-
-        disparity = _safe_float(row.get("Disparity"), 0.0)
-        common = int(row.get("Common Tickers", 0))
-        return {
-            "from": src_id,
-            "to": tgt_id,
-            "label": f"{disparity:.3f}",
-            "title": f"{disparity:.3f} | {common:,} common stocks",
-            "color": EDGE_COLORS["temporal"],
-            "width": 1.5 + disparity * 6,
-        }
-
-    edges += [
-        transition_edge("regime_postcovid", "regime_rateshock", pc_rs),
-        transition_edge("regime_postcovid", "regime_disinflation", pc_d),
-        transition_edge("regime_rateshock", "regime_disinflation", rs_d),
-    ]
-
-    edges += [
-        {"from": "mech_pca", "to": "q1", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_pca", "to": "q2", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_pca", "to": "q3", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_pca", "to": "q4", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-    ]
-
-    pc1_drivers = ["factor_ctd", "factor_roa", "factor_ey"]
-    pc2_drivers = ["factor_sp", "factor_btm", "factor_ey"]
-    pc3_drivers = ["factor_dta", "factor_gp", "factor_vol"]
-
-    for f in pc1_drivers:
-        edges.append({"from": f, "to": "mech_pca", "label": "PC1", "color": EDGE_COLORS["structural"], "width": 2})
-    for f in pc2_drivers:
-        edges.append({"from": f, "to": "mech_pca", "label": "PC2", "color": EDGE_COLORS["membership"], "width": 2})
-    for f in pc3_drivers:
-        edges.append({"from": f, "to": "mech_pca", "label": "PC3", "color": EDGE_COLORS["governance"], "width": 2})
-
-    edges += [
-        {"from": "mech_procrustes", "to": "regime_postcovid", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_procrustes", "to": "regime_rateshock", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-        {"from": "mech_procrustes", "to": "regime_disinflation", "label": "", "color": EDGE_COLORS["structural"], "width": 1.5},
-    ]
-
-    for period_id, period_name in [
-        ("regime_postcovid", "Post-COVID"),
-        ("regime_rateshock", "Rate Shock"),
-        ("regime_disinflation", "Disinflation"),
-    ]:
-        score = _crowding_score(period_name)
-        label = f"{score:.1f}" if score is not None else ""
-        width = 1.5 + (score / 25 if score is not None else 0)
-        edges.append({
-            "from": "mech_crowding",
-            "to": period_id,
-            "label": label,
-            "title": f"Crowding score: {score:.1f}" if score is not None else "Crowding unavailable",
-            "color": EDGE_COLORS["crowding"],
-            "width": width,
-        })
-
-    edges += [
-        {"from": "plat_esds", "to": "mech_pca", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_procrustes", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_crowding", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_kmeans", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "mech_quadrant", "label": "", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "plat_barra", "label": "complements", "color": EDGE_COLORS["governance"], "width": 2},
-        {"from": "plat_esds", "to": "plat_narrative", "label": "Tier 1", "color": EDGE_COLORS["governance"], "width": 1.5},
-        {"from": "plat_esds", "to": "plat_chatbot", "label": "Tier 2", "color": EDGE_COLORS["governance"], "width": 1.5},
-    ]
-
-    return edges
-
-
-def _mechanism_nodes() -> list[dict]:
-    return [
-        {
-            "id": "mech_pca",
-            "label": "PCA\nStructural\nCoordinate System",
-            "layer": "mechanism",
-            "tooltip": "Principal component geometry defining factor space structure",
-        },
-        {
-            "id": "mech_procrustes",
-            "label": "Procrustes\nDisparity",
-            "layer": "mechanism",
-            "tooltip": "Rotation-invariant distance between factor spaces across regimes",
-        },
-        {
-            "id": "mech_crowding",
-            "label": "Geometric\nCrowding",
-            "layer": "mechanism",
-            "tooltip": "Spatial compression signal within PCA factor space",
-        },
-        {
-            "id": "mech_kmeans",
-            "label": "KMeans\nClustering",
-            "layer": "mechanism",
-            "tooltip": "Structural peer groups based on factor geometry",
-        },
-        {
-            "id": "mech_quadrant",
-            "label": "Quadrant\nClassification",
-            "layer": "mechanism",
-            "tooltip": "PC1 / PC2 quadrant classification of securities",
-        },
-    ]
-
-
-def _platform_nodes() -> list[dict]:
-    return [
-        {
-            "id": "plat_esds",
-            "label": "ESDS\nStructural\nVisibility Layer",
-            "layer": "platform",
-            "tooltip": (
-                "Equity Structural Diagnostics System\n"
-                "Complement to Barra / Aladdin / Axioma — not a replacement\n"
-                "~1,738 U.S. equities | Three macro regimes\n"
-                "Two-tier AI: Narrative Engine (governance) + Chatbot (practitioner)"
-            ),
-        },
-        {
-            "id": "plat_barra",
-            "label": "Barra / Aladdin\n/ Axioma",
-            "layer": "platform",
-            "tooltip": (
-                "Incumbent institutional risk platforms\n"
-                "Measure factor exposures; do not monitor structural character of factor space\n"
-                "ESDS sits alongside — not competing"
-            ),
-        },
-        {
-            "id": "plat_narrative",
-            "label": "Tier 1\nNarrative Engine\n(Deterministic)",
-            "layer": "platform",
-            "tooltip": (
-                "Rules-based governance artifact — no API key required\n"
-                "Versioned, auditable, CRO-level outputs\n"
-                "Not a generative chatbot — structural interpretive translation"
-            ),
-        },
-        {
-            "id": "plat_chatbot",
-            "label": "Tier 2\nAI Chatbot\n(Configurable)",
-            "layer": "platform",
-            "tooltip": (
-                "Configurable practitioner tool — requires OpenAI API key\n"
-                "Multi-turn conversational analysis\n"
-                "Separated from governance layer by design"
-            ),
-        },
-    ]
-
-
-# ── Pyvis graph builder ───────────────────────────────────────────────────────
-
-def _build_pyvis_network(height: str = "700px") -> Network:
-    """Build and return a configured Pyvis Network for the static ontology."""
+def _make_pyvis_net(height: str = "680px") -> Network:
     net = Network(
-        height=height,
-        width="100%",
-        bgcolor="#0d1117",
-        font_color="#e6edf3",
-        directed=True,
+        height=height, width="100%",
+        bgcolor="#0d1117", font_color="#e6edf3", directed=True,
     )
-
-    net.set_options("""
-    {
-      "physics": {
-        "enabled": true,
-        "solver": "forceAtlas2Based",
-        "forceAtlas2Based": {
-          "gravitationalConstant": -120,
-          "centralGravity": 0.005,
-          "springLength": 180,
-          "springConstant": 0.04,
-          "damping": 0.5,
-          "avoidOverlap": 0.5
-        },
-        "stabilization": {
-          "enabled": true,
-          "iterations": 250,
-          "updateInterval": 25
-        }
-      },
-      "interaction": {
-        "hover": true,
-        "tooltipDelay": 200,
-        "navigationButtons": true,
-        "keyboard": { "enabled": true }
-      },
-      "edges": {
-        "smooth": { "enabled": true, "type": "dynamic" },
-        "arrows": { "to": { "enabled": true, "scaleFactor": 0.7 } },
-        "font": { "size": 10, "color": "#adb5bd", "face": "Courier New" }
-      },
-      "nodes": {
-        "font": { "size": 12, "color": "#e6edf3", "face": "Calibri" },
-        "borderWidth": 2,
-        "shadow": { "enabled": true, "size": 8, "x": 2, "y": 2 }
-      }
-    }
-    """)
-
-    # Add all node groups
-    all_node_groups = [
-        _regime_nodes(),
-        _factor_nodes(),
-        _quadrant_nodes(),
-        _mechanism_nodes(),
-        _platform_nodes(),
-    ]
-
-    for group in all_node_groups:
-        for node in group:
-            layer = node.get("layer", "default")
-            color = LAYER_COLORS.get(layer, LAYER_COLORS["default"])
-            size  = LAYER_SIZES.get(layer, LAYER_SIZES["default"])
-            net.add_node(
-                node["id"],
-                label=node["label"],
-                title=node.get("tooltip", node["label"]),
-                color={
-                    "background": color,
-                    "border": "#ffffff",
-                    "highlight": {"background": "#ffffff", "border": color},
-                    "hover":     {"background": "#ffffff", "border": color},
-                },
-                size=size,
-                shape="dot",
-                mass=1.5,
-            )
-
-    # Add all edges
-    for edge in _structural_edges():
-        net.add_edge(
-            edge["from"],
-            edge["to"],
-            label=edge.get("label", ""),
-            color=edge.get("color", EDGE_COLORS["default"]),
-            width=edge.get("width", 1.5),
-            title=edge.get("title", edge.get("label", "")),
-        )
-
+    net.set_options(_PYVIS_OPTIONS)
     return net
 
 
-def _render_pyvis_to_html(net: Network) -> str:
-    """Return PyVis graph HTML directly."""
-    return net.generate_html()
-
-
-@st.cache_data()
-def _build_equity_graph_html_from_pipeline() -> str:
+def _populate_pyvis_from_networkx(net: Network, G) -> None:
     """
-    Build equity-augmented KG by running PCA for each period directly.
-    Mirrors the pattern used by the crowding module in app.py.
-    Cached so it only runs once per session.
+    Transfer all nodes and edges from a NetworkX DiGraph into a Pyvis Network.
+    Node visual properties are determined by node_type attribute.
+    """
+    for node_id, attrs in G.nodes(data=True):
+        ntype  = attrs.get("node_type", "default")
+        color  = LAYER_COLORS.get(ntype, LAYER_COLORS["default"])
+        size   = LAYER_SIZES.get(ntype, LAYER_SIZES["default"])
+        label  = attrs.get("label", str(node_id))
+
+        # Truncate long stock labels
+        if ntype == "stock" and len(label) > 6:
+            label = label[:6]
+
+        # Build tooltip from node attributes
+        tooltip_parts = [attrs.get("tooltip", "")] if attrs.get("tooltip") else []
+        for k, v in attrs.items():
+            if k not in ("label", "node_type", "tooltip") and v is not None:
+                tooltip_parts.append(f"{k}: {v}")
+        tooltip = "\n".join(tooltip_parts) or label
+
+        net.add_node(
+            str(node_id),
+            label = label,
+            title = tooltip,
+            color = {
+                "background": color,
+                "border":     "#ffffff",
+                "highlight":  {"background": "#ffffff", "border": color},
+                "hover":      {"background": "#ffffff", "border": color},
+            },
+            size  = size,
+            shape = "dot",
+            mass  = 1.5,
+        )
+
+    for src, tgt, attrs in G.edges(data=True):
+        etype  = attrs.get("edge_type", "")
+        ecolor = EDGE_COLORS.get(etype, EDGE_COLORS["default"])
+        width  = 1.5
+        # Scale edge width by relationship strength
+        if etype == "regime_transition":
+            d     = _safe_float(attrs.get("procrustes_disparity"), 0.0)
+            width = 1.5 + d * 6
+        elif etype == "crowding_level":
+            width = 1.5 + _safe_float(attrs.get("score"), 0.0) / 25
+        net.add_edge(
+            str(src), str(tgt),
+            label = attrs.get("label", ""),
+            color = ecolor,
+            width = width,
+            title = attrs.get("label", etype),
+        )
+
+
+@st.cache_data(show_spinner=False)
+def _build_static_graph_html(_cache_key) -> str:
+    """
+    Build the static ontology Pyvis graph via kg_builder.
+    Cached; cache is busted when session state changes (via _cache_key).
+    _cache_key should be a hash/id of the relevant session state keys.
     """
     if not KG_BUILDER_AVAILABLE:
-        return _build_cached_graph_html()
+        return "<p>kg_builder not available</p>"
+    try:
+        kg_result = build_static_ontology_graph()
+        net       = _make_pyvis_net(height="680px")
+        _populate_pyvis_from_networkx(net, kg_result.graph)
+        return net.generate_html()
+    except Exception as exc:
+        return f"<p>Static graph build error: {exc}</p>"
+
+
+def _static_graph_cache_key() -> int:
+    """
+    Derive a cache key from the session state keys that affect the static graph.
+    When any of these change (pipeline runs), the cached graph is invalidated.
+    """
+    relevant = (
+        id(st.session_state.get("procrustes_results")),
+        id(st.session_state.get("crowding_df")),
+        id(st.session_state.get("pca_model")),
+        id(st.session_state.get("migration_summary")),
+    )
+    return hash(relevant)
+
+
+def _build_equity_graph_html() -> str:
+    """
+    Build the equity-augmented graph using per-period scores_df from session state.
+    Checks session_state['period_scores'] first (set by app.py Option A).
+    Falls back to re-running _run_pca_for_period() if period_scores not available.
+    """
+    if not KG_BUILDER_AVAILABLE:
+        return _build_static_graph_html(_static_graph_cache_key())
 
     try:
-        from period_analysis import _run_pca_for_period
-        from config import FEATURE_COLUMNS
+        # ── Option A: use pre-computed per-period scores from session state ──
+        period_scores = st.session_state.get("period_scores")
 
-        raw_data = st.session_state.get("raw_data")
-        if raw_data is None or raw_data.empty:
-            return _build_cached_graph_html()
+        if not period_scores:
+            # ── Fallback: re-run PCA per period ──────────────────────────────
+            period_scores = _recompute_period_scores()
+
+        if not period_scores:
+            st.warning("No period scores available — showing static ontology.")
+            return _build_static_graph_html(_static_graph_cache_key())
+
+        migration_df = st.session_state.get("migration_wide")
+
+        kg_result = build_kg(
+            period_data          = period_scores,
+            migration_df         = migration_df,
+            include_equity_nodes = True,
+        )
+        net = _make_pyvis_net(height="680px")
+        _populate_pyvis_from_networkx(net, kg_result.graph)
+        return net.generate_html()
+
+    except Exception as exc:
+        st.warning(f"Equity graph build failed, showing static ontology: {exc}")
+        return _build_static_graph_html(_static_graph_cache_key())
+
+
+def _recompute_period_scores() -> dict:
+    """
+    Fallback: re-run _run_pca_for_period() for each regime period.
+    Used only when session_state['period_scores'] is not populated.
+    """
+    raw_data = st.session_state.get("raw_data")
+    if raw_data is None or raw_data.empty:
+        return {}
+
+    try:
+        from period_analysis import _run_pca_for_period, SUB_PERIODS
+        from config import FEATURE_COLUMNS
 
         date_col = next(
             (c for c in ["public_date", "date", "datadate"] if c in raw_data.columns),
             None,
         )
         if date_col is None:
-            return _build_cached_graph_html()
+            return {}
 
-        features = [c for c in FEATURE_COLUMNS if c in raw_data.columns]
+        features     = [c for c in FEATURE_COLUMNS if c in raw_data.columns]
+        # Use clean short labels (strip \n from SUB_PERIODS keys)
+        short_map    = {k.split('\n')[0]: v for k, v in SUB_PERIODS.items()}
+        period_scores = {}
 
-        period_label_map = {
-            "Post-COVID":   ("2021-03-01", "2022-06-30"),
-            "Rate Shock":   ("2022-07-01", "2023-09-30"),
-            "Disinflation": ("2023-10-01", "2024-10-31"),
-        }
-
-        period_data = {}
-        for period_name, (start, end) in period_label_map.items():
-            mask = (raw_data[date_col] >= start) & (raw_data[date_col] <= end)
-            period_slice = raw_data[mask]
-            if len(period_slice) < 10:
+        for short_label, (start, end) in short_map.items():
+            mask  = (raw_data[date_col] >= start) & (raw_data[date_col] <= end)
+            slice_df = raw_data[mask]
+            if len(slice_df) < 10:
                 continue
             try:
                 _, scores_df, _, _ = _run_pca_for_period(
-                    period_slice, features, date_col, start, end
+                    slice_df, features, date_col, start, end
                 )
                 if scores_df is not None and not scores_df.empty:
-                    # Normalize column names for kg_builder
                     if "Quadrant" in scores_df.columns and "quadrant" not in scores_df.columns:
                         scores_df = scores_df.copy()
                         scores_df["quadrant"] = scores_df["Quadrant"]
-                    period_data[period_name] = scores_df
+                    period_scores[short_label] = scores_df
             except Exception:
                 continue
 
-        if not period_data:
-            return _build_cached_graph_html()
-
-        return _build_equity_graph_html(period_data, migration_df=None)
+        return period_scores
 
     except Exception as exc:
-        st.warning(f"Live equity graph failed, showing static ontology: {exc}")
-        return _build_cached_graph_html()
+        st.warning(f"Period score recomputation failed: {exc}")
+        return {}
 
 
-# ── Legend builder ────────────────────────────────────────────────────────────
+# =============================================================================
+# METRICS PANEL — all values from session state
+# =============================================================================
+
+def _render_metrics_panel() -> None:
+    """Three-column empirical anchors strip — all values from live session state."""
+    col1, col2, col3 = st.columns(3)
+
+    pc_var = _pc_variance_live()
+
+    with col1:
+        st.markdown("**Procrustes Disparity**")
+        pairs = [
+            ("Post-COVID", "Rate Shock",   "PC→RS"),
+            ("Post-COVID", "Disinflation", "PC→D"),
+            ("Rate Shock", "Disinflation", "RS→D"),
+        ]
+        any_live = False
+        for a, b, label in pairs:
+            row = _lookup_procrustes(a, b)
+            if row is not None:
+                disp    = _safe_float(row.get("Disparity"), 0.0)
+                common  = int(_safe_float(row.get("Common Tickers"), 0))
+                st.metric(label, f"{disp:.3f}",
+                          delta=f"{common:,} common tickers")
+                any_live = True
+            else:
+                # Show Appendix B fallback with label
+                fb = APPENDIX_B_PROCRUSTES.get((a, b)) if KG_SCHEMA_AVAILABLE else None
+                if fb:
+                    st.metric(f"{label} (ref)", f"{fb['disparity']:.3f}",
+                              delta=f"{fb['common_tickers']:,} tickers (Appendix B)")
+        if not any_live:
+            st.info("Run Period Comparison to populate live Procrustes diagnostics.")
+
+    with col2:
+        st.markdown("**Factor Crowding Score**")
+        for period in ["Post-COVID", "Rate Shock", "Disinflation"]:
+            score = _crowding_score_live(period)
+            if score is not None:
+                risk = ("Normal" if score < CROWDING_THRESHOLD_ELEVATED
+                        else "Elevated" if score < CROWDING_THRESHOLD_HIGH
+                        else "High Risk")
+                st.metric(period, f"{score:.1f}",
+                          delta=risk,
+                          delta_color="normal" if score < CROWDING_THRESHOLD_HIGH else "inverse")
+            else:
+                fb = APPENDIX_B_CROWDING.get(period) if KG_SCHEMA_AVAILABLE else None
+                if fb:
+                    st.metric(f"{period} (ref)", f"{fb['score']:.1f}",
+                              delta=f"{fb['risk_level'].value} (Appendix B)")
+                else:
+                    st.metric(period, "N/A")
+
+    with col3:
+        st.markdown("**PC Variance Explained**")
+        for pc in ["PC1", "PC2", "PC3"]:
+            v = pc_var.get(pc)
+            if v is not None:
+                st.metric(pc, f"{v:.1f}%")
+
+        st.markdown("**Quadrant Migration**")
+        for a, b, label in [("Post-COVID", "Rate Shock", "PC→RS"),
+                             ("Rate Shock", "Disinflation", "RS→D")]:
+            mr = _migration_row_live(f"{a} -> {b}")
+            if mr is not None:
+                rate    = str(mr.get("Migration Rate", "N/A"))
+                changed = int(_safe_float(mr.get("Changed Quadrant"), 0))
+                total   = int(_safe_float(mr.get("Stocks Analyzed"), 0))
+                st.metric(f"Migration {label}", rate,
+                          delta=f"{changed:,} / {total:,} stocks")
+            else:
+                fb = APPENDIX_B_MIGRATION.get((a, b)) if KG_SCHEMA_AVAILABLE else None
+                if fb:
+                    st.metric(f"Migration {label} (ref)",
+                              f"{fb['migration_pct']:.1f}%",
+                              delta=f"{fb['changed']:,}/{fb['analyzed']:,} (Appendix B)")
+
+
+# =============================================================================
+# LEGEND
+# =============================================================================
 
 def _render_legend() -> None:
-    """Render a compact color legend below the graph."""
+    universe = _universe_count_live()
+    pc_var   = _pc_variance_live()
+    comb_var = round(sum(pc_var.get(f"PC{i}", 0) for i in range(1, 4)), 1)
+
     st.markdown(
-        """
+        f"""
         <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px; font-size:13px;">
           <span><span style="color:#00b4d8;">●</span> Macro Regime</span>
           <span><span style="color:#90e0ef;">●</span> Factor Signal</span>
@@ -642,9 +534,12 @@ def _render_legend() -> None:
           <span><span style="color:#e63946;">●</span> Core Mechanism</span>
           <span><span style="color:#6d6875;">●</span> Platform / Governance</span>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:6px; font-size:12px; color:#6c757d;">
-          <span>Edge width = relationship strength &nbsp;|&nbsp;
-          Hover nodes for empirical detail &nbsp;|&nbsp;
+        <div style="display:flex; flex-wrap:wrap; gap:16px; margin-top:6px;
+                    font-size:12px; color:#6c757d;">
+          <span>Universe: ~{universe:,} equities &nbsp;|&nbsp;
+          PC1+PC2+PC3 variance: ~{comb_var:.1f}% &nbsp;|&nbsp;
+          Edge width = relationship strength &nbsp;|&nbsp;
+          Hover nodes for live detail &nbsp;|&nbsp;
           Scroll to zoom &nbsp;|&nbsp; Drag to pan</span>
         </div>
         """,
@@ -652,127 +547,19 @@ def _render_legend() -> None:
     )
 
 
-# ── Key metrics panel ─────────────────────────────────────────────────────────
-
-def _render_metrics_panel() -> None:
-    """Three-column empirical anchors strip above the graph."""
-    col1, col2, col3 = st.columns(3)
-
-    procrustes = st.session_state.get("procrustes_results")
-    migration_summary = st.session_state.get("migration_summary")
-    migration_pct = st.session_state.get("migration_pct")
-
-    with col1:
-        if procrustes is not None and len(procrustes) >= 3:
-            row1 = procrustes.iloc[0]
-            row2 = procrustes.iloc[1]
-            row3 = procrustes.iloc[2]
-
-            st.metric(
-                "Procrustes — PC→RS",
-                f"{row1['Disparity']:.3f}",
-                delta=f"{int(row1['Common Tickers']):,} overlapping stocks"
-            )
-            st.metric(
-                "Procrustes — PC→D",
-                f"{row2['Disparity']:.3f}",
-                delta=f"{int(row2['Common Tickers']):,} overlapping stocks"
-            )
-            st.metric(
-                "Procrustes — RS→D",
-                f"{row3['Disparity']:.3f}",
-                delta=f"{int(row3['Common Tickers']):,} overlapping stocks"
-            )
-        else:
-            st.info("Run Period Comparison to populate structural diagnostics.")
-
-    with col2:
-        pc_crowd = _crowding_score("Post-COVID")
-        rs_crowd = _crowding_score("Rate Shock")
-        d_crowd = _crowding_score("Disinflation")
-
-        if pc_crowd is not None:
-            st.metric(
-                "Crowding — Post-COVID",
-                f"{pc_crowd:.1f}",
-                delta="Normal" if pc_crowd < 50 else "Elevated" if pc_crowd < 70 else "High Risk",
-                delta_color="normal" if pc_crowd < 70 else "inverse"
-            )
-        else:
-            st.metric("Crowding — Post-COVID", "N/A")
-
-        if rs_crowd is not None:
-            st.metric(
-                "Crowding — Rate Shock",
-                f"{rs_crowd:.1f}",
-                delta="Normal" if rs_crowd < 50 else "Elevated" if rs_crowd < 70 else "High Risk",
-                delta_color="normal" if rs_crowd < 70 else "inverse"
-            )
-        else:
-            st.metric("Crowding — Rate Shock", "N/A")
-
-        if d_crowd is not None:
-            st.metric(
-                "Crowding — Disinflation",
-                f"{d_crowd:.1f}",
-                delta="Normal" if d_crowd < 50 else "Elevated" if d_crowd < 70 else "High Risk",
-                delta_color="normal" if d_crowd < 70 else "inverse"
-            )
-        else:
-            st.metric("Crowding — Disinflation", "N/A")
-
-    with col3:
-        pc_rs = _migration_row("Post-COVID → Rate Shock")
-        rs_d = _migration_row("Rate Shock → Disinflation")
-
-        if pc_rs is not None:
-            st.metric(
-                "Migration PC→RS",
-                str(pc_rs["Migration Rate"]),
-                delta=f"{int(pc_rs['Changed Quadrant']):,} / {int(pc_rs['Stocks Analyzed']):,} stocks"
-            )
-        else:
-            st.metric("Migration PC→RS", "N/A")
-
-        if rs_d is not None:
-            st.metric(
-                "Migration RS→D",
-                str(rs_d["Migration Rate"]),
-                delta=f"{int(rs_d['Changed Quadrant']):,} / {int(rs_d['Stocks Analyzed']):,} stocks"
-            )
-        else:
-            st.metric("Migration RS→D", "N/A")
-
-        if migration_pct is not None and migration_summary is not None and len(migration_summary) > 0:
-            tracked = int(migration_summary.iloc[0]["Stocks Analyzed"])
-            changed_any = int(round(tracked * float(migration_pct) / 100.0))
-            st.metric(
-                "Changed quadrant",
-                f"{migration_pct:.1f}%",
-                delta=f"{changed_any:,} / {tracked:,} — governance scale"
-            )
-        else:
-            st.metric("Changed quadrant", "N/A")
-
-# ── Filter sidebar ────────────────────────────────────────────────────────────
+# =============================================================================
+# FILTER SIDEBAR
+# =============================================================================
 
 def _render_kg_filters() -> dict:
-    """
-    Sidebar controls for the KG tab.
-    Returns a dict of filter state that future phases can use
-    to add ticker ego-networks or layer toggling.
-    """
     with st.sidebar:
         st.markdown("---")
-        st.markdown("### 🧠 Knowledge Graph")
-
+        st.markdown("### Knowledge Graph")
         show_factors    = st.checkbox("Show Factor Nodes",    value=True)
         show_quadrants  = st.checkbox("Show Quadrant Nodes",  value=True)
         show_mechanisms = st.checkbox("Show Mechanism Nodes", value=True)
         show_platforms  = st.checkbox("Show Platform Nodes",  value=True)
-
         st.markdown("---")
-
     return {
         "show_factors":    show_factors,
         "show_quadrants":  show_quadrants,
@@ -781,168 +568,25 @@ def _render_kg_filters() -> dict:
     }
 
 
-@st.cache_data()
-def _build_cached_graph_html() -> str:
-    """Build the static PyVis ontology graph once and cache the HTML."""
-    net = _build_pyvis_network(height="680px")
-    return _render_pyvis_to_html(net)
-
-
-def _build_equity_graph_html(period_data: dict, migration_df) -> str:
-    """
-    Build a PyVis graph that includes live equity nodes from the pipeline.
-    Called only when session state has loaded pipeline data.
-    Not cached — equity data is session-specific.
-    """
-    if not KG_BUILDER_AVAILABLE:
-        return _build_cached_graph_html()
-
-    try:
-        kg_result = build_kg(
-            period_data=period_data,
-            migration_df=migration_df,
-            include_equity_nodes=True,
-        )
-        G = kg_result.graph
-
-        net = Network(
-            height="680px",
-            width="100%",
-            bgcolor="#0d1117",
-            font_color="#e6edf3",
-            directed=True,
-        )
-        net.set_options("""
-        {
-          "physics": {
-            "enabled": true,
-            "solver": "forceAtlas2Based",
-            "forceAtlas2Based": {
-              "gravitationalConstant": -120,
-              "centralGravity": 0.005,
-              "springLength": 180,
-              "springConstant": 0.04,
-              "damping": 0.5,
-              "avoidOverlap": 0.5
-            },
-            "stabilization": { "enabled": true, "iterations": 250 }
-          },
-          "interaction": {
-            "hover": true,
-            "tooltipDelay": 200,
-            "navigationButtons": true,
-            "keyboard": { "enabled": true }
-          },
-          "edges": {
-            "smooth": { "enabled": true, "type": "dynamic" },
-            "arrows": { "to": { "enabled": true, "scaleFactor": 0.7 } },
-            "font": { "size": 10, "color": "#adb5bd", "face": "Courier New" }
-          },
-          "nodes": {
-            "font": { "size": 12, "color": "#e6edf3", "face": "Calibri" },
-            "borderWidth": 2,
-            "shadow": { "enabled": true, "size": 8, "x": 2, "y": 2 }
-          }
-        }
-        """)
-
-        # Node type → visual properties
-        node_type_style = {
-            "regime":           ("#00b4d8", 40),
-            "factor":           ("#90e0ef", 24),
-            "quadrant":         ("#f4a261", 30),
-            "axis":             ("#2ec4b6", 22),
-            "category":         ("#48cae4", 20),
-            "crowding":         ("#e63946", 28),
-            "transition":       ("#f4a261", 26),
-            "structural_break": ("#e63946", 34),
-            "early_warning":    ("#e63946", 32),
-            "stock":            ("#b7e4c7", 10),
-            "cluster":          ("#52b788", 18),
-            "default":          ("#adb5bd", 16),
-        }
-
-        for node_id, attrs in G.nodes(data=True):
-            ntype = attrs.get("node_type", "default")
-            color, size = node_type_style.get(ntype, node_type_style["default"])
-            label = attrs.get("label", str(node_id))
-            # Truncate long stock labels
-            if ntype == "stock" and len(label) > 6:
-                label = label[:6]
-            tooltip = "\n".join(
-                f"{k}: {v}" for k, v in attrs.items()
-                if k not in ("label", "node_type") and v is not None
-            )
-            net.add_node(
-                str(node_id),
-                label=label,
-                title=tooltip or label,
-                color={
-                    "background": color,
-                    "border": "#ffffff",
-                    "highlight": {"background": "#ffffff", "border": color},
-                    "hover":     {"background": "#ffffff", "border": color},
-                },
-                size=size,
-                shape="dot",
-                mass=1.5,
-            )
-
-        for src, tgt, attrs in G.edges(data=True):
-            etype = attrs.get("edge_type", "")
-            edge_color_map = {
-                "regime_transition":    "#f4a261",
-                "crowding_level":       "#e63946",
-                "factor_loading":       "#90e0ef",
-                "belongs_to_category":  "#48cae4",
-                "triggers_break":       "#e63946",
-                "triggers_warning":     "#e63946",
-                "quadrant_assignment":  "#b7e4c7",
-                "cluster_membership":   "#52b788",
-                "belongs_to":           "#52b788",
-                "migrates_to":          "#f4a261",
-            }
-            ecolor = edge_color_map.get(etype, "#495057")
-            width  = attrs.get("width", 1.0)
-            if etype == "regime_transition":
-                d = attrs.get("procrustes_disparity", 0)
-                width = 1.5 + d * 6
-            elif etype == "crowding_level":
-                width = 1.5 + attrs.get("score", 0) / 25
-            net.add_edge(
-                str(src), str(tgt),
-                label=attrs.get("label", ""),
-                color=ecolor,
-                width=width,
-                title=attrs.get("label", etype),
-            )
-
-        return net.generate_html()
-
-    except Exception as exc:
-        # Fallback to static graph on any error
-        import streamlit as _st
-        _st.warning(f"Equity graph build failed, showing static ontology: {exc}")
-        return _build_cached_graph_html()
-
-
-# ── Main entry point ──────────────────────────────────────────────────────────
+# =============================================================================
+# MAIN ENTRY POINT
+# =============================================================================
 
 def render_kg_tab() -> None:
     """
     Main entry point called from app.py inside the Knowledge Graph tab.
     Renders the full interactive Pyvis ontology with metrics and legend.
     """
-    st.subheader("🧠 ESDS Knowledge Graph — Structural Ontology")
+    st.subheader("ESDS Knowledge Graph — Structural Ontology")
     st.caption(
         "Interactive map of the ESDS framework: five core mechanisms, "
         "eleven factor signals, three macro regimes, four quadrant positions, "
         "and the institutional governance layer. "
-        "Hover any node for empirical detail. "
-        "Edge width reflects relationship strength."
+        "Hover any node for live empirical detail. "
+        "Edge width reflects relationship strength. "
+        "All values populated from live pipeline outputs."
     )
 
-    # ── Dependency check ──────────────────────────────────────────────────────
     if not PYVIS_AVAILABLE:
         st.error(
             "**Pyvis not installed.** Add `pyvis` to `requirements.txt` and redeploy.\n\n"
@@ -950,58 +594,65 @@ def render_kg_tab() -> None:
         )
         return
 
-    # ── Empirical anchors strip ───────────────────────────────────────────────
-    with st.expander("📊 Empirical Anchors", expanded=False):
+    # Empirical anchors strip
+    with st.expander("Empirical Anchors", expanded=False):
         _render_metrics_panel()
 
     st.markdown("---")
 
-    # ── Graph ─────────────────────────────────────────────────────────────────
+    # View mode toggle
     view_mode = st.radio(
         "Graph view",
         ["Static Ontology", "Live Equity Nodes"],
         horizontal=True,
-        help="Static Ontology: framework architecture only. Live Equity Nodes: adds ~1,738 tickers, clusters, and quadrant assignments from the pipeline.",
+        help=(
+            "Static Ontology: framework architecture with live Procrustes / "
+            "crowding / variance values on edges and tooltips. "
+            "Live Equity Nodes: adds ~1,738 tickers, clusters, and quadrant "
+            "assignments from the pipeline (requires Period Comparison to have run)."
+        ),
     )
 
     with st.spinner("Building structural knowledge graph…"):
         try:
             if view_mode == "Live Equity Nodes" and KG_BUILDER_AVAILABLE:
-                html = _build_equity_graph_html_from_pipeline()
+                html = _build_equity_graph_html()
             else:
-                html = _build_cached_graph_html()
+                html = _build_static_graph_html(_static_graph_cache_key())
             components.html(html, height=700, scrolling=False)
         except Exception as exc:
             st.error(f"Knowledge graph render error: {exc}")
             st.info(
-                "If this is a first-run import error, confirm that "
-                "`kg_schema.py` and `kg_builder.py` are in the same "
-                "directory as `app.py`."
+                "Confirm that `kg_schema.py` and `kg_builder.py` are in the "
+                "same directory as `app.py`, and that `pyvis` is installed."
             )
 
     _render_legend()
 
-    # ── Interpretation notes ──────────────────────────────────────────────────
     st.markdown("---")
-    with st.expander("📖 How to read this graph"):
+    with st.expander("How to read this graph"):
         st.markdown(
             """
 **Node layers**
-- 🔵 **Teal — Macro Regimes**: Post-COVID, Rate Shock, Disinflation. The three structural windows that define the ESDS analysis universe.
-- 🩵 **Light teal — Factor Signals**: The 11 retained signals across Fundamental, Profitability, Quality, Leverage, and Behavioral domains.
-- 🟠 **Amber — Quadrants**: The four structural positions on the PC1/PC2 plane (Quality Growth, Quality Value, Value Trap, Distressed Growth).
-- 🔴 **Red — Core Mechanisms**: The five proprietary methods — PCA as structural geometry, KMeans clustering, Procrustes disparity, geometric crowding, quadrant classification.
-- 🟣 **Purple — Governance / Platform**: ESDS as a whole, its two-tier AI architecture, and the incumbent platforms it complements.
+- **Teal — Macro Regimes**: Post-COVID, Rate Shock, Disinflation.
+  Hover for live Procrustes scores, crowding score, and date range.
+- **Light teal — Factor Signals**: 11 retained signals.
+  Hover for live PC loadings from the fitted PCA model.
+- **Amber — Quadrants**: Four structural positions on the PC1/PC2 plane.
+  Hover for definitions sourced from config.py.
+- **Red — Core Mechanisms**: Five proprietary methods. Zero prior art nodes are flagged.
+- **Purple — Governance / Platform**: ESDS two-tier AI architecture and incumbent platforms.
 
 **Edge encoding**
-- **Edge width** encodes relationship strength. The thick red edge from Crowding to Disinflation (67.9, Elevated) is intentionally prominent.
-- **Procrustes edges** between regimes encode structural distance — the 0.459 Post-COVID → Disinflation edge is thicker than the 0.186 Rate Shock → Disinflation edge, reflecting greater structural discontinuity.
-- **PC1/PC2/PC3 labels** on factor → PCA edges identify which principal component each factor primarily drives.
+- **Edge width** encodes relationship strength.
+  Procrustes edges scale with disparity score — thicker = more structural distance.
+  Crowding edges scale with crowding score — thicker = more concentrated.
+- **All values are live** from the pipeline when Period Comparison has been run.
+  Appendix B fallbacks are used only before the pipeline runs, and are labeled as such.
 
-**Zero prior art nodes** (hover for detail)
-- Procrustes Disparity — no prior application to equity factor spaces
-- Geometric Crowding — spatial PCA compression, not correlation-based
-- PCA as Governance Diagnostic — structural framing without precedent
+**Zero prior art mechanisms**
+- *Procrustes Disparity*: no prior application to equity factor spaces.
+- *Geometric Crowding*: spatial PCA compression, distinct from correlation-based measures.
+- *PCA as Governance Diagnostic*: structural framing without precedent.
             """
         )
-
