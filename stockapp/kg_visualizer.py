@@ -988,7 +988,7 @@ def render_kg_tab() -> None:
             """
 **Node layers**
 - 🔵 **Teal — Macro Regimes**: Post-COVID, Rate Shock, Disinflation. The three structural windows that define the ESDS analysis universe.
-- 🟡 **Yellow — Factor Signals**: The 11 retained signals across Fundamental, Profitability, Quality, Leverage, and Behavioral domains.
+- 🩵 **Light teal — Factor Signals**: The 11 retained signals across Fundamental, Profitability, Quality, Leverage, and Behavioral domains.
 - 🟠 **Amber — Quadrants**: The four structural positions on the PC1/PC2 plane (Quality Growth, Quality Value, Value Trap, Distressed Growth).
 - 🔴 **Red — Core Mechanisms**: The five proprietary methods — PCA as structural geometry, KMeans clustering, Procrustes disparity, geometric crowding, quadrant classification.
 - 🟣 **Purple — Governance / Platform**: ESDS as a whole, its two-tier AI architecture, and the incumbent platforms it complements.
