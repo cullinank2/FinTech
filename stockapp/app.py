@@ -1526,6 +1526,12 @@ def main():
                                     )
                                     if scores_df is None:
                                         continue
+                                    # Store clean per-period scores for Knowledge Graph
+                                    # (before period/cluster columns are added for crowding)
+                                    if "period_scores" not in st.session_state:
+                                        st.session_state["period_scores"] = {}
+                                    st.session_state["period_scores"][period_name] = scores_df.copy()
+
                                     scores_df['period'] = period_name
                                     # compute_crowding_scores needs 'cluster' column
                                     # derive it from Quadrant label
