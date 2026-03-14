@@ -9,7 +9,7 @@ This is the vocabulary of the KG — no graph construction happens here.
 Design principles:
   - Every node property maps to a real field in utils.py, period_analysis.py,
   
-    config.py, or an Appendix B empirical anchor.
+    config.py, or values produced by the analytics pipeline.
   - No invented abstractions. If it isn't computed by the existing pipeline,
     it is not a property here.
   - Dataclasses are immutable (frozen=True) to enforce governance integrity.
@@ -283,7 +283,7 @@ class CrowdingScoreNode:
     Factor Crowding Score for one regime.
     Formula: 0.6 * Concentration + 0.4 * (100 - Dispersion_Normalized)
     Source: utils.py::compute_crowding_scores()
-    Appendix B ground truth:
+    Values are populated dynamically from utils.py::compute_crowding_scores().
     Values are populated dynamically from utils.py::compute_crowding_scores().
     """
     node_id:              str         # "crowding:{regime}"
@@ -344,7 +344,7 @@ class InstabilitySignalNode:
     Intermediate warning: elevated but sub-break Procrustes + rising crowding.
     Represents the 0.15–0.29 'meaningful structural change' zone.
     Signals are generated dynamically when disparity falls within
-the 0.15–0.29 meaningful structural change range.
+    the 0.15–0.29 meaningful structural change range.
     Source: Appendix A threshold definitions + utils.py crowding thresholds.
     """
     node_id:                str         # "signal:{transition_id}"
