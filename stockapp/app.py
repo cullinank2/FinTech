@@ -71,7 +71,7 @@ from period_analysis import (
     get_features_from_df,
     PERIOD_KEYS,
 )
-from narrative_engine import generate_narrative
+from narrative_engine import generate_narrative  # ARCH: intentional NE boundary — app.py is the sole authorized caller
 
 
 # =============================================================================
