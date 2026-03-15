@@ -1079,3 +1079,4 @@ def render_structural_intelligence_tab() -> None:
         _render_early_warning_panel(kg)
     elif panel == "🔍 Reasoning Chain Viewer":
         _render_reasoning_chain_panel(kg)
+
