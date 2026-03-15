@@ -15,7 +15,6 @@ Date: 2024
 """
 
 import streamlit as st
-from scan_hardcoded_constants import show_audit
 import pandas as pd
 import os
 from typing import Optional
@@ -1437,12 +1436,11 @@ def main():
         # Show overall cluster summary
         if st.session_state.pca_df is not None:
 
-            landing_tab1, landing_tab2, landing_tab3, landing_tab4, landing_tab5 = st.tabs([
+            landing_tab1, landing_tab2, landing_tab3, landing_tab4 = st.tabs([
                 "📊 Cluster Overview",
                 "📐 Period Comparison",
                 "🧠 Knowledge Graph",
                 "🔬 Structural Intelligence",
-                "🧪 Code Audit",
             ])
 
             with landing_tab1:
@@ -1766,9 +1764,6 @@ def main():
 
         with landing_tab4:
                 render_structural_intelligence_tab()
-
-        with landing_tab5:
-                show_audit()
 
         return
     
