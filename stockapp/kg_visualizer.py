@@ -858,10 +858,13 @@ def _render_crowding_chain_panel(kg) -> None:
     st.markdown("**Structural distance between adjacent regimes (Procrustes disparity):**")
     chain_cols = st.columns([2, 1, 2, 1, 2])
     chain_cols[0].markdown(f"**Post-COVID**\n\nCrowding: {pc_score[0]:.1f}\n\n*(Mar 2021 – Jun 2022)*")
-    chain_cols[1].markdown(f"→\n\n**{d01:.3f}**\n\n*{n01:,} tickers*\n\n{'🔴 Major break' if d01 >= 0.30 else '🟡 Moderate'}")
+    src01 = "live" if not using_fallback and ("Post-COVID", "Rate Shock") in procrustes_live else "ref"
+    src12 = "live" if not using_fallback and ("Rate Shock", "Disinflation") in procrustes_live else "ref"
+    chain_cols[1].markdown(f"→\n\n**{d01:.3f}**\n\n*{n01:,} tickers*\n\n{'🔴 Major break' if d01 >= 0.30 else '🟡 Moderate'}\n\n*({src01})*")
     chain_cols[2].markdown(f"**Rate Shock**\n\nCrowding: {pc_score[1]:.1f}\n\n*(Jul 2022 – Sep 2023)*")
-    chain_cols[3].markdown(f"→\n\n**{d12:.3f}**\n\n*{n12:,} tickers*\n\n{'🔴 Major break' if d12 >= 0.30 else '🟢 Stable'}")
-    chain_cols[4].markdown(f"**Disinflation**\n\nCrowding: {pc_score[2]:.1f} 🚨\n\n*(Oct 2023 – Oct 2024)*")
+    chain_cols[3].markdown(f"→\n\n**{d12:.3f}**\n\n*{n12:,} tickers*\n\n{'🔴 Major break' if d12 >= 0.30 else '🟢 Stable'}\n\n*({src12})*")
+    dis_flag = " 🚨" if pc_score[2] > _CROWDING_FLAG else ""
+    chain_cols[4].markdown(f"**Disinflation**\n\nCrowding: {pc_score[2]:.1f}{dis_flag}\n\n*(Oct 2023 – Oct 2024)*")
     st.markdown("---")
     st.markdown(
         f"**Non-adjacent structural distance** (Post-COVID → Disinflation): **{d02:.3f}** "
