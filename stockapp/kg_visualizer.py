@@ -1075,10 +1075,3 @@ def render_structural_intelligence_tab() -> None:
         _render_early_warning_panel(kg)
     elif panel == "🔍 Reasoning Chain Viewer":
         _render_reasoning_chain_panel(kg)
-```
-
-Save, commit, push:
-```
-git add kg_visualizer.py
-git commit -m "Phase 5: Append render_structural_intelligence_tab and four panel functions"
-git push
