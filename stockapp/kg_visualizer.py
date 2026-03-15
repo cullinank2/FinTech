@@ -383,6 +383,12 @@ def _build_equity_graph_html() -> str:
             migration_df         = migration_df,
             include_equity_nodes = True,
         )
+        # Store live KG instance for Structural Intelligence panels
+        try:
+            from kg_interface import KnowledgeGraph
+            st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
+        except Exception:
+            pass
         net = _make_pyvis_net(height="680px")
         _populate_pyvis_from_networkx(net, kg_result.graph)
         return net.generate_html()
