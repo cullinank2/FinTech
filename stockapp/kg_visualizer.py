@@ -56,7 +56,6 @@ try:
 except Exception as _kg_builder_err:
     KG_BUILDER_AVAILABLE = False
     print(f"[kg_visualizer] kg_builder import failed: {_kg_builder_err}")
-    # Minimal fallback so the rest of the file won't crash on name errors
     def _safe_float(val, default=0.0):
         try:
             return float(str(val).replace('%','').replace(',','').strip())
@@ -247,7 +246,6 @@ def _factor_loading_tooltip(factor_code: str) -> str:
                 lines.append(f"{pc}: {sign}{val:.3f}")
     if lines:
         return f"Live loadings:\n" + "\n".join(lines)
-    # Fallback: use display name from factor node in schema
     node = FACTOR_NODES.get(factor_code) if KG_SCHEMA_AVAILABLE else None
     if node:
         return f"{node.display_name} | {node.category.value} | {node.data_source}"
@@ -268,21 +266,16 @@ def _make_pyvis_net(height: str = "680px") -> Network:
 
 
 def _populate_pyvis_from_networkx(net: Network, G) -> None:
-    """
-    Transfer all nodes and edges from a NetworkX DiGraph into a Pyvis Network.
-    Node visual properties are determined by node_type attribute.
-    """
+    """Transfer all nodes and edges from a NetworkX DiGraph into a Pyvis Network."""
     for node_id, attrs in G.nodes(data=True):
         ntype  = attrs.get("node_type", "default")
         color  = LAYER_COLORS.get(ntype, LAYER_COLORS["default"])
         size   = LAYER_SIZES.get(ntype, LAYER_SIZES["default"])
         label  = attrs.get("label", str(node_id))
 
-        # Truncate long stock labels
         if ntype == "stock" and len(label) > 6:
             label = label[:6]
 
-        # Build tooltip from node attributes
         tooltip_parts = [attrs.get("tooltip", "")] if attrs.get("tooltip") else []
         for k, v in attrs.items():
             if k not in ("label", "node_type", "tooltip") and v is not None:
@@ -308,7 +301,6 @@ def _populate_pyvis_from_networkx(net: Network, G) -> None:
         etype  = attrs.get("edge_type", "")
         ecolor = EDGE_COLORS.get(etype, EDGE_COLORS["default"])
         width  = 1.5
-        # Scale edge width by relationship strength
         if etype == "regime_transition":
             d     = _safe_float(attrs.get("procrustes_disparity"), 0.0)
             width = 1.5 + d * 6
@@ -325,11 +317,6 @@ def _populate_pyvis_from_networkx(net: Network, G) -> None:
 
 @st.cache_data(show_spinner=False)
 def _build_static_graph_html(_cache_key) -> str:
-    """
-    Build the static ontology Pyvis graph via kg_builder.
-    Cached; cache is busted when session state changes (via _cache_key).
-    _cache_key should be a hash/id of the relevant session state keys.
-    """
     if not KG_BUILDER_AVAILABLE:
         return "<p>kg_builder not available</p>"
     try:
@@ -342,10 +329,6 @@ def _build_static_graph_html(_cache_key) -> str:
 
 
 def _static_graph_cache_key() -> int:
-    """
-    Derive a cache key from the session state keys that affect the static graph.
-    When any of these change (pipeline runs), the cached graph is invalidated.
-    """
     relevant = (
         id(st.session_state.get("procrustes_results")),
         id(st.session_state.get("crowding_df")),
@@ -356,20 +339,13 @@ def _static_graph_cache_key() -> int:
 
 
 def _build_equity_graph_html() -> str:
-    """
-    Build the equity-augmented graph using per-period scores_df from session state.
-    Checks session_state['period_scores'] first (set by app.py Option A).
-    Falls back to re-running _run_pca_for_period() if period_scores not available.
-    """
     if not KG_BUILDER_AVAILABLE:
         return _build_static_graph_html(_static_graph_cache_key())
 
     try:
-        # ── Option A: use pre-computed per-period scores from session state ──
         period_scores = st.session_state.get("period_scores")
 
         if not period_scores:
-            # ── Fallback: re-run PCA per period ──────────────────────────────
             period_scores = _recompute_period_scores()
 
         if not period_scores:
@@ -399,10 +375,6 @@ def _build_equity_graph_html() -> str:
 
 
 def _recompute_period_scores() -> dict:
-    """
-    Fallback: re-run _run_pca_for_period() for each regime period.
-    Used only when session_state['period_scores'] is not populated.
-    """
     raw_data = st.session_state.get("raw_data")
     if raw_data is None or raw_data.empty:
         return {}
@@ -418,13 +390,12 @@ def _recompute_period_scores() -> dict:
         if date_col is None:
             return {}
 
-        features     = [c for c in FEATURE_COLUMNS if c in raw_data.columns]
-        # Use clean short labels (strip \n from SUB_PERIODS keys)
-        short_map    = {k.split('\n')[0]: v for k, v in SUB_PERIODS.items()}
+        features      = [c for c in FEATURE_COLUMNS if c in raw_data.columns]
+        short_map     = {k.split('\n')[0]: v for k, v in SUB_PERIODS.items()}
         period_scores = {}
 
         for short_label, (start, end) in short_map.items():
-            mask  = (raw_data[date_col] >= start) & (raw_data[date_col] <= end)
+            mask     = (raw_data[date_col] >= start) & (raw_data[date_col] <= end)
             slice_df = raw_data[mask]
             if len(slice_df) < 10:
                 continue
@@ -454,7 +425,6 @@ def _recompute_period_scores() -> dict:
 def _render_metrics_panel() -> None:
     """Three-column empirical anchors strip — all values from live session state."""
     col1, col2, col3 = st.columns(3)
-
     pc_var = _pc_variance_live()
 
     with col1:
@@ -468,13 +438,11 @@ def _render_metrics_panel() -> None:
         for a, b, label in pairs:
             row = _lookup_procrustes(a, b)
             if row is not None:
-                disp    = _safe_float(row.get("Disparity"), 0.0)
-                common  = int(_safe_float(row.get("Common Tickers"), 0))
-                st.metric(label, f"{disp:.3f}",
-                          delta=f"{common:,} common tickers")
+                disp   = _safe_float(row.get("Disparity"), 0.0)
+                common = int(_safe_float(row.get("Common Tickers"), 0))
+                st.metric(label, f"{disp:.3f}", delta=f"{common:,} common tickers")
                 any_live = True
             else:
-                # Show Appendix B fallback with label
                 fb = APPENDIX_B_PROCRUSTES.get((a, b)) if KG_SCHEMA_AVAILABLE else None
                 if fb:
                     st.metric(f"{label} (ref)", f"{fb['disparity']:.3f}",
@@ -490,8 +458,7 @@ def _render_metrics_panel() -> None:
                 risk = ("Normal" if score < CROWDING_THRESHOLD_ELEVATED
                         else "Elevated" if score < CROWDING_THRESHOLD_HIGH
                         else "High Risk")
-                st.metric(period, f"{score:.1f}",
-                          delta=risk,
+                st.metric(period, f"{score:.1f}", delta=risk,
                           delta_color="normal" if score < CROWDING_THRESHOLD_HIGH else "inverse")
             else:
                 fb = APPENDIX_B_CROWDING.get(period) if KG_SCHEMA_AVAILABLE else None
@@ -604,13 +571,11 @@ def render_kg_tab() -> None:
         )
         return
 
-    # Empirical anchors strip
     with st.expander("Empirical Anchors", expanded=False):
         _render_metrics_panel()
 
     st.markdown("---")
 
-    # View mode toggle
     view_mode = st.radio(
         "Graph view",
         ["Static Ontology", "Live Equity Nodes"],
@@ -672,7 +637,6 @@ def render_kg_tab() -> None:
 # PHASE 5 — STRUCTURAL INTELLIGENCE TAB
 # =============================================================================
 
-# Appendix B empirical anchors used throughout this tab
 _APPENDIX_B_CROWDING = {
     "Post-COVID":   28.3,
     "Rate Shock":   30.1,
@@ -691,6 +655,47 @@ _APPENDIX_B_MIGRATION = {
 _REGIME_ORDER  = ["Post-COVID", "Rate Shock", "Disinflation"]
 _CROWDING_FLAG = 50.0
 
+
+# ---------------------------------------------------------------------------
+# Shared helper: pull live Procrustes dict from session state
+# ---------------------------------------------------------------------------
+
+def _get_live_procrustes_dict() -> dict:
+    """
+    Return {(Period A, Period B): {disparity, n_tickers}} from session state.
+    Empty dict if not yet populated.
+    """
+    out = {}
+    try:
+        proc_df = st.session_state.get("procrustes_results")
+        if proc_df is not None and not proc_df.empty:
+            for _, row in proc_df.iterrows():
+                a    = str(row.get("Period A", "")).strip()
+                b    = str(row.get("Period B", "")).strip()
+                disp = _safe_float(row.get("Disparity"), None)
+                n    = int(_safe_float(row.get("Common Tickers"), 0))
+                if a and b and disp is not None:
+                    out[(a, b)] = {"disparity": disp, "n_tickers": n}
+    except Exception:
+        pass
+    return out
+
+
+def _get_disp_with_source(r_a: str, r_b: str, live_proc: dict) -> tuple:
+    """
+    Return (disparity_value, n_tickers, source_label) for a regime pair.
+    Prefers live session state; falls back to Appendix B with label.
+    """
+    ab = _APPENDIX_B_PROCRUSTES.get((r_a, r_b), {"disparity": 0.0, "n_tickers": 0})
+    live = live_proc.get((r_a, r_b), live_proc.get((r_b, r_a), {}))
+    if live:
+        return live["disparity"], live["n_tickers"], "live"
+    return ab["disparity"], ab["n_tickers"], "Appendix B"
+
+
+# ---------------------------------------------------------------------------
+# Panel 1 — Peer Path Explorer
+# ---------------------------------------------------------------------------
 
 def _render_peer_path_panel(kg) -> None:
     st.markdown("### 🔗 Peer Path Explorer")
@@ -716,8 +721,8 @@ def _render_peer_path_panel(kg) -> None:
             return
         if kg is None:
             st.warning(
-                "Knowledge Graph not yet built. Run Period Comparison with "
-                "Live Equity Nodes enabled in the Knowledge Graph tab first."
+                "Knowledge Graph not yet built. Run Period Comparison then enable "
+                "Live Equity Nodes in the Knowledge Graph tab first."
             )
             return
         try:
@@ -759,16 +764,20 @@ def _render_peer_path_panel(kg) -> None:
         )
 
 
+# ---------------------------------------------------------------------------
+# Panel 2 — Regime Crowding Chain
+# ---------------------------------------------------------------------------
+
 def _render_crowding_chain_panel(kg) -> None:
     st.markdown("### 📈 Regime Crowding Chain")
     st.caption(
         "Crowding scores (spatial compression in PCA factor space) "
         "and Procrustes disparity (structural distance between adjacent regimes). "
-        "Disinflation crowding score of 67.9 is the system's primary prospective risk signal."
+        "Disinflation crowding score is the system's primary prospective risk signal."
     )
-    crowding_live = {}
+    crowding_live   = {}
     procrustes_live = {}
-    using_fallback = True
+    using_fallback  = True
 
     # ── Tier 1: live KG instance ──────────────────────────────────────────
     if kg is not None:
@@ -786,10 +795,9 @@ def _render_crowding_chain_panel(kg) -> None:
         except Exception:
             using_fallback = True
 
-    # ── Tier 2: session_state directly (populated by Period Comparison) ───
+    # ── Tier 2: session_state directly ────────────────────────────────────
     if using_fallback:
         try:
-            # Crowding scores from crowding_df
             for key in ["crowding_df", "crowding_results"]:
                 df = st.session_state.get(key)
                 if df is not None and not df.empty:
@@ -805,44 +813,38 @@ def _render_crowding_chain_panel(kg) -> None:
                         using_fallback = False
                     break
 
-            # Procrustes scores from procrustes_results
-            proc_df = st.session_state.get("procrustes_results")
-            if proc_df is not None and not proc_df.empty:
-                for _, row in proc_df.iterrows():
-                    a = str(row.get("Period A", "")).strip()
-                    b = str(row.get("Period B", "")).strip()
-                    key = (a, b)
-                    if key in _APPENDIX_B_PROCRUSTES:
-                        disp = _safe_float(row.get("Disparity"), None)
-                        n    = int(_safe_float(row.get("Common Tickers"), 0))
-                        if disp is not None:
-                            procrustes_live[key] = {
-                                "disparity":  disp,
-                                "n_tickers":  n,
-                            }
+            live_proc = _get_live_procrustes_dict()
+            for key, vals in live_proc.items():
+                if key in _APPENDIX_B_PROCRUSTES:
+                    procrustes_live[key] = vals
         except Exception:
             pass
 
+    # FIX 2: explicit None checks in inner functions — no silent Appendix B substitution
     def _cs(regime):
         if not using_fallback and regime in crowding_live:
-            return crowding_live[regime].get("crowding_score", _APPENDIX_B_CROWDING[regime])
+            val = crowding_live[regime].get("crowding_score")
+            if val is not None:
+                return val
         return _APPENDIX_B_CROWDING[regime]
 
     def _ps(r_a, r_b):
         key = (r_a, r_b)
         ab  = _APPENDIX_B_PROCRUSTES[key]
         if not using_fallback and key in procrustes_live:
-            return procrustes_live[key].get("disparity", ab["disparity"]), \
-                   procrustes_live[key].get("n_tickers", ab["n_tickers"])
+            d = procrustes_live[key].get("disparity")
+            n = procrustes_live[key].get("n_tickers")
+            if d is not None and n is not None:
+                return d, n
         return ab["disparity"], ab["n_tickers"]
 
-    pc_score       = [_cs(r) for r in _REGIME_ORDER]
-    d01, n01       = _ps("Post-COVID", "Rate Shock")
-    d02, n02       = _ps("Post-COVID", "Disinflation")
-    d12, n12       = _ps("Rate Shock", "Disinflation")
+    pc_score  = [_cs(r) for r in _REGIME_ORDER]
+    d01, n01  = _ps("Post-COVID", "Rate Shock")
+    d02, n02  = _ps("Post-COVID", "Disinflation")
+    d12, n12  = _ps("Rate Shock", "Disinflation")
 
     if using_fallback:
-        st.info("📋 Displaying Appendix B empirical values. Run Period Comparison to populate live KG data.")
+        st.info("📋 Displaying Appendix B empirical values. Run Period Comparison to populate live data.")
 
     col1, col2, col3 = st.columns(3)
     for col, regime, score, prev in zip(
@@ -866,22 +868,28 @@ def _render_crowding_chain_panel(kg) -> None:
         f"across {n02:,} common tickers — "
         f"{'largest disparity in the three-regime sequence, confirming cumulative structural drift.' if d02 > d01 and d02 > d12 else 'structural drift assessment.'}"
     )
+    # FIX 1: caption reflects actual data source
+    data_source = "live pipeline" if not using_fallback else "Appendix B reference"
     st.caption(
-        "*Procrustes disparity: rotation-invariant distance between PCA loading matrices. "
-        "Threshold ≥ 0.30 = meaningful structural break. Source: Appendix B empirical data.*"
+        f"*Procrustes disparity: rotation-invariant distance between PCA loading matrices. "
+        f"Threshold ≥ 0.30 = meaningful structural break. Source: {data_source}.*"
     )
 
+
+# ---------------------------------------------------------------------------
+# Panel 3 — Early Warning Panel
+# ---------------------------------------------------------------------------
 
 def _render_early_warning_panel(kg) -> None:
     st.markdown("### 🚨 Early Warning Panel")
     st.caption(
         "Structural risk signals that precede correlation-based detection. "
-        "Crowding flag threshold: **>50** (Appendix B anchor). "
-        "Procrustes break threshold: **≥0.30**."
+        "Crowding flag threshold: **>50**. Procrustes break threshold: **≥0.30**."
     )
     st.markdown("#### Factor Space Crowding Status")
-    crowding_data = {}
+    crowding_data  = {}
     using_fallback = True
+
     if kg is not None:
         try:
             for regime in _REGIME_ORDER:
@@ -893,7 +901,7 @@ def _render_early_warning_panel(kg) -> None:
         except Exception:
             using_fallback = True
 
-    # ── Tier 2: session_state directly (populated by Period Comparison) ───
+    # ── Tier 2: session_state directly ────────────────────────────────────
     if using_fallback:
         try:
             for key in ["crowding_df", "crowding_results"]:
@@ -914,16 +922,19 @@ def _render_early_warning_panel(kg) -> None:
             pass
 
     if using_fallback:
-        st.info("📋 Appendix B values — run Period Comparison to populate live KG data.")
+        st.info("📋 Appendix B values — run Period Comparison to populate live data.")
 
     for regime in _REGIME_ORDER:
         score = (
-            crowding_data[regime].get("crowding_score", _APPENDIX_B_CROWDING[regime])
+            crowding_data[regime].get("crowding_score")
             if not using_fallback and regime in crowding_data
-            else _APPENDIX_B_CROWDING[regime]
+            else None
         )
-        flagged  = score > _CROWDING_FLAG
-        bar_pct  = min(int(score), 100)
+        # FIX 5: explicit None check — only fall back to Appendix B if truly missing
+        if score is None:
+            score = _APPENDIX_B_CROWDING[regime]
+        flagged = score > _CROWDING_FLAG
+        bar_pct = min(int(score), 100)
         if flagged:
             icon, label, color = "🚨", "ELEVATED — prospective risk signal active", "#d62728"
         elif score > 35:
@@ -955,42 +966,34 @@ def _render_early_warning_panel(kg) -> None:
         except Exception:
             pass
 
-    # ── Tier 2: pull from procrustes_results session state ────────────────
     if not procrustes_live:
-        try:
-            proc_df = st.session_state.get("procrustes_results")
-            if proc_df is not None and not proc_df.empty:
-                for _, row in proc_df.iterrows():
-                    a = str(row.get("Period A", "")).strip()
-                    b = str(row.get("Period B", "")).strip()
-                    key = (a, b)
-                    if key in _APPENDIX_B_PROCRUSTES:
-                        disp = _safe_float(row.get("Disparity"), None)
-                        n    = int(_safe_float(row.get("Common Tickers"), 0))
-                        if disp is not None:
-                            procrustes_live[key] = {"disparity": disp, "n_tickers": n}
-        except Exception:
-            pass
+        procrustes_live = _get_live_procrustes_dict()
+
     for label, r_a, r_b in breaks:
-        ab   = _APPENDIX_B_PROCRUSTES[(r_a, r_b)]
-        disp = procrustes_live.get((r_a, r_b), {}).get("disparity", ab["disparity"])
-        n    = procrustes_live.get((r_a, r_b), {}).get("n_tickers", ab["n_tickers"])
-        major_break = disp >= 0.30
-        icon    = "🔴" if major_break else "🟢"
-        verdict = "**MAJOR STRUCTURAL BREAK**" if major_break else "Structurally stable"
-        st.markdown(f"{icon} &nbsp; **{label}** — disparity {disp:.3f} ({n:,} common tickers) — {verdict}")
+        disp, n, src = _get_disp_with_source(r_a, r_b, procrustes_live)
+        major_break  = disp >= 0.30
+        icon         = "🔴" if major_break else "🟢"
+        verdict      = "**MAJOR STRUCTURAL BREAK**" if major_break else "Structurally stable"
+        st.markdown(
+            f"{icon} &nbsp; **{label}** — disparity {disp:.3f} "
+            f"({n:,} common tickers) — {verdict} ({src})"
+        )
 
     st.markdown("---")
     st.markdown("#### Signal Summary")
-    disinflation_score = (
-        crowding_data.get("Disinflation", {}).get("crowding_score", 67.9)
-        if not using_fallback else 67.9
-    )
-    d_pc_rs_val  = procrustes_live.get(("Post-COVID", "Rate Shock"),   {}).get("disparity", 0.342)
-    d_pc_dis_val = procrustes_live.get(("Post-COVID", "Disinflation"), {}).get("disparity", 0.459)
-    d_rs_dis_val = procrustes_live.get(("Rate Shock", "Disinflation"), {}).get("disparity", 0.186)
 
-    # Dynamically identify which transition is the major break
+    # FIX 5 & 6: all values sourced from live data with explicit labels
+    _dis_live = crowding_data.get("Disinflation", {}).get("crowding_score") \
+                if not using_fallback else None
+    disinflation_score = _dis_live if _dis_live is not None \
+                         else _APPENDIX_B_CROWDING["Disinflation"]
+    dis_score_src = "live" if _dis_live is not None else "Appendix B"
+
+    # FIX 6: clean unpacking using shared helper with explicit source labels
+    d_pc_rs_val,  _n_pc_rs,  src_pc_rs  = _get_disp_with_source("Post-COVID", "Rate Shock",   procrustes_live)
+    d_pc_dis_val, _n_pc_dis, src_pc_dis = _get_disp_with_source("Post-COVID", "Disinflation", procrustes_live)
+    d_rs_dis_val, _n_rs_dis, src_rs_dis = _get_disp_with_source("Rate Shock", "Disinflation", procrustes_live)
+
     all_transitions = {
         "Post-COVID → Rate Shock":   d_pc_rs_val,
         "Post-COVID → Disinflation": d_pc_dis_val,
@@ -1015,15 +1018,21 @@ def _render_early_warning_panel(kg) -> None:
 
     rs_dis_text = (
         f"- The Rate Shock → Disinflation transition produced a Procrustes disparity of "
-        f"**{d_rs_dis_val:.3f}** — "
+        f"**{d_rs_dis_val:.3f}** ({src_rs_dis}) — "
         f"{'below the 0.30 break threshold, indicating structural continuity despite the crowding escalation.' if d_rs_dis_val < 0.30 else 'above the 0.30 break threshold, indicating structural discontinuity alongside crowding escalation.'}"
     )
 
+    all_live = all(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs, src_pc_dis])
+    any_live = any(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs, src_pc_dis])
+    summary_src = "live pipeline" if all_live else \
+                  "mixed — live + Appendix B" if any_live else "Appendix B reference"
+
     st.info(
         f"**Current structural risk reading (Disinflation regime):**\n\n"
-        f"- Factor space crowding score: **{disinflation_score:.1f}** 🚨 — "
+        f"- Factor space crowding score: **{disinflation_score:.1f}** 🚨 ({dis_score_src}) — "
         f"above the {_CROWDING_FLAG:.0f}-point flag threshold. "
-        f"Spatial compression of the equity universe is at its highest observed level across the three-regime sequence.\n\n"
+        f"Spatial compression of the equity universe is at its highest observed level "
+        f"across the three-regime sequence.\n\n"
         f"{rs_dis_text}\n\n"
         f"{major_text}\n\n"
         f"**Interpretation:** Factor crowding escalation without a concurrent structural break "
@@ -1031,12 +1040,17 @@ def _render_early_warning_panel(kg) -> None:
         f"factor space *within a stable structural regime* — conditions historically "
         f"associated with synchronized factor unwind risk."
     )
+    # FIX 4: caption reflects actual data source, not hardcoded "Appendix B anchors"
     st.caption(
-        "*Tier 1 governance output: deterministic Appendix B anchors + KG path traversal. "
-        "Flag threshold (>50) anchored to Appendix B empirical sequence: 28.3 / 30.1 / 67.9. "
-        "No language model involved.*"
+        f"*Tier 1 governance output: deterministic KG path traversal. "
+        f"Flag threshold (>50). Data source: {summary_src}. "
+        f"No language model involved.*"
     )
 
+
+# ---------------------------------------------------------------------------
+# Panel 4 — Reasoning Chain Viewer
+# ---------------------------------------------------------------------------
 
 def _render_reasoning_chain_panel(kg) -> None:
     st.markdown("### 🔍 Reasoning Chain Viewer")
@@ -1067,17 +1081,15 @@ def _render_reasoning_chain_panel(kg) -> None:
     subgraph_data = None
     if kg is not None:
         try:
-            # Only use KG subgraph if structural nodes exist
             structural_ids = [n for n in node_ids
                               if n != f"regime:{regime_sel}"
                               and kg._G.has_node(n)]
             if structural_ids:
-                valid_ids = [n for n in node_ids if kg._G.has_node(n)]
+                valid_ids     = [n for n in node_ids if kg._G.has_node(n)]
                 subgraph_data = kg.serialize_subgraph(valid_ids)
         except Exception as e:
             st.warning(f"KG subgraph query returned: {e}.")
 
-    
     if subgraph_data and subgraph_data.get("nodes"):
         st.markdown(f"#### Live KG Reasoning Chain — {regime_sel}")
         st.markdown("**Nodes in subgraph:**")
@@ -1095,8 +1107,7 @@ def _render_reasoning_chain_panel(kg) -> None:
                 etype = edge.get("attrs", {}).get("edge_type", "")
                 st.markdown(f"- `{src}` →[**{etype}**]→ `{tgt}`")
     else:
-        # ── Build chain from live session state (richer than Appendix B) ──
-        # Pull live crowding score
+        # ── Build chain from live session state ───────────────────────────
         live_score = None
         for ss_key in ["crowding_df", "crowding_results"]:
             df = st.session_state.get(ss_key)
@@ -1111,29 +1122,18 @@ def _render_reasoning_chain_panel(kg) -> None:
                 if live_score is not None:
                     break
 
-        # Pull live Procrustes scores
-        live_procrustes = {}
-        proc_df = st.session_state.get("procrustes_results")
-        if proc_df is not None and not proc_df.empty:
-            for _, row in proc_df.iterrows():
-                a = str(row.get("Period A", "")).strip()
-                b = str(row.get("Period B", "")).strip()
-                disp = _safe_float(row.get("Disparity"), None)
-                n    = int(_safe_float(row.get("Common Tickers"), 0))
-                if disp is not None:
-                    live_procrustes[(a, b)] = {"disparity": disp, "n_tickers": n}
+        live_procrustes = _get_live_procrustes_dict()
 
         score   = live_score if live_score is not None else _APPENDIX_B_CROWDING[regime_sel]
         source  = "live pipeline" if live_score is not None else "Appendix B reference"
         flagged = score > _CROWDING_FLAG
-        date_ranges = ['Mar 2021–Jun 2022', 'Jul 2022–Sep 2023', 'Oct 2023–Oct 2024']
+        date_ranges = ["Mar 2021–Jun 2022", "Jul 2022–Sep 2023", "Oct 2023–Oct 2024"]
 
         st.markdown(f"#### Structural Reasoning Chain — {regime_sel}")
         st.caption(f"Values sourced from: **{source}**")
 
         chain_lines = [
-            f"**Node:** `regime:{regime_sel}` — type: `regime` | "
-            f"period: {date_ranges[idx]}",
+            f"**Node:** `regime:{regime_sel}` — type: `regime` | period: {date_ranges[idx]}",
             "",
             f"**Edge:** `has_crowding_metric` →",
             f"**Node:** `crowding:{regime_sel}` — "
@@ -1144,48 +1144,34 @@ def _render_reasoning_chain_panel(kg) -> None:
         ]
 
         if idx > 0:
-            prior = _REGIME_ORDER[idx - 1]
-            key   = (prior, regime_sel)
-            ab    = _APPENDIX_B_PROCRUSTES[key]
-            live  = live_procrustes.get(key, live_procrustes.get((regime_sel, prior), {}))
-            disp  = live.get("disparity", ab["disparity"])
-            n     = live.get("n_tickers", ab["n_tickers"])
-            src   = "live" if live else "Appendix B"
-            major = disp >= 0.30
+            prior        = _REGIME_ORDER[idx - 1]
+            disp, n, src = _get_disp_with_source(prior, regime_sel, live_procrustes)
+            major        = disp >= 0.30
             chain_lines += [
                 f"**Edge:** `regime_transition` ← from `regime:{prior}` →",
                 f"**Node:** `procrustes_transition:{prior}:{regime_sel}` — "
                 f"disparity **{disp:.3f}** | {n:,} common tickers | "
-                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} "
-                f"({src})",
+                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} ({src})",
                 "",
             ]
 
         if idx < len(_REGIME_ORDER) - 1:
-            nxt   = _REGIME_ORDER[idx + 1]
-            key   = (regime_sel, nxt)
-            ab    = _APPENDIX_B_PROCRUSTES[key]
-            live  = live_procrustes.get(key, {})
-            disp  = live.get("disparity", ab["disparity"])
-            n     = live.get("n_tickers", ab["n_tickers"])
-            src   = "live" if live else "Appendix B"
-            major = disp >= 0.30
+            nxt          = _REGIME_ORDER[idx + 1]
+            disp, n, src = _get_disp_with_source(regime_sel, nxt, live_procrustes)
+            major        = disp >= 0.30
             chain_lines += [
                 f"**Edge:** `regime_transition` → to `regime:{nxt}` →",
                 f"**Node:** `procrustes_transition:{regime_sel}:{nxt}` — "
                 f"disparity **{disp:.3f}** | {n:,} common tickers | "
-                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} "
-                f"({src})",
+                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} ({src})",
                 "",
             ]
 
-        # Migration — pull from live session state if available
+        # Migration
         live_mig = None
         try:
             mig_summary = st.session_state.get("migration_summary_df")
             if mig_summary is not None and not mig_summary.empty:
-                # For first/middle regimes: find outgoing transition (starts with regime)
-                # For last regime (Disinflation): find incoming transition (ends with regime)
                 is_last = (idx == len(_REGIME_ORDER) - 1)
                 for _, mrow in mig_summary.iterrows():
                     t = str(mrow.get("Transition", "")).replace("→", "->").strip()
@@ -1203,14 +1189,11 @@ def _render_reasoning_chain_panel(kg) -> None:
 
         mig_values = list(_APPENDIX_B_MIGRATION.values())
         if live_mig is not None:
-            mig     = live_mig
-            mig_src = "live"
+            mig, mig_src = live_mig, "live"
         elif idx < len(mig_values):
-            mig     = mig_values[idx]
-            mig_src = "Appendix B"
+            mig, mig_src = mig_values[idx], "Appendix B"
         else:
-            mig     = None
-            mig_src = ""
+            mig, mig_src = None, ""
 
         if mig is not None:
             chain_lines += [
@@ -1239,6 +1222,10 @@ def _render_reasoning_chain_panel(kg) -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# Main entry point — render_structural_intelligence_tab()
+# ---------------------------------------------------------------------------
+
 def render_structural_intelligence_tab() -> None:
     """
     Phase 5: Structural Intelligence tab.
@@ -1254,12 +1241,24 @@ def render_structural_intelligence_tab() -> None:
 
     kg = st.session_state.get("kg_instance", None)
 
-    if kg is None:
+    # FIX 7: distinguish between no data at all vs data available but no KG instance
+    has_live_data = (
+        st.session_state.get("crowding_df") is not None or
+        st.session_state.get("procrustes_results") is not None
+    )
+
+    if kg is None and not has_live_data:
         st.warning(
-            "⚠️ Knowledge Graph not yet built. "
-            "The Peer Path Explorer and Reasoning Chain Viewer will show Appendix B "
-            "fallback values. Run **Period Comparison** first, then enable "
-            "**Live Equity Nodes** in the Knowledge Graph tab to populate the full KG."
+            "⚠️ No live data available yet. "
+            "Run **Period Comparison** to populate structural diagnostics. "
+            "The Peer Path Explorer additionally requires **Live Equity Nodes** "
+            "in the Knowledge Graph tab."
+        )
+    elif kg is None and has_live_data:
+        st.info(
+            "ℹ️ Live pipeline data available — Crowding Chain, Early Warning, and "
+            "Reasoning Chain Viewer are fully live. "
+            "For Peer Path Explorer, enable **Live Equity Nodes** in the Knowledge Graph tab."
         )
 
     st.markdown("---")
@@ -1286,4 +1285,3 @@ def render_structural_intelligence_tab() -> None:
         _render_early_warning_panel(kg)
     elif panel == "🔍 Reasoning Chain Viewer":
         _render_reasoning_chain_panel(kg)
-
