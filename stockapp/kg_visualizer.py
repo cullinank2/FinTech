@@ -1152,16 +1152,44 @@ def _render_reasoning_chain_panel(kg) -> None:
                 "",
             ]
 
-        # Migration
-        mig_keys   = list(_APPENDIX_B_MIGRATION.keys())
+        # Migration — pull from live session state if available
+        live_mig = None
+        try:
+            mig_summary = st.session_state.get("migration_summary_df")
+            if mig_summary is not None and not mig_summary.empty:
+                # Find the row matching this regime's outgoing transition
+                # summary_df rows contain a Transition column like "Post-COVID -> Rate Shock"
+                for _, mrow in mig_summary.iterrows():
+                    t = str(mrow.get("Transition", "")).replace("→", "->").strip()
+                    # Match any transition that starts from this regime
+                    if t.startswith(regime_sel):
+                        rate_str = str(mrow.get("Migration Rate", "")).replace("%", "").strip()
+                        changed  = int(_safe_float(mrow.get("Changed Quadrant", 0)))
+                        total    = int(_safe_float(mrow.get("Stocks Analyzed", 0)))
+                        rate_val = _safe_float(rate_str, None)
+                        if rate_val is not None and total > 0:
+                            live_mig = {"pct": rate_val, "n": changed, "of": total}
+                            break
+        except Exception:
+            pass
+
         mig_values = list(_APPENDIX_B_MIGRATION.values())
-        if idx < len(mig_values):
-            mig = mig_values[idx]
+        if live_mig is not None:
+            mig     = live_mig
+            mig_src = "live"
+        elif idx < len(mig_values):
+            mig     = mig_values[idx]
+            mig_src = "Appendix B"
+        else:
+            mig     = None
+            mig_src = ""
+
+        if mig is not None:
             chain_lines += [
                 f"**Edge:** `has_migration_event` →",
                 f"**Node:** `quadrant_migration:{regime_sel}` — "
                 f"**{mig['pct']:.1f}%** quadrant migration rate "
-                f"({mig['n']} of {mig['of']} tickers changed quadrant)",
+                f"({mig['n']} of {mig['of']} tickers changed quadrant) ({mig_src})",
                 "",
             ]
 

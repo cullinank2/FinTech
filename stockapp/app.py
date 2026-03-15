@@ -1651,6 +1651,8 @@ def main():
                                 migration_df, summary_df, migration_pct = compute_quadrant_migration(
                                     raw_df, features, date_col
                                 )
+                                if summary_df is not None and not summary_df.empty:
+                                    st.session_state["migration_summary_df"] = summary_df
 
                             if migration_df is not None and not migration_df.empty:
                                 col_a, col_b, col_c = st.columns(3)
