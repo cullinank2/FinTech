@@ -1046,6 +1046,14 @@ def _render_reasoning_chain_panel(kg) -> None:
         except Exception as e:
             st.warning(f"KG subgraph query returned: {e}. Displaying Appendix B fallback chain.")
 
+    # ── Debug: show all available node IDs in the graph ──────────────────
+    if kg is not None:
+        with st.expander("🔧 Debug: All node IDs in KG (first 50)"):
+            all_nodes = list(kg._G.nodes())[:50]
+            for n in all_nodes:
+                attrs = kg._G.nodes[n]
+                st.markdown(f"`{n}` — type: `{attrs.get('node_type','?')}`")
+
     if subgraph_data and subgraph_data.get("nodes"):
         st.markdown(f"#### Live KG Reasoning Chain — {regime_sel}")
         st.markdown("**Nodes in subgraph:**")
