@@ -17,7 +17,6 @@ Date: 2024
 import streamlit as st
 import pandas as pd
 import os
-from typing import Optional
 
 # Import project modules
 from config import (

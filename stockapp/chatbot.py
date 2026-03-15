@@ -18,7 +18,7 @@ Phase 4 update: KG subgraph injection (Tier 2 integration)
 """
 
 import os
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 import pandas as pd
 
 try:

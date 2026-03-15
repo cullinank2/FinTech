@@ -31,7 +31,6 @@ except NameError:
     sys.path.insert(0, os.getcwd())
 
 import networkx as nx
-import pandas as pd
 
 # ── Schema import ─────────────────────────────────────────────────────────────
 try:
