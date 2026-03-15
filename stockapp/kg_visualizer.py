@@ -886,6 +886,27 @@ def _render_early_warning_panel(kg) -> None:
                 using_fallback = False
         except Exception:
             using_fallback = True
+
+    # ── Tier 2: session_state directly (populated by Period Comparison) ───
+    if using_fallback:
+        try:
+            for key in ["crowding_df", "crowding_results"]:
+                df = st.session_state.get(key)
+                if df is not None and not df.empty:
+                    for _, row in df.iterrows():
+                        p = str(row.get("period", row.get("Period", ""))).strip()
+                        if p in _REGIME_ORDER:
+                            score = _safe_float(
+                                row.get("crowding_score") or row.get("score"), None
+                            )
+                            if score is not None:
+                                crowding_data[p] = {"crowding_score": score}
+                    if crowding_data:
+                        using_fallback = False
+                    break
+        except Exception:
+            pass
+
     if using_fallback:
         st.info("📋 Appendix B values — run Period Comparison to populate live KG data.")
 
@@ -925,6 +946,23 @@ def _render_early_warning_panel(kg) -> None:
                 result = kg.get_procrustes_transition(r_a, r_b)
                 if result:
                     procrustes_live[(r_a, r_b)] = result
+        except Exception:
+            pass
+
+    # ── Tier 2: pull from procrustes_results session state ────────────────
+    if not procrustes_live:
+        try:
+            proc_df = st.session_state.get("procrustes_results")
+            if proc_df is not None and not proc_df.empty:
+                for _, row in proc_df.iterrows():
+                    a = str(row.get("Period A", "")).strip()
+                    b = str(row.get("Period B", "")).strip()
+                    key = (a, b)
+                    if key in _APPENDIX_B_PROCRUSTES:
+                        disp = _safe_float(row.get("Disparity"), None)
+                        n    = int(_safe_float(row.get("Common Tickers"), 0))
+                        if disp is not None:
+                            procrustes_live[key] = {"disparity": disp, "n_tickers": n}
         except Exception:
             pass
     for label, r_a, r_b in breaks:
