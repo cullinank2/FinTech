@@ -34,9 +34,8 @@ Node ID conventions:
   platform:   "platform:{id}"         e.g. "platform:esds"
 """
 
-from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Optional, Tuple, Dict, List
+from dataclasses import dataclass
+from typing import Optional, Tuple, Dict
 from enum import Enum
 
 
@@ -459,12 +458,6 @@ def _build_catalogs():
                     "Rules-based governance artifact — no API key required.\n"
                     "Versioned, auditable, CRO-level outputs.\n"
                     "Source: narrative_engine.py"  # ARCH: intentional NE boundary — provenance label only, no import
-
-- app.py: annotate generate_narrative import as sole authorized NE caller
-- chatbot.py: annotate NE docstring reference as doc-only, no import
-- kg_schema.py: annotate NE provenance label as doc-only, no import
-- kg_schema.py: EdgeType.FACTOR_LOADING confirmed correct (scanner was checking wrong plural form)
-- No functional code changes in this commit
                 ),
             ),
             "chatbot": PlatformNode(

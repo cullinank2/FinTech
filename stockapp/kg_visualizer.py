@@ -17,8 +17,6 @@ migration rates, universe count, factor loadings) flows from:
 No hard-coded Appendix B values appear in this file.
 """
 
-from __future__ import annotations
-
 import streamlit as st
 import streamlit.components.v1 as components
 
