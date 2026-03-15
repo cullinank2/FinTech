@@ -1224,16 +1224,20 @@ def render_narrative_section(
     show_pc3 = timelapse_is_3d or cluster_3d
 
     with st.spinner("Generating narrative analysis..."):
+        kg           = st.session_state.get("kg_instance")
+        kg_regime    = st.session_state.get("kg_current_regime")
         sections = generate_narrative(
-            ticker      = ticker,
-            pca_row     = pca_row,
-            percentiles = percentiles,
-            factor_data = factor_data,
-            peer_df     = peer_df,
-            raw_data    = raw_data,
-            loadings    = loadings,
-            gics_sector = gics_sector,
-            show_pc3    = show_pc3,
+            ticker          = ticker,
+            pca_row         = pca_row,
+            percentiles     = percentiles,
+            factor_data     = factor_data,
+            peer_df         = peer_df,
+            raw_data        = raw_data,
+            loadings        = loadings,
+            gics_sector     = gics_sector,
+            show_pc3        = show_pc3,
+            kg              = kg,
+            current_regime  = kg_regime,
         )
 
     current_view = st.session_state.get('current_view', '🎯 Cluster Plot')
@@ -1248,6 +1252,10 @@ def render_narrative_section(
         st.markdown(sections['peers'])
     else:
         st.markdown(sections['summary'])
+
+    if sections.get('structural') and kg is not None:
+        with st.expander("🧠 Structural Context (Knowledge Graph — Tier 1)", expanded=False):
+            st.markdown(sections['structural'])
 
 
 def render_chatbot_section(
@@ -1283,6 +1291,17 @@ def render_chatbot_section(
     
     # Update chatbot context
     factor_data = get_factor_breakdown(pca_row)
+    kg = st.session_state.get("kg_instance")
+    kg_regime = st.session_state.get("kg_current_regime")
+    kg_subgraph = None
+    if kg is not None and kg_regime is not None:
+        try:
+            kg_subgraph = kg.serialize_subgraph([
+                f"regime:{kg_regime}",
+                f"stock:{ticker}",
+            ])
+        except Exception:
+            kg_subgraph = None
     chatbot.set_stock_context(
         ticker=ticker,
         permno=permno,
@@ -1293,7 +1312,8 @@ def render_chatbot_section(
         factor_data=factor_data,
         percentiles=percentiles,
         peer_count=peer_count,
-        cluster_summary=cluster_summary
+        cluster_summary=cluster_summary,
+        kg_subgraph=kg_subgraph,
     )
     
     # Quick analysis button
@@ -1551,6 +1571,20 @@ def main():
                                 crowding_df = compute_crowding_scores(combined_period_df)
                                 st.session_state["crowding_df"] = crowding_df
                                 st.session_state["crowding_results"] = crowding_df
+
+                                # Build KG instance for Tier 1 narrative + Tier 2 chatbot
+                                try:
+                                    from kg_builder import build_kg
+                                    from kg_interface import KnowledgeGraph
+                                    kg_result = build_kg(
+                                        period_data          = st.session_state.get("period_scores"),
+                                        migration_df         = st.session_state.get("migration_wide"),
+                                        include_equity_nodes = True,
+                                    )
+                                    st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
+                                    st.session_state["kg_current_regime"] = "Disinflation"
+                                except Exception:
+                                    pass
 
                                 if not crowding_df.empty:
                                     # Metric cards — one per regime
