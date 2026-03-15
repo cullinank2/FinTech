@@ -987,18 +987,45 @@ def _render_early_warning_panel(kg) -> None:
         if not using_fallback else 67.9
     )
     d_pc_rs_val  = procrustes_live.get(("Post-COVID", "Rate Shock"),   {}).get("disparity", 0.342)
+    d_pc_dis_val = procrustes_live.get(("Post-COVID", "Disinflation"), {}).get("disparity", 0.459)
     d_rs_dis_val = procrustes_live.get(("Rate Shock", "Disinflation"), {}).get("disparity", 0.186)
+
+    # Dynamically identify which transition is the major break
+    all_transitions = {
+        "Post-COVID → Rate Shock":   d_pc_rs_val,
+        "Post-COVID → Disinflation": d_pc_dis_val,
+        "Rate Shock → Disinflation": d_rs_dis_val,
+    }
+    major_breaks = {k: v for k, v in all_transitions.items() if v >= 0.30}
+    if major_breaks:
+        major_label = max(major_breaks, key=major_breaks.get)
+        major_val   = major_breaks[major_label]
+        major_text  = (
+            f"- The **{major_label}** transition was the largest structural break "
+            f"(disparity {major_val:.3f} ≥ 0.30)."
+        )
+    else:
+        major_label = max(all_transitions, key=all_transitions.get)
+        major_val   = all_transitions[major_label]
+        major_text  = (
+            f"- No transition exceeded the 0.30 break threshold. "
+            f"The largest disparity was **{major_label}** at {major_val:.3f} — "
+            f"structural continuity held across all three regimes."
+        )
+
+    rs_dis_text = (
+        f"- The Rate Shock → Disinflation transition produced a Procrustes disparity of "
+        f"**{d_rs_dis_val:.3f}** — "
+        f"{'below the 0.30 break threshold, indicating structural continuity despite the crowding escalation.' if d_rs_dis_val < 0.30 else 'above the 0.30 break threshold, indicating structural discontinuity alongside crowding escalation.'}"
+    )
+
     st.info(
         f"**Current structural risk reading (Disinflation regime):**\n\n"
         f"- Factor space crowding score: **{disinflation_score:.1f}** 🚨 — "
         f"above the {_CROWDING_FLAG:.0f}-point flag threshold. "
         f"Spatial compression of the equity universe is at its highest observed level across the three-regime sequence.\n\n"
-        f"- The Rate Shock → Disinflation transition produced a Procrustes disparity of "
-        f"**{d_rs_dis_val:.3f}** — "
-        f"{'below the 0.30 break threshold, indicating structural continuity despite the crowding escalation.' if d_rs_dis_val < 0.30 else 'above the 0.30 break threshold, indicating structural discontinuity alongside crowding escalation.'}\n\n"
-        f"- The Post-COVID → Rate Shock transition was the major structural break "
-        f"(disparity {d_pc_rs_val:.3f} ≥ 0.30), establishing the new structural regime "
-        f"that persisted with increasing crowding into Disinflation.\n\n"
+        f"{rs_dis_text}\n\n"
+        f"{major_text}\n\n"
         f"**Interpretation:** Factor crowding escalation without a concurrent structural break "
         f"in Disinflation indicates equities are piling into an increasingly compressed "
         f"factor space *within a stable structural regime* — conditions historically "
