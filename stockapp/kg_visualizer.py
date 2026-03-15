@@ -763,6 +763,8 @@ def _render_crowding_chain_panel(kg) -> None:
     crowding_live = {}
     procrustes_live = {}
     using_fallback = True
+
+    # ── Tier 1: live KG instance ──────────────────────────────────────────
     if kg is not None:
         try:
             for regime in _REGIME_ORDER:
@@ -777,6 +779,43 @@ def _render_crowding_chain_panel(kg) -> None:
                 using_fallback = False
         except Exception:
             using_fallback = True
+
+    # ── Tier 2: session_state directly (populated by Period Comparison) ───
+    if using_fallback:
+        try:
+            # Crowding scores from crowding_df
+            for key in ["crowding_df", "crowding_results"]:
+                df = st.session_state.get(key)
+                if df is not None and not df.empty:
+                    for _, row in df.iterrows():
+                        p = str(row.get("period", row.get("Period", ""))).strip()
+                        if p in _REGIME_ORDER:
+                            score = _safe_float(
+                                row.get("crowding_score") or row.get("score"), None
+                            )
+                            if score is not None:
+                                crowding_live[p] = {"crowding_score": score}
+                    if crowding_live:
+                        using_fallback = False
+                    break
+
+            # Procrustes scores from procrustes_results
+            proc_df = st.session_state.get("procrustes_results")
+            if proc_df is not None and not proc_df.empty:
+                for _, row in proc_df.iterrows():
+                    a = str(row.get("Period A", "")).strip()
+                    b = str(row.get("Period B", "")).strip()
+                    key = (a, b)
+                    if key in _APPENDIX_B_PROCRUSTES:
+                        disp = _safe_float(row.get("Disparity"), None)
+                        n    = int(_safe_float(row.get("Common Tickers"), 0))
+                        if disp is not None:
+                            procrustes_live[key] = {
+                                "disparity":  disp,
+                                "n_tickers":  n,
+                            }
+        except Exception:
+            pass
 
     def _cs(regime):
         if not using_fallback and regime in crowding_live:
