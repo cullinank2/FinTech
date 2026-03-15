@@ -1157,12 +1157,13 @@ def _render_reasoning_chain_panel(kg) -> None:
         try:
             mig_summary = st.session_state.get("migration_summary_df")
             if mig_summary is not None and not mig_summary.empty:
-                # Find the row matching this regime's outgoing transition
-                # summary_df rows contain a Transition column like "Post-COVID -> Rate Shock"
+                # For first/middle regimes: find outgoing transition (starts with regime)
+                # For last regime (Disinflation): find incoming transition (ends with regime)
+                is_last = (idx == len(_REGIME_ORDER) - 1)
                 for _, mrow in mig_summary.iterrows():
                     t = str(mrow.get("Transition", "")).replace("→", "->").strip()
-                    # Match any transition that starts from this regime
-                    if t.startswith(regime_sel):
+                    matched = t.endswith(regime_sel) if is_last else t.startswith(regime_sel)
+                    if matched:
                         rate_str = str(mrow.get("Migration Rate", "")).replace("%", "").strip()
                         changed  = int(_safe_float(mrow.get("Changed Quadrant", 0)))
                         total    = int(_safe_float(mrow.get("Stocks Analyzed", 0)))
