@@ -35,15 +35,17 @@ try:
         REGIME_NODES, FACTOR_NODES, QUADRANT_NODES, MECHANISM_NODES,
         PLATFORM_NODES, AXIS_NODES, CATEGORY_NODES,
         APPENDIX_B_PROCRUSTES, APPENDIX_B_CROWDING, APPENDIX_B_PC_VARIANCE,
-        APPENDIX_B_MIGRATION,
+        APPENDIX_B_MIGRATION, SHORT_PERIOD_MAP,
+        PROCRUSTES_MEANINGFUL,
         CROWDING_THRESHOLD_ELEVATED, CROWDING_THRESHOLD_HIGH,
-        PROCRUSTES_MEANINGFUL, CROWDING_THRESHOLD_ELEVATED, CROWDING_THRESHOLD_HIGH,
-        SHORT_PERIOD_MAP,
     )
     KG_SCHEMA_AVAILABLE = True
 except Exception as _schema_err:
     KG_SCHEMA_AVAILABLE = False
     print(f"[kg_visualizer] kg_schema import failed: {_schema_err}")
+    CROWDING_THRESHOLD_ELEVATED = 50.0  # fallback — matches kg_schema.py definition
+    CROWDING_THRESHOLD_HIGH     = 70.0  # fallback — matches kg_schema.py definition
+    PROCRUSTES_MEANINGFUL       = 0.30  # fallback — matches kg_schema.py definition
 
 # ── Builder import ────────────────────────────────────────────────────────────
 try:
