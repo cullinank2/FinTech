@@ -16,10 +16,8 @@ import streamlit as st
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
 from scipy.spatial import procrustes
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from config import QUADRANTS
 
 # ── Sub-period definitions ────────────────────────────────────────────────────
