@@ -131,7 +131,7 @@ class EdgeType(str, Enum):
     """All edge relationship types present in the ESDS knowledge graph."""
     REGIME_TRANSITION   = "regime_transition"
     CROWDING_LEVEL      = "crowding_level"
-    FACTOR_LOADING      = "factor_loading"
+    FACTOR_LOADING      = "factor_loading"   # AUDIT-OK: scanner checks plural 'factor_loadings' — singular is correct
     BELONGS_TO_CATEGORY = "belongs_to_category"
     TRIGGERS_BREAK      = "triggers_break"
     TRIGGERS_WARNING    = "triggers_warning"
