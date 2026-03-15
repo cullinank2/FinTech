@@ -61,7 +61,7 @@ from visualizations import (
     plot_crowding_score
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
-from kg_visualizer import render_kg_tab
+from kg_visualizer import render_kg_tab, render_structural_intelligence_tab
 from period_analysis import (
     create_loading_comparison_chart,
     compute_procrustes_table,
@@ -1436,10 +1436,11 @@ def main():
         # Show overall cluster summary
         if st.session_state.pca_df is not None:
 
-            landing_tab1, landing_tab2, landing_tab3 = st.tabs([
+            landing_tab1, landing_tab2, landing_tab3, landing_tab4 = st.tabs([
                 "📊 Cluster Overview",
                 "📐 Period Comparison",
-                "🧠 Knowledge Graph"
+                "🧠 Knowledge Graph",
+                "🔬 Structural Intelligence",
             ])
 
             with landing_tab1:
@@ -1758,6 +1759,9 @@ def main():
 
         with landing_tab3:
                 render_kg_tab()
+
+        with landing_tab4:
+                render_structural_intelligence_tab()
 
         return
     
