@@ -1040,20 +1040,17 @@ def _render_reasoning_chain_panel(kg) -> None:
     subgraph_data = None
     if kg is not None:
         try:
-            valid_ids = [n for n in node_ids if kg._G.has_node(n)]
-            if valid_ids:
+            # Only use KG subgraph if structural nodes exist
+            structural_ids = [n for n in node_ids
+                              if n != f"regime:{regime_sel}"
+                              and kg._G.has_node(n)]
+            if structural_ids:
+                valid_ids = [n for n in node_ids if kg._G.has_node(n)]
                 subgraph_data = kg.serialize_subgraph(valid_ids)
         except Exception as e:
-            st.warning(f"KG subgraph query returned: {e}. Displaying Appendix B fallback chain.")
+            st.warning(f"KG subgraph query returned: {e}.")
 
-    # ── Debug: show all available node IDs in the graph ──────────────────
-    if kg is not None:
-        with st.expander("🔧 Debug: All node IDs in KG (first 50)"):
-            all_nodes = list(kg._G.nodes())[:50]
-            for n in all_nodes:
-                attrs = kg._G.nodes[n]
-                st.markdown(f"`{n}` — type: `{attrs.get('node_type','?')}`")
-
+    
     if subgraph_data and subgraph_data.get("nodes"):
         st.markdown(f"#### Live KG Reasoning Chain — {regime_sel}")
         st.markdown("**Nodes in subgraph:**")
@@ -1071,48 +1068,111 @@ def _render_reasoning_chain_panel(kg) -> None:
                 etype = edge.get("attrs", {}).get("edge_type", "")
                 st.markdown(f"- `{src}` →[**{etype}**]→ `{tgt}`")
     else:
-        st.markdown(f"#### Appendix B Structural Chain — {regime_sel}")
-        st.info(
-            "KG equity nodes not yet populated. Displaying Appendix B empirical "
-            "reasoning chain. Run Period Comparison to populate live KG."
-        )
-        score   = _APPENDIX_B_CROWDING[regime_sel]
+        # ── Build chain from live session state (richer than Appendix B) ──
+        # Pull live crowding score
+        live_score = None
+        for ss_key in ["crowding_df", "crowding_results"]:
+            df = st.session_state.get(ss_key)
+            if df is not None and not df.empty:
+                for _, row in df.iterrows():
+                    p = str(row.get("period", row.get("Period", ""))).strip()
+                    if p == regime_sel:
+                        live_score = _safe_float(
+                            row.get("crowding_score") or row.get("score"), None
+                        )
+                        break
+                if live_score is not None:
+                    break
+
+        # Pull live Procrustes scores
+        live_procrustes = {}
+        proc_df = st.session_state.get("procrustes_results")
+        if proc_df is not None and not proc_df.empty:
+            for _, row in proc_df.iterrows():
+                a = str(row.get("Period A", "")).strip()
+                b = str(row.get("Period B", "")).strip()
+                disp = _safe_float(row.get("Disparity"), None)
+                n    = int(_safe_float(row.get("Common Tickers"), 0))
+                if disp is not None:
+                    live_procrustes[(a, b)] = {"disparity": disp, "n_tickers": n}
+
+        score   = live_score if live_score is not None else _APPENDIX_B_CROWDING[regime_sel]
+        source  = "live pipeline" if live_score is not None else "Appendix B reference"
         flagged = score > _CROWDING_FLAG
+        date_ranges = ['Mar 2021–Jun 2022', 'Jul 2022–Sep 2023', 'Oct 2023–Oct 2024']
+
+        st.markdown(f"#### Structural Reasoning Chain — {regime_sel}")
+        st.caption(f"Values sourced from: **{source}**")
+
         chain_lines = [
-            f"**Node:** `regime:{regime_sel}` — structural period, "
-            f"{['Mar 2021–Jun 2022','Jul 2022–Sep 2023','Oct 2023–Oct 2024'][idx]}",
+            f"**Node:** `regime:{regime_sel}` — type: `regime` | "
+            f"period: {date_ranges[idx]}",
             "",
             f"**Edge:** `has_crowding_metric` →",
-            f"**Node:** `crowding:{regime_sel}` — score {score:.1f} / 100 "
-            f"({'🚨 FLAGGED: above {:.0f} threshold'.format(_CROWDING_FLAG) if flagged else 'within normal range'})",
+            f"**Node:** `crowding:{regime_sel}` — "
+            f"score **{score:.1f}** / 100 | "
+            f"{'🚨 FLAGGED — above threshold' if flagged else '🟢 within normal range'} "
+            f"(threshold: {_CROWDING_FLAG:.0f})",
             "",
         ]
+
         if idx > 0:
             prior = _REGIME_ORDER[idx - 1]
-            ab    = _APPENDIX_B_PROCRUSTES[(prior, regime_sel)]
-            major = ab["disparity"] >= 0.30
+            key   = (prior, regime_sel)
+            ab    = _APPENDIX_B_PROCRUSTES[key]
+            live  = live_procrustes.get(key, live_procrustes.get((regime_sel, prior), {}))
+            disp  = live.get("disparity", ab["disparity"])
+            n     = live.get("n_tickers", ab["n_tickers"])
+            src   = "live" if live else "Appendix B"
+            major = disp >= 0.30
             chain_lines += [
                 f"**Edge:** `regime_transition` ← from `regime:{prior}` →",
                 f"**Node:** `procrustes_transition:{prior}:{regime_sel}` — "
-                f"disparity {ab['disparity']:.3f}, {ab['n_tickers']:,} common tickers, "
-                f"{'🔴 major structural break' if major else '🟢 structurally stable transition'}",
+                f"disparity **{disp:.3f}** | {n:,} common tickers | "
+                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} "
+                f"({src})",
                 "",
             ]
+
+        if idx < len(_REGIME_ORDER) - 1:
+            nxt   = _REGIME_ORDER[idx + 1]
+            key   = (regime_sel, nxt)
+            ab    = _APPENDIX_B_PROCRUSTES[key]
+            live  = live_procrustes.get(key, {})
+            disp  = live.get("disparity", ab["disparity"])
+            n     = live.get("n_tickers", ab["n_tickers"])
+            src   = "live" if live else "Appendix B"
+            major = disp >= 0.30
+            chain_lines += [
+                f"**Edge:** `regime_transition` → to `regime:{nxt}` →",
+                f"**Node:** `procrustes_transition:{regime_sel}:{nxt}` — "
+                f"disparity **{disp:.3f}** | {n:,} common tickers | "
+                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} "
+                f"({src})",
+                "",
+            ]
+
+        # Migration
+        mig_keys   = list(_APPENDIX_B_MIGRATION.keys())
         mig_values = list(_APPENDIX_B_MIGRATION.values())
         if idx < len(mig_values):
             mig = mig_values[idx]
             chain_lines += [
                 f"**Edge:** `has_migration_event` →",
-                f"**Node:** migration context — {mig['pct']:.1f}% quadrant migration rate "
+                f"**Node:** `quadrant_migration:{regime_sel}` — "
+                f"**{mig['pct']:.1f}%** quadrant migration rate "
                 f"({mig['n']} of {mig['of']} tickers changed quadrant)",
                 "",
             ]
+
         if flagged:
             chain_lines += [
                 f"**Edge:** `triggers_early_warning` →",
-                f"**Node:** `early_warning:{regime_sel}` — 🚨 structural crowding "
-                f"flag active (score {score:.1f} > threshold {_CROWDING_FLAG:.0f})",
+                f"**Node:** `early_warning:{regime_sel}` — 🚨 crowding flag active | "
+                f"score {score:.1f} > threshold {_CROWDING_FLAG:.0f} | "
+                f"prospective structural risk signal",
             ]
+
         for line in chain_lines:
             st.markdown(line)
 
