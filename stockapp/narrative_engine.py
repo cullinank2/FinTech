@@ -638,11 +638,14 @@ def generate_structural_context(
 
             # Factor rotation summary
             rotations = chain.get("factor_rotations", [])
-            reversals = [r for r in rotations if r.get("stability_class") == "reversed"]
+            # Use pc2_stability_class for display — overall stability_class may reflect
+            # a PC3 reversal that is invisible in the PC2 display context.
+            reversals = [r for r in rotations
+                         if r.get("pc2_stability_class", r.get("stability_class")) == "reversed"]
             if reversals:
                 lines += [
                     "",
-                    f"**Factor sign reversals ({len(reversals)} detected):**",
+                    f"**Factor sign reversals on PC2 ({len(reversals)} detected):**",
                 ]
                 for rev in reversals:
                     disp = rev.get("display_name", rev.get("factor", ""))

@@ -579,24 +579,31 @@ class KnowledgeGraph:
         for code in factor_codes:
             rot = self.get_factor_rotation(code, from_regime, to_regime)
             if "error" not in rot:
+                # pc2_stability_class: stability classification specific to PC2 axis only.
+                # stability_class is worst-case across all PCs — correct for overall
+                # structural assessment but misleading when displaying PC2 values.
+                pc2_stab = _classify_stability(rot["pc2_from"], rot["pc2_to"])
                 factor_rotations.append({
-                    "factor":          code,
-                    "display_name":    self._G.nodes.get(f"factor:{code}", {}).get("label", code),
-                    "pc2_from":        rot["pc2_from"],
-                    "pc2_to":          rot["pc2_to"],
-                    "sign_change_pc2": rot["sign_change_pc2"],
-                    "delta_pc2":       rot["magnitude_delta_pc2"],
-                    "stability_class": rot["stability_class"],
-                    "headline_pc":     rot["headline_pc"],
-                    "data_source":     rot["data_source"],
+                    "factor":            code,
+                    "display_name":      self._G.nodes.get(f"factor:{code}", {}).get("label", code),
+                    "pc2_from":          rot["pc2_from"],
+                    "pc2_to":            rot["pc2_to"],
+                    "sign_change_pc2":   rot["sign_change_pc2"],
+                    "delta_pc2":         rot["magnitude_delta_pc2"],
+                    "stability_class":   rot["stability_class"],     # overall worst-case
+                    "pc2_stability_class": pc2_stab,                 # PC2-specific
+                    "headline_pc":       rot["headline_pc"],
+                    "data_source":       rot["data_source"],
                 })
 
         # Sort: reversed first, then rotated, then stable
         _stab_order = {"reversed": 0, "rotated": 1, "stable": 2}
         factor_rotations.sort(key=lambda x: _stab_order.get(x["stability_class"], 3))
 
-        # Count sign reversals for narrative chain
-        reversals = [f for f in factor_rotations if f["stability_class"] == "reversed"]
+        # Count sign reversals on PC2 specifically — this is the primary diagnostic axis.
+        # Using overall stability_class would include PC3 reversals that are not visible
+        # in the PC2 display context and would produce misleading labels.
+        reversals = [f for f in factor_rotations if f["pc2_stability_class"] == "reversed"]
 
         # ── Step 4: Build narrative_chain for Tier 1 engine ──────────────────
         narrative_chain = [
