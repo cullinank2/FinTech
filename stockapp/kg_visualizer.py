@@ -398,6 +398,12 @@ def _recompute_period_scores() -> dict:
         short_map     = {k.split('\n')[0]: v for k, v in SUB_PERIODS.items()}
         period_scores = {}
 
+        try:
+            from sklearn.cluster import KMeans
+            _kmeans_available = True
+        except ImportError:
+            _kmeans_available = False
+
         for short_label, (start, end) in short_map.items():
             mask     = (raw_data[date_col] >= start) & (raw_data[date_col] <= end)
             slice_df = raw_data[mask]
@@ -411,6 +417,22 @@ def _recompute_period_scores() -> dict:
                     if "Quadrant" in scores_df.columns and "quadrant" not in scores_df.columns:
                         scores_df = scores_df.copy()
                         scores_df["quadrant"] = scores_df["Quadrant"]
+
+                    # Add cluster column via KMeans — required for get_peers()
+                    # cluster_membership edges only wire when this column exists
+                    if "cluster" not in scores_df.columns and _kmeans_available:
+                        try:
+                            n_clusters = min(8, max(2, len(scores_df) // 50))
+                            pc_cols = [c for c in ["PC1", "PC2", "PC3"]
+                                       if c in scores_df.columns]
+                            km = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+                            scores_df = scores_df.copy()
+                            scores_df["cluster"] = km.fit_predict(
+                                scores_df[pc_cols].values
+                            )
+                        except Exception:
+                            pass  # peers unavailable for this period, not fatal
+
                     period_scores[short_label] = scores_df
             except Exception:
                 continue
