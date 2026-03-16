@@ -793,6 +793,36 @@ def _render_peer_path_panel(kg) -> None:
                 "Live Equity Nodes in the Knowledge Graph tab first."
             )
             return
+
+        # ── TEMPORARY DEBUG ──────────────────────────────────────────────────
+        with st.expander("🔍 Debug info (temporary)", expanded=True):
+            summary = kg.summary()
+            st.write(f"**Total nodes:** {summary['total_nodes']}")
+            st.write(f"**Total edges:** {summary['total_edges']}")
+            node_types = summary.get('node_type_counts', {})
+            st.write(f"**Stock nodes:** {node_types.get('stock', 0)}")
+            st.write(f"**Cluster nodes:** {node_types.get('cluster', 0)}")
+            edge_types = summary.get('edge_type_counts', {})
+            st.write(f"**cluster_membership edges:** {edge_types.get('cluster_membership', 0)}")
+            st.write(f"**quadrant_assignment edges:** {edge_types.get('quadrant_assignment', 0)}")
+            # Check if ticker exists
+            stock_id = f"stock:{ticker_input}"
+            st.write(f"**stock:{ticker_input} in graph:** {kg._G.has_node(stock_id)}")
+            if kg._G.has_node(stock_id):
+                out_edges = list(kg._G.out_edges(stock_id, data=True))
+                st.write(f"**Edges from stock node:** {len(out_edges)}")
+                for u, v, d in out_edges[:5]:
+                    st.write(f"  → `{v}` | type: `{d.get('edge_type')}` | regime: `{d.get('regime')}`")
+            # Check period_scores in session state
+            ps = st.session_state.get("period_scores", {})
+            st.write(f"**period_scores keys:** {list(ps.keys())}")
+            for k, df in ps.items():
+                if df is not None:
+                    has_cluster = "cluster" in df.columns
+                    st.write(f"  `{k}`: {len(df)} rows, cluster col: {has_cluster}")
+            st.write(f"**_kg_instance_key:** {st.session_state.get('_kg_instance_key')}")
+        # ── END TEMPORARY DEBUG ───────────────────────────────────────────────
+
         try:
             peers = kg.get_peers(ticker_input, regime_sel, max_results=max_peers)
         except Exception as e:
