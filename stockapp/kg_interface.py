@@ -517,6 +517,26 @@ class KnowledgeGraph:
         stocks_analyzed  = int(_safe_float(transition_attrs.get("stocks_analyzed")))
         t_data_source    = transition_attrs.get("data_source", "unknown")
 
+        # ── Override migration with live session state if available ───────────
+        try:
+            ss = _get_session_state()
+            mig_summary = ss.get("migration_summary_df")
+            if mig_summary is not None and not mig_summary.empty:
+                for _, mrow in mig_summary.iterrows():
+                    t = str(mrow.get("Transition", "")).replace("→", "->").strip()
+                    if t.endswith(to_regime):
+                        rate_str = str(mrow.get("Migration Rate", "")).replace("%", "").strip()
+                        changed  = int(_safe_float(mrow.get("Changed Quadrant", 0)))
+                        total    = int(_safe_float(mrow.get("Stocks Analyzed", 0)))
+                        rate_val = _safe_float(rate_str, None)
+                        if rate_val is not None and total > 0:
+                            migration_pct   = rate_val
+                            stocks_changed  = changed
+                            stocks_analyzed = total
+                        break
+        except Exception:
+            pass
+
         # ── Step 2: Crowding before / after ───────────────────────────────────
         def _crowding_from_node(regime_id: str) -> tuple[float, str]:
             attrs = self._node_attrs(regime_id)
@@ -745,6 +765,28 @@ class KnowledgeGraph:
                       APPENDIX_B_PROCRUSTES.get((regime, prior_regime)) or {})
                 proc_from_prior = _safe_float(fb.get("disparity", 0.0))
                 is_major_break  = proc_from_prior >= PROCRUSTES_MEANINGFUL
+
+            # ── Tier 2: override migration values from live session state ─────
+            # The graph edge was built from Appendix B — live migration_summary_df
+            # is more accurate and should take precedence when available.
+            try:
+                ss = _get_session_state()
+                mig_summary = ss.get("migration_summary_df")
+                if mig_summary is not None and not mig_summary.empty:
+                    for _, mrow in mig_summary.iterrows():
+                        t = str(mrow.get("Transition", "")).replace("→", "->").strip()
+                        if t.endswith(regime):
+                            rate_str = str(mrow.get("Migration Rate", "")).replace("%", "").strip()
+                            changed  = int(_safe_float(mrow.get("Changed Quadrant", 0)))
+                            total    = int(_safe_float(mrow.get("Stocks Analyzed", 0)))
+                            rate_val = _safe_float(rate_str, None)
+                            if rate_val is not None and total > 0:
+                                migration_pct   = rate_val
+                                stocks_changed  = changed
+                                stocks_analyzed = total
+                            break
+            except Exception:
+                pass
 
         early_warning = crowding_score >= CROWDING_THRESHOLD_ELEVATED
 
