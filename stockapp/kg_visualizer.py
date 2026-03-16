@@ -362,10 +362,15 @@ def _build_equity_graph_html() -> str:
             migration_df         = migration_df,
             include_equity_nodes = True,
         )
-        # Store live KG instance for Structural Intelligence panels
+        # Store live KG instance — keyed to period_scores identity so it only
+        # rebuilds when the underlying data actually changes, not on every render
         try:
             from kg_interface import KnowledgeGraph
-            st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
+            current_key = id(st.session_state.get("period_scores"))
+            if st.session_state.get("_kg_instance_key") != current_key \
+               or st.session_state.get("kg_instance") is None:
+                st.session_state["kg_instance"]     = KnowledgeGraph(kg_result.graph)
+                st.session_state["_kg_instance_key"] = current_key
         except Exception:
             pass
         net = _make_pyvis_net(height="680px")
@@ -440,6 +445,21 @@ def _recompute_period_scores() -> dict:
         # Cache in session state so re-renders don't re-run PCA
         if period_scores:
             st.session_state["period_scores"] = period_scores
+            # Pre-build kg_instance here so Structural Intelligence tab
+            # doesn't depend on the KG tab having rendered first
+            try:
+                from kg_builder import build_kg as _build_kg
+                from kg_interface import KnowledgeGraph
+                migration_df = st.session_state.get("migration_wide")
+                _kg_result   = _build_kg(
+                    period_data          = period_scores,
+                    migration_df         = migration_df,
+                    include_equity_nodes = True,
+                )
+                st.session_state["kg_instance"]      = KnowledgeGraph(_kg_result.graph)
+                st.session_state["_kg_instance_key"] = id(period_scores)
+            except Exception:
+                pass
 
         return period_scores
 
