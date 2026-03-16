@@ -346,6 +346,19 @@ def _build_equity_graph_html() -> str:
     try:
         period_scores = st.session_state.get("period_scores")
 
+        # Invalidate cache if cluster column is missing from any period
+        # (means cache was built before KMeans fix was deployed)
+        if period_scores:
+            missing_cluster = any(
+                df is not None and "cluster" not in df.columns
+                for df in period_scores.values()
+            )
+            if missing_cluster:
+                period_scores = None
+                st.session_state.pop("period_scores", None)
+                st.session_state.pop("_kg_instance_key", None)
+                st.session_state.pop("kg_instance", None)
+
         if not period_scores:
             period_scores = _recompute_period_scores()
 
@@ -443,9 +456,15 @@ def _recompute_period_scores() -> dict:
                 continue
 
         # Cache in session state so re-renders don't re-run PCA
-        if period_scores:
+        # Only cache if ALL periods have the cluster column
+        all_have_cluster = all(
+            df is not None and "cluster" in df.columns
+            for df in period_scores.values()
+        ) if period_scores else False
+
+        if period_scores and all_have_cluster:
             st.session_state["period_scores"] = period_scores
-            # Pre-build kg_instance here so Structural Intelligence tab
+            # Pre-build kg_instance so Structural Intelligence tab
             # doesn't depend on the KG tab having rendered first
             try:
                 from kg_builder import build_kg as _build_kg
@@ -460,6 +479,9 @@ def _recompute_period_scores() -> dict:
                 st.session_state["_kg_instance_key"] = id(period_scores)
             except Exception:
                 pass
+        elif period_scores and not all_have_cluster:
+            # KMeans failed silently — don't cache, force recompute next render
+            st.session_state.pop("period_scores", None)
 
         return period_scores
 
