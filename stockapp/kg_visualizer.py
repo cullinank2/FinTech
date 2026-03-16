@@ -351,6 +351,8 @@ def _build_equity_graph_html() -> str:
 
         if not period_scores:
             st.warning("No period scores available — showing static ontology.")
+            # Do NOT overwrite kg_instance here — if a live equity graph was
+            # previously built it should remain in session state for other tabs.
             return _build_static_graph_html(_static_graph_cache_key())
 
         migration_df = st.session_state.get("migration_wide")
@@ -372,6 +374,7 @@ def _build_equity_graph_html() -> str:
 
     except Exception as exc:
         st.warning(f"Equity graph build failed, showing static ontology: {exc}")
+        # Do NOT overwrite kg_instance — preserve any previously built live equity graph.
         return _build_static_graph_html(_static_graph_cache_key())
 
 
@@ -411,6 +414,10 @@ def _recompute_period_scores() -> dict:
                     period_scores[short_label] = scores_df
             except Exception:
                 continue
+
+        # Cache in session state so re-renders don't re-run PCA
+        if period_scores:
+            st.session_state["period_scores"] = period_scores
 
         return period_scores
 
