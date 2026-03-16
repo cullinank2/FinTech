@@ -436,6 +436,33 @@ def _recompute_period_scores() -> dict:
                         scores_df = scores_df.copy()
                         scores_df["quadrant"] = scores_df["Quadrant"]
 
+                    # Join GICS sector from raw_data — required for peer table display
+                    if "gics_sector" not in scores_df.columns:
+                        try:
+                            sector_col = next(
+                                (c for c in ["gicdesc", "gics_sector", "gsector"]
+                                 if c in raw_data.columns), None
+                            )
+                            if sector_col:
+                                ticker_col = next(
+                                    (c for c in ["ticker", "TICKER"]
+                                     if c in raw_data.columns), None
+                                )
+                                if ticker_col:
+                                    sector_map = (
+                                        raw_data[[ticker_col, sector_col]]
+                                        .drop_duplicates(subset=[ticker_col])
+                                        .set_index(ticker_col)[sector_col]
+                                        .to_dict()
+                                    )
+                                    scores_df = scores_df.copy()
+                                    scores_df["gics_sector"] = (
+                                        scores_df["ticker"].map(sector_map)
+                                        .fillna("Unknown")
+                                    )
+                        except Exception:
+                            pass
+
                     # Add cluster column via KMeans — required for get_peers()
                     # cluster_membership edges only wire when this column exists
                     if "cluster" not in scores_df.columns and _kmeans_available:
