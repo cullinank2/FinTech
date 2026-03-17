@@ -544,6 +544,26 @@ def generate_peer_context(
         "",
     ]
 
+    # --- Peer dispersion metric (institutional diagnostic) ---
+    if 'PC1' in peer_df.columns and 'PC2' in peer_df.columns:
+        pc1_disp = peer_df['PC1'].std()
+        pc2_disp = peer_df['PC2'].std()
+
+        def _disp_label(val):
+            if val < 0.5:
+                return "low (crowded)"
+            elif val < 1.0:
+                return "moderate"
+            else:
+                return "high (well differentiated)"
+
+        lines += [
+            "",
+            "**Peer Dispersion (Structural Spread):**",
+            f"- PC1 dispersion: {pc1_disp:.2f} → {_disp_label(pc1_disp)}",
+            f"- PC2 dispersion: {pc2_disp:.2f} → {_disp_label(pc2_disp)}",
+        ]    
+
     if pc1_pct_rank is not None:
         quality_pos = (
             "near the top"    if pc1_pct_rank >= 70 else
@@ -576,9 +596,9 @@ def generate_peer_context(
 
             if drift.get("crowding_risk") == "High":
                 lines += [
-                   "",
-                   "⚠️ **Peer context warning:** High factor crowding in this regime — "
-                   "cross-sectional differentiation may be compressed.",
+                    "",
+                    "⚠️ **Peer context warning:** High factor crowding in this regime — "
+                    "cross-sectional differentiation may be compressed.",
                 ]
 
             if drift.get("migration_pct", 0) > 30:
