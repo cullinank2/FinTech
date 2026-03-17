@@ -341,8 +341,8 @@ def generate_trajectory_narrative(
     n_periods = len(stock_df)
 
     pc1_features = PCA_DRIVER_GROUPS['PC1'][:]
-        pc2_features = PCA_DRIVER_GROUPS['PC2'][:]
-        pc3_features = PCA_DRIVER_GROUPS['PC3'][:]
+    pc2_features = PCA_DRIVER_GROUPS['PC2'][:]
+    pc3_features = PCA_DRIVER_GROUPS['PC3'][:]
 
     if loadings:
         if 'PC1' in loadings and 'positive' in loadings['PC1']:
