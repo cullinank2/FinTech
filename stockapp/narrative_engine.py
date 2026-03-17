@@ -227,6 +227,58 @@ def generate_summary(ticker: str, pca_row: Any, show_pc3: bool = False) -> str:
 
     return "\n".join(lines)
 
+# ---------------------------------------------------------------------------
+# FACTOR-LEVEL REGIME INTERPRETATION
+# ---------------------------------------------------------------------------
+
+def _get_factor_regime_notes(kg, current_regime: str) -> dict:
+    """
+    Returns factor-specific warnings based on regime transitions.
+    Focuses on instability, reversals, and crowding.
+    """
+    if kg is None or not current_regime:
+        return {}
+
+    try:
+        drift = kg.get_structural_drift_summary(current_regime)
+
+        regime_order = REGIME_ORDER
+        idx = regime_order.index(current_regime) if current_regime in regime_order else -1
+        prior = regime_order[idx - 1] if idx > 0 else None
+
+        notes = []
+
+        # --- Global instability ---
+        if drift.get("early_warning_triggered"):
+            notes.append(
+                "⚠️ Factor relationships are currently unstable — rankings may shift rapidly."
+            )
+
+        # --- Crowding ---
+        if drift.get("crowding_risk") == "High":
+            notes.append(
+                "🔴 High factor crowding detected — top-ranked signals may be crowded trades."
+            )
+
+        # --- Factor reversals ---
+        if prior:
+            chain = kg.query_crowding_chain(prior, current_regime)
+            reversals = [
+                r for r in chain.get("factor_rotations", [])
+                if r.get("pc2_stability_class") == "reversed"
+            ]
+
+            if reversals:
+                names = [r.get("display_name", r.get("factor")) for r in reversals[:3]]
+                notes.append(
+                    f"🔄 Key factor reversals detected: {', '.join(names)} — "
+                    "interpret value/growth signals with caution."
+                )
+
+        return {"notes": notes}
+
+    except Exception:
+        return {}
 
 # ===========================================================================
 # SECTION 2 — TOP 3 STRENGTHS & WEAKNESSES
@@ -236,6 +288,8 @@ def generate_factor_highlights(
     ticker: str,
     percentiles: Dict[str, float],
     factor_data: Optional[Dict] = None,
+    kg: Any = None,
+    current_regime: Optional[str] = None,
 ) -> str:
     """Section 2: Top 3 factor strengths and weaknesses by percentile rank."""
     if not percentiles:
@@ -272,7 +326,9 @@ def generate_factor_highlights(
     top_pct  = strengths[0][1]
     bot_pct  = weaknesses[0][1]
 
-    lines = [
+    regime_notes = _get_factor_regime_notes(kg, current_regime)
+
+lines = [
         "**🟢 Top 3 Strengths** *(highest percentile ranks vs. GICS sector peers)*",
         *[_row(f, p) for f, p in strengths],
         "",
@@ -282,7 +338,15 @@ def generate_factor_highlights(
         f"*{ticker}'s clearest edge is **{top_feat}** ({_ordinal(top_pct)} percentile). "
         f"Its most notable drag is **{bot_feat}** ({_ordinal(bot_pct)} percentile).*",
     ]
-    return "\n".join(lines)
+    # Append regime-aware interpretation if present
+if regime_notes.get("notes"):
+    lines += [
+        "",
+        "**⚠️ Regime Context (Factor Reliability):**",
+        *[f"- {n}" for n in regime_notes["notes"]],
+    ]
+
+return "\n".join(lines)
 
 
 # ===========================================================================
@@ -797,7 +861,13 @@ def generate_narrative(
 
     return {
         'summary': generate_summary(ticker, pca_row, show_pc3),
-        'factors': generate_factor_highlights(ticker, percentiles, factor_data),
+        'factors': generate_factor_highlights(
+    ticker,
+    percentiles,
+    factor_data,
+    kg=kg,
+    current_regime=current_regime
+),
         'trajectory': (
             generate_trajectory_narrative(ticker, raw_data, loadings, show_pc3)
             if raw_data is not None
