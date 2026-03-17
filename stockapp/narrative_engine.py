@@ -38,22 +38,15 @@ Tier 1 governance note:
 import pandas as pd
 from typing import Dict, Optional, Any
 
+from factor_registry import (
+    FEATURE_DISPLAY_NAMES,
+    PCA_DRIVER_GROUPS,
+    REGIME_ORDER,
+)
+
 # ---------------------------------------------------------------------------
 # Feature display name mapping — mirrors config.py / visualizations.py
 # ---------------------------------------------------------------------------
-FEATURE_DISPLAY_NAMES = {
-    'earnings_yield': 'Earnings Yield',
-    'bm':             'Book-to-Market',
-    'sales_to_price': 'Sales-to-Price',
-    'roe':            'Return on Equity (ROE)',
-    'roa':            'Return on Assets (ROA)',
-    'gprof':          'Gross Profitability',
-    'debt_assets':    'Debt-to-Assets',
-    'cash_debt':      'Cash-to-Debt',
-    'momentum_12m':   '12-Mo. Momentum',
-    'vol_60d_ann':    '60-Day Volatility',
-    'addv_63d':       'Liquidity',
-}
 
 # Quadrant metadata
 _QUADRANT_META = {
@@ -96,7 +89,7 @@ _QUADRANT_META = {
 }
 
 # Canonical regime ordering
-_REGIME_ORDER = ["Post-COVID", "Rate Shock", "Disinflation"]
+_REGIME_ORDER = REGIME_ORDER
 
 
 # ===========================================================================
@@ -347,9 +340,9 @@ def generate_trajectory_narrative(
     date_max  = stock_df['_date'].max().strftime('%b %Y')
     n_periods = len(stock_df)
 
-    pc1_features = ['roa', 'roe', 'cash_debt']
-    pc2_features = ['sales_to_price', 'bm', 'earnings_yield']
-    pc3_features = ['debt_assets', 'vol_60d_ann', 'gprof']
+    pc1_features = PCA_DRIVER_GROUPS['PC1'][:]
+        pc2_features = PCA_DRIVER_GROUPS['PC2'][:]
+        pc3_features = PCA_DRIVER_GROUPS['PC3'][:]
 
     if loadings:
         if 'PC1' in loadings and 'positive' in loadings['PC1']:
