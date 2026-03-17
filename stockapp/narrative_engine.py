@@ -491,6 +491,8 @@ def generate_peer_context(
     peer_df: pd.DataFrame,
     percentiles: Dict[str, float],
     gics_sector: str = 'N/A',
+    kg: Any = None,
+    current_regime: Optional[str] = None,
 ) -> str:
     """Section 4: Peer context — how the stock compares within its quadrant."""
     if peer_df is None or peer_df.empty:
@@ -566,6 +568,28 @@ def generate_peer_context(
         lines.append(
             f"On **valuation style (PC2)**, it is {value_pos} within the group."
         )
+
+    # --- Regime-aware peer context (KG overlay) ---
+    if kg is not None and current_regime:
+        try:
+            drift = kg.get_structural_drift_summary(current_regime)
+
+            if drift.get("crowding_risk") == "High":
+                lines += [
+                   "",
+                   "⚠️ **Peer context warning:** High factor crowding in this regime — "
+                   "cross-sectional differentiation may be compressed.",
+                ]
+
+            if drift.get("migration_pct", 0) > 30:
+                lines += [
+                   "",
+                   "🔀 **Peer instability:** Elevated quadrant migration suggests peer group "
+                   "composition is shifting meaningfully.",
+                ]
+
+        except Exception:
+            pass
 
     if standouts:
         lines += ["", "**Notable factor differentiators vs. GICS sector peers:**"]
@@ -874,7 +898,15 @@ def generate_narrative(
             else "Time-series data was not passed to the narrative engine."
         ),
         'peers': (
-            generate_peer_context(ticker, pca_row, peer_df, percentiles, gics_sector)
+            generate_peer_context(
+            ticker,
+            pca_row,
+            peer_df,
+            percentiles,
+            gics_sector,
+            kg=kg,
+            current_regime=current_regime,
+)
             if peer_df is not None
             else "Peer data was not passed to the narrative engine."
         ),
