@@ -586,7 +586,7 @@ def generate_structural_context(
                 f"| Crowding Score | {crd_e} {drift.get('crowding_score', 'N/A')} "
                 f"({drift.get('crowding_risk', 'N/A')}) |",
                 f"| Procrustes vs. {prior} | "
-                f"{sev_e} {drift.get('procrustes_from_prior', 'N/A'):.3f} "
+                f"{sev_e} {float(drift.get('procrustes_from_prior', 0.0)):.3f} "
                 f"({drift.get('severity_from_prior', 'N/A')}) |",
                 f"| Quadrant Migration Rate | "
                 f"{drift.get('migration_pct', 0):.1f}% "
