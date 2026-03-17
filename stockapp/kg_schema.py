@@ -271,6 +271,7 @@ def _build_catalogs():
             QUADRANTS, PC1_INTERPRETATION, PC2_INTERPRETATION,
             PC3_INTERPRETATION, N_COMPONENTS,
         )
+        from factor_registry import FEATURE_DATA_SOURCES
         from period_analysis import SUB_PERIODS
 
         # Strip \n from SUB_PERIODS keys to get clean short labels
@@ -303,19 +304,7 @@ def _build_catalogs():
             for cat, codes in FACTOR_CATEGORIES.items()
             for code in codes
         }
-        _data_src = {
-            'earnings_yield': 'WRDS/Compustat',
-            'bm':             'WRDS/Compustat',
-            'sales_to_price': 'WRDS/Compustat',
-            'roe':            'WRDS/Compustat',
-            'roa':            'WRDS/Compustat',
-            'gprof':          'WRDS/Compustat',
-            'debt_assets':    'WRDS/Compustat',
-            'cash_debt':      'WRDS/Compustat',
-            'momentum_12m':   'WRDS/CRSP',
-            'vol_60d_ann':    'WRDS/CRSP',
-            'addv_63d':       'WRDS/CRSP',
-        }
+        _data_src = FEATURE_DATA_SOURCES
         _cat_enum_map = {
             'Value':              FactorCategoryName.VALUE,
             'Quality':            FactorCategoryName.QUALITY,
