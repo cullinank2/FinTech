@@ -28,6 +28,8 @@ from typing import Optional
 
 import networkx as nx
 
+from factor_registry import REGIME_ORDER as CANONICAL_REGIME_ORDER
+
 # ── Schema constants (no graph construction imported) ─────────────────────────
 try:
     from kg_schema import (
@@ -50,7 +52,7 @@ except Exception as _e:
 
 # ── Regime ordering (chronological) ──────────────────────────────────────────
 
-REGIME_ORDER = ["Post-COVID", "Rate Shock", "Disinflation"]
+REGIME_ORDER = CANONICAL_REGIME_ORDER
 
 # Appendix B per-period loading fallbacks for get_factor_rotation()
 # Used ONLY when session_state["period_loadings"] is not yet populated.
