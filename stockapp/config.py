@@ -27,6 +27,13 @@ OPENAI_API_KEY_PLACEHOLDER = "YOUR_OPENAI_API_KEY_HERE"
 OPENAI_MODEL = "gpt-4o-mini"  # Cost-effective option; use "gpt-4o" for better quality
 
 
+from factor_registry import (
+    FEATURE_COLUMNS,
+    FEATURE_DISPLAY_NAMES,
+    FEATURE_DISPLAY_ORDER,
+    FACTOR_CATEGORIES,
+)
+
 # =============================================================================
 # PCA AND CLUSTERING CONFIGURATION
 # =============================================================================
@@ -38,66 +45,14 @@ N_COMPONENTS = 3
 N_CLUSTERS = 4
 
 # Features used for PCA analysis (must match columns in dataset)
-FEATURE_COLUMNS = [
-    'earnings_yield',    # Value factor
-    'bm',                # Book-to-Market (Value)
-    'sales_to_price',    # Value factor
-    'roe',               # Quality - Return on Equity
-    'roa',               # Quality - Return on Assets
-    'gprof',             # Quality - Gross Profitability
-    'debt_assets',       # Financial Strength
-    'cash_debt',         # Financial Strength
-    'momentum_12m',      # Momentum
-    'vol_60d_ann',       # Volatility (Risk)
-    'addv_63d'           # Liquidity - Average Daily Dollar Volume
-]
-
 
 # =============================================================================
 # FEATURE DISPLAY NAMES (Plain English Labels)
 # =============================================================================
 
-FEATURE_DISPLAY_NAMES = {
-    'earnings_yield': 'Earnings Yield (V)',
-    'bm': 'Book-to-Market (V)',
-    'sales_to_price': 'Sales-to-Price (V)',
-    'roe': 'Return on Equity (Q)',
-    'roa': 'Return on Assets (Q)',
-    'gprof': 'Gross Profitability (Q)',
-    'debt_assets': 'Debt-to-Assets(FS)',
-    'cash_debt': 'Cash-to-Debt (FS)',
-    'momentum_12m': '12-Mo. Momentum (R)',
-    'vol_60d_ann': '60-Day Volatility (R)',
-    'addv_63d': 'Liquidity (R)'
-}
-
-
 # Feature display order (for charts)
-FEATURE_DISPLAY_ORDER = [
-    'earnings_yield',
-    'bm',
-    'sales_to_price',
-    'roe',
-    'roa',
-    'gprof',
-    'debt_assets',
-    'cash_debt',
-    'momentum_12m',
-    'vol_60d_ann',
-    'addv_63d'
-]
-
 
 # Factor categories for grouping and visualization
-FACTOR_CATEGORIES = {
-    'Value': ['earnings_yield', 'bm', 'sales_to_price'],
-    'Quality': ['roe', 'roa', 'gprof'],
-    'Financial Strength': ['debt_assets', 'cash_debt'],
-    'Momentum': ['momentum_12m'],
-    'Risk/Volatility': ['vol_60d_ann'],
-    'Liquidity': ['addv_63d']
-}
-
 
 # =============================================================================
 # PCA AXIS INTERPRETATIONS (from visualization guide)
