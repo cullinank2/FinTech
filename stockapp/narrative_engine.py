@@ -328,7 +328,7 @@ def generate_factor_highlights(
 
     regime_notes = _get_factor_regime_notes(kg, current_regime)
 
-lines = [
+    lines = [
         "**🟢 Top 3 Strengths** *(highest percentile ranks vs. GICS sector peers)*",
         *[_row(f, p) for f, p in strengths],
         "",
@@ -339,14 +339,14 @@ lines = [
         f"Its most notable drag is **{bot_feat}** ({_ordinal(bot_pct)} percentile).*",
     ]
     # Append regime-aware interpretation if present
-if regime_notes.get("notes"):
-    lines += [
-        "",
-        "**⚠️ Regime Context (Factor Reliability):**",
-        *[f"- {n}" for n in regime_notes["notes"]],
-    ]
+    if regime_notes and regime_notes.get("notes"):
+        lines += [
+            "",
+            "**⚠️ Regime Context (Factor Reliability):**",
+            *[f"- {n}" for n in regime_notes["notes"]],
+        ]
 
-return "\n".join(lines)
+    return "\n".join(lines)
 
 
 # ===========================================================================
@@ -849,7 +849,7 @@ def generate_narrative(
     """
     structural_section = generate_structural_context(
         ticker          = ticker,
-        current_regime  = current_regime or "",
+        current_regime = current_regime,
         kg              = kg,
         quadrant_history = kg_quadrant_history,
         kg_peers        = kg_peers,
@@ -862,11 +862,11 @@ def generate_narrative(
     return {
         'summary': generate_summary(ticker, pca_row, show_pc3),
         'factors': generate_factor_highlights(
-    ticker,
-    percentiles,
-    factor_data,
+    ticker=ticker,
+    percentiles=percentiles,
+    factor_data=factor_data,
     kg=kg,
-    current_regime=current_regime
+    current_regime=current_regime,
 ),
         'trajectory': (
             generate_trajectory_narrative(ticker, raw_data, loadings, show_pc3)
