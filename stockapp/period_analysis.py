@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from scipy.spatial import procrustes
 import plotly.graph_objects as go
 from config import QUADRANTS
+from factor_registry import FEATURE_DISPLAY_NAMES
 
 # ── Sub-period definitions ────────────────────────────────────────────────────
 SUB_PERIODS = {
@@ -31,19 +32,6 @@ SUB_PERIODS = {
 PERIOD_KEYS = list(SUB_PERIODS.keys())
 
 # Human-readable feature names  (must match the order your PCA uses)
-FEATURE_DISPLAY_NAMES = {
-    'roa':            'ROA',
-    'roe':            'ROE',
-    'cash_debt':      'Cash-to-Debt',
-    'vol_60d_ann':    '60d Volatility',
-    'sales_to_price': 'Sales/Price',
-    'bm':             'Book/Market',
-    'earnings_yield': 'Earnings Yield',
-    'debt_assets':    'Debt/Assets',
-    'gprof':          'Gross Profitability',
-    'momentum_12m':   'Momentum 12M',
-    'ps':             'Sales Multiple',
-}
 
 # ── Core: run PCA on one sub-period ──────────────────────────────────────────
 
