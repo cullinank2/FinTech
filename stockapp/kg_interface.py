@@ -52,7 +52,7 @@ except Exception as _e:
 
 # ── Regime ordering (chronological) ──────────────────────────────────────────
 
-REGIME_ORDER = CANONICAL_REGIME_ORDER
+# Use canonical regime ordering from registry
 
 # Appendix B per-period loading fallbacks for get_factor_rotation()
 # Used ONLY when session_state["period_loadings"] is not yet populated.
@@ -96,7 +96,7 @@ def _euclidean(pc1_a: float, pc2_a: float, pc1_b: float, pc2_b: float) -> float:
 
 def _regime_index(regime: str) -> int:
     try:
-        return REGIME_ORDER.index(regime)
+        return CANONICAL_REGIME_ORDER.index(regime)
     except ValueError:
         return -1
 
@@ -746,7 +746,7 @@ class KnowledgeGraph:
 
         # Prior regime
         regime_idx  = _regime_index(regime)
-        prior_regime = REGIME_ORDER[regime_idx - 1] if regime_idx > 0 else None
+        prior_regime = CANONICAL_REGIME_ORDER[regime_idx - 1] if regime_idx > 0 else None
 
         # Procrustes from prior via incoming transition edge
         proc_from_prior  = 0.0
