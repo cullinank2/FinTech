@@ -20,6 +20,9 @@ No hard-coded Appendix B values appear in this file.
 import streamlit as st
 import streamlit.components.v1 as components
 
+# Canonical regime order (single source of truth)
+from factor_registry import REGIME_ORDER
+
 try:
     from pyvis.network import Network
     PYVIS_AVAILABLE = True
@@ -769,7 +772,8 @@ _APPENDIX_B_MIGRATION = {
     "Post-COVID→Disinflation":  {"pct": 30.1, "n": 95,  "of": 316},
     "Rate Shock→Disinflation":  {"pct": 60.1, "n": 190, "of": 316},
 }
-_REGIME_ORDER  = ["Post-COVID", "Rate Shock", "Disinflation"]
+# Use canonical regime order from factor_registry
+_REGIME_ORDER = REGIME_ORDER
 _CROWDING_FLAG = 50.0
 
 
