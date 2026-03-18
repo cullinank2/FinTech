@@ -28,7 +28,10 @@ from typing import Optional
 
 import networkx as nx
 
-from factor_registry import REGIME_ORDER as CANONICAL_REGIME_ORDER
+from factor_registry import (
+    REGIME_ORDER as CANONICAL_REGIME_ORDER,
+    FEATURE_COLUMNS,
+)
 
 # ── Schema constants (no graph construction imported) ─────────────────────────
 try:
@@ -569,13 +572,8 @@ class KnowledgeGraph:
             if d.get("node_type") == (NodeType.FACTOR.value if KG_SCHEMA_AVAILABLE else "factor")
         ]
         if not factor_codes:
-            # Fallback to known 11 factors
-            factor_codes = [
-                "earnings_yield", "bm", "sales_to_price",
-                "roe", "roa", "gprof",
-                "debt_assets", "cash_debt",
-                "momentum_12m", "vol_60d_ann", "addv_63d",
-            ]
+            # Fallback to canonical registry factor order
+            factor_codes = list(FEATURE_COLUMNS)
 
         factor_rotations = []
         for code in factor_codes:
