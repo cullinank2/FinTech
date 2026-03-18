@@ -43,18 +43,26 @@ PCA_FEATURES = FEATURE_LIST
 FEATURE_COLUMNS = PCA_FEATURES
 
 # Display names used across charts / UI
+# ============================================================
+# Feature Metadata (single structured definition layer)
+# ============================================================
+FEATURE_METADATA = {
+    EY: {'display': 'Earnings Yield (V)'},
+    BM: {'display': 'Book-to-Market (V)'},
+    SP: {'display': 'Sales-to-Price (V)'},
+    ROE: {'display': 'Return on Equity (Q)'},
+    ROA: {'display': 'Return on Assets (Q)'},
+    GPROF: {'display': 'Gross Profitability (Q)'},
+    DEBT_ASSETS: {'display': 'Debt-to-Assets(FS)'},
+    CASH_DEBT: {'display': 'Cash-to-Debt (FS)'},
+    MOMENTUM: {'display': '12-Mo. Momentum (R)'},
+    VOL: {'display': '60-Day Volatility (R)'},
+    LIQUIDITY: {'display': 'Liquidity (R)'}
+}
+
+# Derived display names (backward-compatible)
 FEATURE_DISPLAY_NAMES = {
-    EY: 'Earnings Yield (V)',
-    BM: 'Book-to-Market (V)',
-    SP: 'Sales-to-Price (V)',
-    ROE: 'Return on Equity (Q)',
-    ROA: 'Return on Assets (Q)',
-    GPROF: 'Gross Profitability (Q)',
-    DEBT_ASSETS: 'Debt-to-Assets(FS)',
-    CASH_DEBT: 'Cash-to-Debt (FS)',
-    MOMENTUM: '12-Mo. Momentum (R)',
-    VOL: '60-Day Volatility (R)',
-    LIQUIDITY: 'Liquidity (R)'
+    k: v['display'] for k, v in FEATURE_METADATA.items()
 }
 
 # Display order follows canonical feature list
