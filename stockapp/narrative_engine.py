@@ -404,10 +404,11 @@ def generate_trajectory_narrative(
     date_max  = stock_df['_date'].max().strftime('%b %Y')
     n_periods = len(stock_df)
 
-    pc1_features = PCA_DRIVER_GROUPS['PC1'][:]
-    pc2_features = PCA_DRIVER_GROUPS['PC2'][:]
-    pc3_features = PCA_DRIVER_GROUPS['PC3'][:]
-
+    # Registry-driven PCA driver groups (no hard-coded axis keys)
+    pc1_features = list(PCA_DRIVER_GROUPS.get("PC1", []))
+    pc2_features = list(PCA_DRIVER_GROUPS.get("PC2", []))
+    pc3_features = list(PCA_DRIVER_GROUPS.get("PC3", []))
+    
     if loadings:
         if 'PC1' in loadings and 'positive' in loadings['PC1']:
             pc1_features = list(loadings['PC1']['positive'].keys())[:3]
