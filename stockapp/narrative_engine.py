@@ -88,8 +88,7 @@ _QUADRANT_META = {
     },
 }
 
-# Canonical regime ordering
-_REGIME_ORDER = REGIME_ORDER
+# Canonical regime ordering (use registry directly — no local alias)
 
 
 # ===========================================================================
@@ -709,8 +708,8 @@ def generate_structural_context(
 
     # ── 5b: Regime transition chain ───────────────────────────────────────────
     try:
-        regime_idx  = _REGIME_ORDER.index(current_regime) if current_regime in _REGIME_ORDER else -1
-        prior_regime = _REGIME_ORDER[regime_idx - 1] if regime_idx > 0 else None
+        regime_idx  = REGIME_ORDER.index(current_regime) if current_regime in REGIME_ORDER else -1
+        prior_regime = REGIME_ORDER[regime_idx - 1] if regime_idx > 0 else None
 
         if prior_regime:
             chain = kg.query_crowding_chain(prior_regime, current_regime)
