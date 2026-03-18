@@ -3,6 +3,33 @@ Configuration settings and constants for the Stock PCA Cluster Analysis App.
 Contains API endpoints, visualization settings, and factor definitions.
 """
 
+# ==========================================================
+# MASTER FEATURE REGISTRY (Single Source of Truth)
+# ==========================================================
+
+FEATURE_REGISTRY = {
+    "earnings_yield": {
+        "category": "Value",
+        "label": "Earnings Yield",
+        "source": "WRDS/Compustat"
+    },
+    "sales_to_price": {
+        "category": "Value",
+        "label": "Sales-to-Price",
+        "source": "WRDS/Compustat"
+    },
+    "roe": {
+        "category": "Quality",
+        "label": "Return on Equity",
+        "source": "WRDS/Compustat"
+    },
+    "roa": {
+        "category": "Quality",
+        "label": "Return on Assets",
+        "source": "WRDS/Compustat"
+    },
+}
+
 # =============================================================================
 # DATA SOURCE CONFIGURATION
 # =============================================================================
@@ -44,15 +71,20 @@ N_COMPONENTS = 3
 # Number of clusters for KMeans
 N_CLUSTERS = 4
 
-# Features used for PCA analysis (must match columns in dataset)
-
 # =============================================================================
-# FEATURE DISPLAY NAMES (Plain English Labels)
+# FEATURE CONFIGURATION (Registry-Driven)
 # =============================================================================
 
-# Feature display order (for charts)
+# NOTE:
+# All PCA features, display names, ordering, and categories
+# are sourced from factor_registry.py (single source of truth).
+# Do NOT define or duplicate feature lists in this file.
 
-# Factor categories for grouping and visualization
+# Imported objects:
+# - FEATURE_COLUMNS
+# - FEATURE_DISPLAY_NAMES
+# - FEATURE_DISPLAY_ORDER
+# - FACTOR_CATEGORIES
 
 # =============================================================================
 # PCA AXIS INTERPRETATIONS (from visualization guide)
