@@ -41,17 +41,17 @@ LIQUIDITY = 'addv_63d'
 
 # Display names used across charts / UI
 FEATURE_DISPLAY_NAMES = {
-    'earnings_yield': 'Earnings Yield (V)',
-    'bm': 'Book-to-Market (V)',
-    'sales_to_price': 'Sales-to-Price (V)',
-    'roe': 'Return on Equity (Q)',
-    'roa': 'Return on Assets (Q)',
-    'gprof': 'Gross Profitability (Q)',
-    'debt_assets': 'Debt-to-Assets(FS)',
-    'cash_debt': 'Cash-to-Debt (FS)',
-    'momentum_12m': '12-Mo. Momentum (R)',
-    'vol_60d_ann': '60-Day Volatility (R)',
-    'addv_63d': 'Liquidity (R)'
+    EY: 'Earnings Yield (V)',
+    BM: 'Book-to-Market (V)',
+    SP: 'Sales-to-Price (V)',
+    ROE: 'Return on Equity (Q)',
+    ROA: 'Return on Assets (Q)',
+    GPROF: 'Gross Profitability (Q)',
+    DEBT_ASSETS: 'Debt-to-Assets(FS)',
+    CASH_DEBT: 'Cash-to-Debt (FS)',
+    MOMENTUM: '12-Mo. Momentum (R)',
+    VOL: '60-Day Volatility (R)',
+    LIQUIDITY: 'Liquidity (R)'
 }
 
 # Display order follows canonical feature list
@@ -75,17 +75,17 @@ PCA_DRIVER_GROUPS = {
 
 # KG / ontology data-source mapping
 FEATURE_DATA_SOURCES = {
-    'earnings_yield': 'WRDS/Compustat',
-    'bm': 'WRDS/Compustat',
-    'sales_to_price': 'WRDS/Compustat',
-    'roe': 'WRDS/Compustat',
-    'roa': 'WRDS/Compustat',
-    'gprof': 'WRDS/Compustat',
-    'debt_assets': 'WRDS/Compustat',
-    'cash_debt': 'WRDS/Compustat',
-    'momentum_12m': 'WRDS/CRSP',
-    'vol_60d_ann': 'WRDS/CRSP',
-    'addv_63d': 'WRDS/CRSP',
+    EY: 'WRDS/Compustat',
+    BM: 'WRDS/Compustat',
+    SP: 'WRDS/Compustat',
+    ROE: 'WRDS/Compustat',
+    ROA: 'WRDS/Compustat',
+    GPROF: 'WRDS/Compustat',
+    DEBT_ASSETS: 'WRDS/Compustat',
+    CASH_DEBT: 'WRDS/Compustat',
+    MOMENTUM: 'WRDS/CRSP',
+    VOL: 'WRDS/CRSP',
+    LIQUIDITY: 'WRDS/CRSP',
 }
 
 REGIME_ORDER = ["Post-COVID", "Rate Shock", "Disinflation"]
