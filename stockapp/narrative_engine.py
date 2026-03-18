@@ -101,7 +101,7 @@ def _describe_pc1(pc1: float) -> str:
     if pc1 >= 1.5:
         return (
             f"a PC1 score of {pc1:.2f} — well above average — signals exceptionally strong "
-            "profitability and operational quality. ROA, ROE, and cash-to-debt ratios are "
+            f"profitability and operational quality. {', '.join([FEATURE_DISPLAY_NAMES.get(f, f) for f in PCA_DRIVER_GROUPS.get('PC1', [])])} ratios are "
             "all pointing to a high-quality business with durable financial health."
         )
     elif pc1 >= 0.5:
@@ -114,7 +114,7 @@ def _describe_pc1(pc1: float) -> str:
         return (
             f"a PC1 score of {pc1:.2f} reflects near-average operational quality — "
             "neither a standout on profitability nor a concern on financial health. "
-            "Performance on ROA, ROE, and cash-to-debt is in line with the broader universe."
+            f"Performance on {', '.join([FEATURE_DISPLAY_NAMES.get(f, f) for f in PCA_DRIVER_GROUPS.get('PC1', [])])} is in line with the broader universe."
         )
     elif pc1 >= -1.5:
         return (
@@ -457,7 +457,7 @@ def generate_trajectory_narrative(
         "**Valuation Style Trajectory (PC2 drivers):** " + (
             "; ".join(pc2_trends) + "."
             if pc2_trends else
-            "Valuation multiples (Sales-to-Price, Book-to-Market, Earnings Yield) "
+            f"Valuation multiples ({', '.join([FEATURE_DISPLAY_NAMES.get(f, f) for f in PCA_DRIVER_GROUPS.get('PC2', [])])}) "
             "have remained relatively stable over the observation window."
         ),
     ]
