@@ -32,6 +32,9 @@ from factor_registry import (
     REGIME_ORDER as CANONICAL_REGIME_ORDER,
     FEATURE_COLUMNS,
     FEATURE_LIST,
+    EY, BM, SP, ROE, ROA, GPROF,
+    DEBT_ASSETS, CASH_DEBT,
+    MOMENTUM, VOL, LIQUIDITY,
 )
 
 # ── Schema constants (no graph construction imported) ─────────────────────────
