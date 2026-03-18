@@ -5,7 +5,22 @@ Single source of truth for factor definitions used across the app,
 knowledge graph, narrative engine, and period analysis modules.
 """
 
-# Canonical factor keys (true source of truth)
+# ============================================================
+# Feature Key Constants (true single source of truth)
+# ============================================================
+EY = 'earnings_yield'
+BM = 'bm'
+SP = 'sales_to_price'
+ROE = 'roe'
+ROA = 'roa'
+GPROF = 'gprof'
+DEBT_ASSETS = 'debt_assets'
+CASH_DEBT = 'cash_debt'
+MOMENTUM = 'momentum_12m'
+VOL = 'vol_60d_ann'
+LIQUIDITY = 'addv_63d'
+
+# Canonical factor keys (derived from constants)
 ALL_FEATURE_KEYS = [
     EY,
     BM,
@@ -26,21 +41,6 @@ FEATURE_LIST = ALL_FEATURE_KEYS
 # PCA feature columns (alias for backward compatibility)
 PCA_FEATURES = FEATURE_LIST
 FEATURE_COLUMNS = PCA_FEATURES
-
-# ============================================================
-# Feature Key Constants (eliminates hard-coded string usage)
-# ============================================================
-EY = 'earnings_yield'
-BM = 'bm'
-SP = 'sales_to_price'
-ROE = 'roe'
-ROA = 'roa'
-GPROF = 'gprof'
-DEBT_ASSETS = 'debt_assets'
-CASH_DEBT = 'cash_debt'
-MOMENTUM = 'momentum_12m'
-VOL = 'vol_60d_ann'
-LIQUIDITY = 'addv_63d'
 
 # Display names used across charts / UI
 FEATURE_DISPLAY_NAMES = {
