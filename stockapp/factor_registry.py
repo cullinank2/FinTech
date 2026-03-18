@@ -7,17 +7,17 @@ knowledge graph, narrative engine, and period analysis modules.
 
 # Canonical factor list (single source of truth)
 FEATURE_LIST = [
-    'earnings_yield',
-    'bm',
-    'sales_to_price',
-    'roe',
-    'roa',
-    'gprof',
-    'debt_assets',
-    'cash_debt',
-    'momentum_12m',
-    'vol_60d_ann',
-    'addv_63d'
+    EY,
+    BM,
+    SP,
+    ROE,
+    ROA,
+    GPROF,
+    DEBT_ASSETS,
+    CASH_DEBT,
+    MOMENTUM,
+    VOL,
+    LIQUIDITY
 ]
 
 # PCA feature columns (alias for backward compatibility)
