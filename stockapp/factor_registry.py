@@ -51,54 +51,65 @@ FEATURE_METADATA = {
         'display': 'Earnings Yield (V)',
         'category': 'Value',
         'pc': ['PC2'],
+        'source': 'WRDS/Compustat',
     },
     BM: {
         'display': 'Book-to-Market (V)',
         'category': 'Value',
         'pc': ['PC2'],
+        'source': 'WRDS/Compustat',
     },
     SP: {
         'display': 'Sales-to-Price (V)',
         'category': 'Value',
         'pc': ['PC2'],
+        'source': 'WRDS/Compustat',
     },
     ROE: {
         'display': 'Return on Equity (Q)',
         'category': 'Quality',
         'pc': ['PC1'],
+        'source': 'WRDS/Compustat',
     },
     ROA: {
         'display': 'Return on Assets (Q)',
         'category': 'Quality',
         'pc': ['PC1'],
+        'source': 'WRDS/Compustat',
     },
     GPROF: {
         'display': 'Gross Profitability (Q)',
         'category': 'Quality',
         'pc': ['PC3'],
+        'source': 'WRDS/Compustat',
     },
     DEBT_ASSETS: {
         'display': 'Debt-to-Assets(FS)',
         'category': 'Financial Strength',
         'pc': ['PC3'],
+        'source': 'WRDS/Compustat',
     },
     CASH_DEBT: {
         'display': 'Cash-to-Debt (FS)',
         'category': 'Financial Strength',
         'pc': ['PC1'],
+        'source': 'WRDS/Compustat',
     },
     MOMENTUM: {
         'display': '12-Mo. Momentum (R)',
         'category': 'Momentum',
+        'source': 'WRDS/CRSP',
     },
     VOL: {
         'display': '60-Day Volatility (R)',
         'category': 'Risk/Volatility',
         'pc': ['PC3'],
+        'source': 'WRDS/CRSP',
     },
     LIQUIDITY: {
         'display': 'Liquidity (R)',
         'category': 'Liquidity',
+        'source': 'WRDS/CRSP',
     }
 }
 
@@ -123,19 +134,9 @@ for k, v in FEATURE_METADATA.items():
     for pc in v.get('pc', []):
         PCA_DRIVER_GROUPS.setdefault(pc, []).append(k)
 
-# KG / ontology data-source mapping
+# KG / ontology data-source mapping (derived for backward compatibility)
 FEATURE_DATA_SOURCES = {
-    EY: 'WRDS/Compustat',
-    BM: 'WRDS/Compustat',
-    SP: 'WRDS/Compustat',
-    ROE: 'WRDS/Compustat',
-    ROA: 'WRDS/Compustat',
-    GPROF: 'WRDS/Compustat',
-    DEBT_ASSETS: 'WRDS/Compustat',
-    CASH_DEBT: 'WRDS/Compustat',
-    MOMENTUM: 'WRDS/CRSP',
-    VOL: 'WRDS/CRSP',
-    LIQUIDITY: 'WRDS/CRSP',
+    k: v.get('source') for k, v in FEATURE_METADATA.items()
 }
 
 REGIME_ORDER = ["Post-COVID", "Rate Shock", "Disinflation"]
