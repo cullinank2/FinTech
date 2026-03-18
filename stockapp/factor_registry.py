@@ -94,11 +94,26 @@ for k, v in FEATURE_METADATA.items():
         FACTOR_CATEGORIES.setdefault(cat, []).append(k)
 
 # For narrative / PCA interpretation defaults
-PCA_DRIVER_GROUPS = {
-    'PC1': [ROA, ROE, CASH_DEBT],
-    'PC2': [SP, BM, EY],
-    'PC3': [DEBT_ASSETS, VOL, GPROF],
-}
+# ------------------------------------------------------------
+# Attach PCA driver metadata to each feature
+# ------------------------------------------------------------
+FEATURE_METADATA[ROA].setdefault('pc', []).append('PC1')
+FEATURE_METADATA[ROE].setdefault('pc', []).append('PC1')
+FEATURE_METADATA[CASH_DEBT].setdefault('pc', []).append('PC1')
+
+FEATURE_METADATA[SP].setdefault('pc', []).append('PC2')
+FEATURE_METADATA[BM].setdefault('pc', []).append('PC2')
+FEATURE_METADATA[EY].setdefault('pc', []).append('PC2')
+
+FEATURE_METADATA[DEBT_ASSETS].setdefault('pc', []).append('PC3')
+FEATURE_METADATA[VOL].setdefault('pc', []).append('PC3')
+FEATURE_METADATA[GPROF].setdefault('pc', []).append('PC3')
+
+# Derived PCA driver groups (backward-compatible)
+PCA_DRIVER_GROUPS = {}
+for k, v in FEATURE_METADATA.items():
+    for pc in v.get('pc', []):
+        PCA_DRIVER_GROUPS.setdefault(pc, []).append(k)
 
 # KG / ontology data-source mapping
 FEATURE_DATA_SOURCES = {
