@@ -24,6 +24,21 @@ FEATURE_LIST = [
 PCA_FEATURES = FEATURE_LIST
 FEATURE_COLUMNS = PCA_FEATURES
 
+# ============================================================
+# Feature Key Constants (eliminates hard-coded string usage)
+# ============================================================
+EY = 'earnings_yield'
+BM = 'bm'
+SP = 'sales_to_price'
+ROE = 'roe'
+ROA = 'roa'
+GPROF = 'gprof'
+DEBT_ASSETS = 'debt_assets'
+CASH_DEBT = 'cash_debt'
+MOMENTUM = 'momentum_12m'
+VOL = 'vol_60d_ann'
+LIQUIDITY = 'addv_63d'
+
 # Display names used across charts / UI
 FEATURE_DISPLAY_NAMES = {
     'earnings_yield': 'Earnings Yield (V)',
