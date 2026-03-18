@@ -47,17 +47,59 @@ FEATURE_COLUMNS = PCA_FEATURES
 # Feature Metadata (single structured definition layer)
 # ============================================================
 FEATURE_METADATA = {
-    EY: {'display': 'Earnings Yield (V)'},
-    BM: {'display': 'Book-to-Market (V)'},
-    SP: {'display': 'Sales-to-Price (V)'},
-    ROE: {'display': 'Return on Equity (Q)'},
-    ROA: {'display': 'Return on Assets (Q)'},
-    GPROF: {'display': 'Gross Profitability (Q)'},
-    DEBT_ASSETS: {'display': 'Debt-to-Assets(FS)'},
-    CASH_DEBT: {'display': 'Cash-to-Debt (FS)'},
-    MOMENTUM: {'display': '12-Mo. Momentum (R)'},
-    VOL: {'display': '60-Day Volatility (R)'},
-    LIQUIDITY: {'display': 'Liquidity (R)'}
+    EY: {
+        'display': 'Earnings Yield (V)',
+        'category': 'Value',
+        'pc': ['PC2'],
+    },
+    BM: {
+        'display': 'Book-to-Market (V)',
+        'category': 'Value',
+        'pc': ['PC2'],
+    },
+    SP: {
+        'display': 'Sales-to-Price (V)',
+        'category': 'Value',
+        'pc': ['PC2'],
+    },
+    ROE: {
+        'display': 'Return on Equity (Q)',
+        'category': 'Quality',
+        'pc': ['PC1'],
+    },
+    ROA: {
+        'display': 'Return on Assets (Q)',
+        'category': 'Quality',
+        'pc': ['PC1'],
+    },
+    GPROF: {
+        'display': 'Gross Profitability (Q)',
+        'category': 'Quality',
+        'pc': ['PC3'],
+    },
+    DEBT_ASSETS: {
+        'display': 'Debt-to-Assets(FS)',
+        'category': 'Financial Strength',
+        'pc': ['PC3'],
+    },
+    CASH_DEBT: {
+        'display': 'Cash-to-Debt (FS)',
+        'category': 'Financial Strength',
+        'pc': ['PC1'],
+    },
+    MOMENTUM: {
+        'display': '12-Mo. Momentum (R)',
+        'category': 'Momentum',
+    },
+    VOL: {
+        'display': '60-Day Volatility (R)',
+        'category': 'Risk/Volatility',
+        'pc': ['PC3'],
+    },
+    LIQUIDITY: {
+        'display': 'Liquidity (R)',
+        'category': 'Liquidity',
+    }
 }
 
 # Derived display names (backward-compatible)
@@ -68,46 +110,12 @@ FEATURE_DISPLAY_NAMES = {
 # Display order follows canonical feature list
 FEATURE_DISPLAY_ORDER = FEATURE_LIST
 
-# ------------------------------------------------------------
-# Attach category metadata to each feature
-# ------------------------------------------------------------
-FEATURE_METADATA[EY]['category'] = 'Value'
-FEATURE_METADATA[BM]['category'] = 'Value'
-FEATURE_METADATA[SP]['category'] = 'Value'
-
-FEATURE_METADATA[ROE]['category'] = 'Quality'
-FEATURE_METADATA[ROA]['category'] = 'Quality'
-FEATURE_METADATA[GPROF]['category'] = 'Quality'
-
-FEATURE_METADATA[DEBT_ASSETS]['category'] = 'Financial Strength'
-FEATURE_METADATA[CASH_DEBT]['category'] = 'Financial Strength'
-
-FEATURE_METADATA[MOMENTUM]['category'] = 'Momentum'
-FEATURE_METADATA[VOL]['category'] = 'Risk/Volatility'
-FEATURE_METADATA[LIQUIDITY]['category'] = 'Liquidity'
-
 # Derived factor categories (backward-compatible)
 FACTOR_CATEGORIES = {}
 for k, v in FEATURE_METADATA.items():
     cat = v.get('category')
     if cat:
         FACTOR_CATEGORIES.setdefault(cat, []).append(k)
-
-# For narrative / PCA interpretation defaults
-# ------------------------------------------------------------
-# Attach PCA driver metadata to each feature
-# ------------------------------------------------------------
-FEATURE_METADATA[ROA].setdefault('pc', []).append('PC1')
-FEATURE_METADATA[ROE].setdefault('pc', []).append('PC1')
-FEATURE_METADATA[CASH_DEBT].setdefault('pc', []).append('PC1')
-
-FEATURE_METADATA[SP].setdefault('pc', []).append('PC2')
-FEATURE_METADATA[BM].setdefault('pc', []).append('PC2')
-FEATURE_METADATA[EY].setdefault('pc', []).append('PC2')
-
-FEATURE_METADATA[DEBT_ASSETS].setdefault('pc', []).append('PC3')
-FEATURE_METADATA[VOL].setdefault('pc', []).append('PC3')
-FEATURE_METADATA[GPROF].setdefault('pc', []).append('PC3')
 
 # Derived PCA driver groups (backward-compatible)
 PCA_DRIVER_GROUPS = {}
