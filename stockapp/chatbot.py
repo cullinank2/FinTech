@@ -14,7 +14,7 @@ Phase 4 update: KG subgraph injection (Tier 2 integration)
       - The chatbot never receives a live KnowledgeGraph object.
       - It receives only a serialized JSON-compatible dict — a bounded snapshot.
       - This is Tier 2: configurable, session-specific, non-reportable output.
-      - Section 5 of narrative_engine.py is Tier 1: deterministic, auditable.  # ARCH: intentional NE boundary — doc reference only, no import
+      - Tier 1 Narrative Engine (deterministic, auditable module).  # ARCH: intentional NE boundary — doc reference only, no import
 """
 
 import os
@@ -356,8 +356,8 @@ Factor Values:
         lines += [
             "",
             "Note: KG context is Tier 2 (practitioner tool). For the deterministic",
-            "governance version of this structural analysis, refer to Section 5 of",
-            "the Narrative Engine output.",
+            "governance version of this structural analysis, refer to the",
+            "Tier 1 Narrative Engine output.",
             "=" * 60,
         ]
 
