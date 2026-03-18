@@ -68,14 +68,30 @@ FEATURE_DISPLAY_NAMES = {
 # Display order follows canonical feature list
 FEATURE_DISPLAY_ORDER = FEATURE_LIST
 
-FACTOR_CATEGORIES = {
-    'Value': [EY, BM, SP],
-    'Quality': [ROE, ROA, GPROF],
-    'Financial Strength': [DEBT_ASSETS, CASH_DEBT],
-    'Momentum': [MOMENTUM],
-    'Risk/Volatility': [VOL],
-    'Liquidity': [LIQUIDITY]
-}
+# ------------------------------------------------------------
+# Attach category metadata to each feature
+# ------------------------------------------------------------
+FEATURE_METADATA[EY]['category'] = 'Value'
+FEATURE_METADATA[BM]['category'] = 'Value'
+FEATURE_METADATA[SP]['category'] = 'Value'
+
+FEATURE_METADATA[ROE]['category'] = 'Quality'
+FEATURE_METADATA[ROA]['category'] = 'Quality'
+FEATURE_METADATA[GPROF]['category'] = 'Quality'
+
+FEATURE_METADATA[DEBT_ASSETS]['category'] = 'Financial Strength'
+FEATURE_METADATA[CASH_DEBT]['category'] = 'Financial Strength'
+
+FEATURE_METADATA[MOMENTUM]['category'] = 'Momentum'
+FEATURE_METADATA[VOL]['category'] = 'Risk/Volatility'
+FEATURE_METADATA[LIQUIDITY]['category'] = 'Liquidity'
+
+# Derived factor categories (backward-compatible)
+FACTOR_CATEGORIES = {}
+for k, v in FEATURE_METADATA.items():
+    cat = v.get('category')
+    if cat:
+        FACTOR_CATEGORIES.setdefault(cat, []).append(k)
 
 # For narrative / PCA interpretation defaults
 PCA_DRIVER_GROUPS = {
