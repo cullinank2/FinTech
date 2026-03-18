@@ -1839,9 +1839,16 @@ def main():
         pca_row
     )
     
-    # Get quadrant peers
+    # Get quadrant peers (GICS-filtered universe for consistency)
+    gics_filtered_pca = filter_by_gics_sector(
+        pca_df,
+        st.session_state.raw_data,
+        ticker,
+        st.session_state.get('gics_filter_mode', 'All Stocks')
+    )
+
     quadrant_peers = get_stocks_in_same_quadrant(
-        pca_df, pc1, pc2, exclude_ticker=ticker
+        gics_filtered_pca, pc1, pc2, exclude_ticker=ticker
     )
     
     # Render visualizations
