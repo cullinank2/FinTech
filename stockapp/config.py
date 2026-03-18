@@ -4,31 +4,12 @@ Contains API endpoints, visualization settings, and factor definitions.
 """
 
 # ==========================================================
-# MASTER FEATURE REGISTRY (Single Source of Truth)
+# FEATURE REGISTRY NOTE
 # ==========================================================
 
-FEATURE_REGISTRY = {
-    "earnings_yield": {
-        "category": "Value",
-        "label": "Earnings Yield",
-        "source": "WRDS/Compustat"
-    },
-    "sales_to_price": {
-        "category": "Value",
-        "label": "Sales-to-Price",
-        "source": "WRDS/Compustat"
-    },
-    "roe": {
-        "category": "Quality",
-        "label": "Return on Equity",
-        "source": "WRDS/Compustat"
-    },
-    "roa": {
-        "category": "Quality",
-        "label": "Return on Assets",
-        "source": "WRDS/Compustat"
-    },
-}
+# All factor definitions (categories, labels, sources)
+# are maintained in factor_registry.py.
+# This file intentionally does NOT duplicate them.
 
 # =============================================================================
 # DATA SOURCE CONFIGURATION
