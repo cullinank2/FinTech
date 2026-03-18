@@ -21,7 +21,8 @@ FEATURE_LIST = [
 ]
 
 # PCA feature columns (alias for backward compatibility)
-FEATURE_COLUMNS = FEATURE_LIST
+PCA_FEATURES = FEATURE_LIST
+FEATURE_COLUMNS = PCA_FEATURES
 
 # Display names used across charts / UI
 FEATURE_DISPLAY_NAMES = {
