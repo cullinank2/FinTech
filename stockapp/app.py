@@ -161,10 +161,55 @@ st.markdown("""
         background-color: #e3f2fd;
         border-left: 4px solid #2196f3;
     }
-    .assistant-message {
-        background-color: #f5f5f5;
-        border-left: 4px solid #4caf50;
+    .chat-message {
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 0.5rem 0;
+}
+
+/* USER MESSAGE */
+.user-message {
+    background-color: var(--secondary-background-color);
+    color: var(--text-color) !important;
+    border-left: 4px solid #3b82f6;
+}
+
+/* ASSISTANT MESSAGE */
+.assistant-message {
+    background-color: var(--secondary-background-color);
+    color: var(--text-color) !important;
+    border-left: 4px solid #10b981;
+}
+
+/* FORCE TEXT VISIBILITY */
+.user-message * {
+    color: var(--text-color) !important;
+}
+
+.assistant-message * {
+    color: var(--text-color) !important;
+}
+
+/* DARK MODE FIX */
+@media (prefers-color-scheme: dark) {
+    .user-message {
+        background-color: #1e293b !important;
+        color: #ffffff !important;
     }
+
+    .assistant-message {
+        background-color: #111827 !important;
+        color: #f9fafb !important;
+    }
+
+    .user-message * {
+        color: #ffffff !important;
+    }
+
+    .assistant-message * {
+        color: #f9fafb !important;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
