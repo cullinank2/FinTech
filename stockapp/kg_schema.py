@@ -20,7 +20,7 @@ Design principles:
 
 Node ID conventions:
   regime:     "regime:{short_name}"     e.g. "regime:Post-COVID"
-  factor:     "factor:{code}"           e.g. "factor:earnings_yield"
+  factor:     "factor:{code}"           e.g. "factor:<feature_code>"
   axis:       "axis:PC{n}"             e.g. "axis:PC1"
   category:   "category:{name}"        e.g. "category:Value"
   quadrant:   "quadrant:{id}"          e.g. "quadrant:Q4"
@@ -446,7 +446,7 @@ def _build_catalogs():
                 tooltip = (
                     "Rules-based governance artifact — no API key required.\n"
                     "Versioned, auditable, CRO-level outputs.\n"
-                    "Source: narrative_engine.py"  # ARCH: intentional NE boundary — provenance label only, no import
+                    "Source: Tier 1 Narrative Engine (deterministic module)"  # ARCH: intentional NE boundary — provenance label only, no import
                 ),
             ),
             "chatbot": PlatformNode(
