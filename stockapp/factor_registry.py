@@ -58,12 +58,12 @@ FEATURE_DISPLAY_NAMES = {
 FEATURE_DISPLAY_ORDER = FEATURE_LIST
 
 FACTOR_CATEGORIES = {
-    'Value': ['earnings_yield', 'bm', 'sales_to_price'],
-    'Quality': ['roe', 'roa', 'gprof'],
-    'Financial Strength': ['debt_assets', 'cash_debt'],
-    'Momentum': ['momentum_12m'],
-    'Risk/Volatility': ['vol_60d_ann'],
-    'Liquidity': ['addv_63d']
+    'Value': [EY, BM, SP],
+    'Quality': [ROE, ROA, GPROF],
+    'Financial Strength': [DEBT_ASSETS, CASH_DEBT],
+    'Momentum': [MOMENTUM],
+    'Risk/Volatility': [VOL],
+    'Liquidity': [LIQUIDITY]
 }
 
 # For narrative / PCA interpretation defaults
