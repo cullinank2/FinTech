@@ -31,6 +31,7 @@ import networkx as nx
 from factor_registry import (
     REGIME_ORDER as CANONICAL_REGIME_ORDER,
     FEATURE_COLUMNS,
+    FEATURE_LIST,
 )
 
 # ── Schema constants (no graph construction imported) ─────────────────────────
@@ -78,6 +79,14 @@ _APPENDIX_B_LOADINGS = {
     ("sales_to_price", "Rate Shock"):   {"PC1": -0.080, "PC2":  0.295, "PC3":  0.050},
     ("sales_to_price", "Disinflation"): {"PC1": -0.070, "PC2":  0.300, "PC3":  0.045},
 }
+
+# ── VALIDATION: ensure Appendix B factors align with registry ───────────────
+for (factor, _regime) in _APPENDIX_B_LOADINGS.keys():
+    if factor not in FEATURE_LIST:
+        raise ValueError(
+            f"[kg_interface] Unknown factor '{factor}' in _APPENDIX_B_LOADINGS — "
+            "not found in FEATURE_LIST (factor_registry.py)"
+        )
 
 
 # =============================================================================
