@@ -5,8 +5,8 @@ Single source of truth for factor definitions used across the app,
 knowledge graph, narrative engine, and period analysis modules.
 """
 
-# Canonical factor list (single source of truth)
-FEATURE_LIST = [
+# Canonical factor keys (true source of truth)
+ALL_FEATURE_KEYS = [
     EY,
     BM,
     SP,
@@ -19,6 +19,9 @@ FEATURE_LIST = [
     VOL,
     LIQUIDITY
 ]
+
+# Canonical factor list (backward-compatible alias)
+FEATURE_LIST = ALL_FEATURE_KEYS
 
 # PCA feature columns (alias for backward compatibility)
 PCA_FEATURES = FEATURE_LIST
