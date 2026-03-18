@@ -772,8 +772,7 @@ _APPENDIX_B_MIGRATION = {
     "Post-COVID→Disinflation":  {"pct": 30.1, "n": 95,  "of": 316},
     "Rate Shock→Disinflation":  {"pct": 60.1, "n": 190, "of": 316},
 }
-# Use canonical regime order from factor_registry
-_REGIME_ORDER = REGIME_ORDER
+# Use canonical regime order directly from factor_registry (no local alias)
 _CROWDING_FLAG = 50.0
 
 
@@ -830,7 +829,7 @@ def _render_peer_path_panel(kg) -> None:
             "Ticker", value="", placeholder="e.g. AAPL", key="si_peer_ticker",
         ).strip().upper()
         regime_sel = st.selectbox(
-            "Regime", options=_REGIME_ORDER, index=2, key="si_peer_regime",
+            "Regime", options=REGIME_ORDER, index=2, key="si_peer_regime",
         )
         max_peers = st.slider(
             "Max peers shown", min_value=5, max_value=25, value=10, step=5, key="si_peer_max",
@@ -905,7 +904,7 @@ def _render_crowding_chain_panel(kg) -> None:
     # ── Tier 1: live KG instance ──────────────────────────────────────────
     if kg is not None:
         try:
-            for regime in _REGIME_ORDER:
+            for regime in REGIME_ORDER:
                 result = kg.get_regime_crowding(regime)
                 if result:
                     crowding_live[regime] = result
@@ -926,7 +925,7 @@ def _render_crowding_chain_panel(kg) -> None:
                 if df is not None and not df.empty:
                     for _, row in df.iterrows():
                         p = str(row.get("period", row.get("Period", ""))).strip()
-                        if p in _REGIME_ORDER:
+                        if p in REGIME_ORDER:
                             score = _safe_float(
                                 row.get("crowding_score") or row.get("score"), None
                             )
@@ -961,7 +960,7 @@ def _render_crowding_chain_panel(kg) -> None:
                 return d, n
         return ab["disparity"], ab["n_tickers"]
 
-    pc_score  = [_cs(r) for r in _REGIME_ORDER]
+    pc_score  = [_cs(r) for r in REGIME_ORDER]
     d01, n01  = _ps("Post-COVID", "Rate Shock")
     d02, n02  = _ps("Post-COVID", "Disinflation")
     d12, n12  = _ps("Rate Shock", "Disinflation")
@@ -971,7 +970,7 @@ def _render_crowding_chain_panel(kg) -> None:
 
     col1, col2, col3 = st.columns(3)
     for col, regime, score, prev in zip(
-        [col1, col2, col3], _REGIME_ORDER, pc_score, [None] + pc_score[:-1]
+        [col1, col2, col3], REGIME_ORDER, pc_score, [None] + pc_score[:-1]
     ):
         delta_str = f"{score - prev:+.1f} vs prior regime" if prev is not None else None
         flag = " 🚨" if score > _CROWDING_FLAG else ""
@@ -1019,7 +1018,7 @@ def _render_early_warning_panel(kg) -> None:
 
     if kg is not None:
         try:
-            for regime in _REGIME_ORDER:
+            for regime in REGIME_ORDER:
                 result = kg.get_regime_crowding(regime)
                 if result:
                     crowding_data[regime] = result
@@ -1036,7 +1035,7 @@ def _render_early_warning_panel(kg) -> None:
                 if df is not None and not df.empty:
                     for _, row in df.iterrows():
                         p = str(row.get("period", row.get("Period", ""))).strip()
-                        if p in _REGIME_ORDER:
+                        if p in REGIME_ORDER:
                             score = _safe_float(
                                 row.get("crowding_score") or row.get("score"), None
                             )
@@ -1051,7 +1050,7 @@ def _render_early_warning_panel(kg) -> None:
     if using_fallback:
         st.info("📋 Appendix B values — run Period Comparison to populate live data.")
 
-    for regime in _REGIME_ORDER:
+    for regime in REGIME_ORDER:
         score = (
             crowding_data[regime].get("crowding_score")
             if not using_fallback and regime in crowding_data
@@ -1186,7 +1185,7 @@ def _render_reasoning_chain_panel(kg) -> None:
         "node → edge → node provenance. Tier 1 governance artifact: no language model involved."
     )
     regime_sel = st.selectbox(
-        "Select regime to inspect", options=_REGIME_ORDER, index=2, key="si_chain_regime",
+        "Select regime to inspect", options=REGIME_ORDER, index=2, key="si_chain_regime",
     )
     run_chain = st.button("Generate Reasoning Chain", key="si_chain_run")
     if not run_chain:
@@ -1199,11 +1198,11 @@ def _render_reasoning_chain_panel(kg) -> None:
         f"crowding:{regime_sel}",
         f"early_warning:{regime_sel}",
     ]
-    idx = _REGIME_ORDER.index(regime_sel)
+    idx = REGIME_ORDER.index(regime_sel)
     if idx > 0:
-        node_ids.append(f"procrustes_transition:{_REGIME_ORDER[idx-1]}:{regime_sel}")
-    if idx < len(_REGIME_ORDER) - 1:
-        node_ids.append(f"procrustes_transition:{regime_sel}:{_REGIME_ORDER[idx+1]}")
+        node_ids.append(f"procrustes_transition:{REGIME_ORDER[idx-1]}:{regime_sel}")
+    if idx < len(REGIME_ORDER) - 1:
+        node_ids.append(f"procrustes_transition:{regime_sel}:{REGIME_ORDER[idx+1]}")
 
     subgraph_data = None
     if kg is not None:
@@ -1275,7 +1274,7 @@ def _render_reasoning_chain_panel(kg) -> None:
         ]
 
         if idx > 0:
-            prior        = _REGIME_ORDER[idx - 1]
+            prior        = REGIME_ORDER[idx - 1]
             disp, n, src = _get_disp_with_source(prior, regime_sel, live_procrustes)
             major        = disp >= 0.30
             chain_lines += [
@@ -1286,8 +1285,8 @@ def _render_reasoning_chain_panel(kg) -> None:
                 "",
             ]
 
-        if idx < len(_REGIME_ORDER) - 1:
-            nxt          = _REGIME_ORDER[idx + 1]
+        if idx < len(REGIME_ORDER) - 1:
+            nxt          = REGIME_ORDER[idx + 1]
             disp, n, src = _get_disp_with_source(regime_sel, nxt, live_procrustes)
             major        = disp >= 0.30
             chain_lines += [
@@ -1303,7 +1302,7 @@ def _render_reasoning_chain_panel(kg) -> None:
         try:
             mig_summary = st.session_state.get("migration_summary_df")
             if mig_summary is not None and not mig_summary.empty:
-                is_last = (idx == len(_REGIME_ORDER) - 1)
+                is_last = (idx == len(REGIME_ORDER) - 1)
                 for _, mrow in mig_summary.iterrows():
                     t = str(mrow.get("Transition", "")).replace("→", "->").strip()
                     matched = t.endswith(regime_sel) if is_last else t.startswith(regime_sel)
