@@ -1272,7 +1272,7 @@ def render_narrative_section(
         kg_regime    = st.session_state.get("kg_current_regime")
         # --- FIX: Align AI peer group with filtered universe ---
         peer_df = peer_df.copy()
-        peer_df = peer_df[peer_df["Quadrant"] == pca_row["Quadrant"]]
+        # peer_df already contains quadrant-filtered peers
 
         sections = generate_narrative(  # ARCH: intentional NE boundary — sole authorized call site
             ticker          = ticker,
