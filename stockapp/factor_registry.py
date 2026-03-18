@@ -5,8 +5,8 @@ Single source of truth for factor definitions used across the app,
 knowledge graph, narrative engine, and period analysis modules.
 """
 
-# Canonical factor list used by PCA
-FEATURE_COLUMNS = [
+# Canonical factor list (single source of truth)
+FEATURE_LIST = [
     'earnings_yield',
     'bm',
     'sales_to_price',
@@ -19,6 +19,9 @@ FEATURE_COLUMNS = [
     'vol_60d_ann',
     'addv_63d'
 ]
+
+# PCA feature columns (alias for backward compatibility)
+FEATURE_COLUMNS = FEATURE_LIST
 
 # Display names used across charts / UI
 FEATURE_DISPLAY_NAMES = {
@@ -35,19 +38,8 @@ FEATURE_DISPLAY_NAMES = {
     'addv_63d': 'Liquidity (R)'
 }
 
-FEATURE_DISPLAY_ORDER = [
-    'earnings_yield',
-    'bm',
-    'sales_to_price',
-    'roe',
-    'roa',
-    'gprof',
-    'debt_assets',
-    'cash_debt',
-    'momentum_12m',
-    'vol_60d_ann',
-    'addv_63d'
-]
+# Display order follows canonical feature list
+FEATURE_DISPLAY_ORDER = FEATURE_LIST
 
 FACTOR_CATEGORIES = {
     'Value': ['earnings_yield', 'bm', 'sales_to_price'],
