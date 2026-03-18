@@ -107,7 +107,7 @@ def _describe_pc1(pc1: float) -> str:
     elif pc1 >= 0.5:
         return (
             f"a PC1 score of {pc1:.2f} indicates above-average operational quality. "
-            "Profitability metrics (ROA, ROE) and financial strength (cash-to-debt) are "
+            f"Profitability metrics ({', '.join([FEATURE_DISPLAY_NAMES.get(f, f) for f in PCA_DRIVER_GROUPS.get('PC1', [])])}) are "
             "solid, placing this stock in favorable territory on the quality axis."
         )
     elif pc1 >= -0.5:
@@ -119,14 +119,14 @@ def _describe_pc1(pc1: float) -> str:
     elif pc1 >= -1.5:
         return (
             f"a PC1 score of {pc1:.2f} indicates below-average operational quality. "
-            "Profitability (ROA, ROE) and/or financial health (cash-to-debt) are weaker "
+            f"Profitability and financial health ({', '.join([FEATURE_DISPLAY_NAMES.get(f, f) for f in PCA_DRIVER_GROUPS.get('PC1', [])])}) are weaker "
             "relative to peers, which may warrant closer scrutiny."
         )
     else:
         return (
             f"a PC1 score of {pc1:.2f} — well below average — reflects material weakness "
             "in operational quality. Low profitability and/or elevated financial risk "
-            "(captured by ROA, ROE, and cash-to-debt) place this stock in the bottom tier."
+            f"(captured by {', '.join([FEATURE_DISPLAY_NAMES.get(f, f) for f in PCA_DRIVER_GROUPS.get('PC1', [])])}) place this stock in the bottom tier."
         )
 
 
@@ -451,7 +451,7 @@ def generate_trajectory_narrative(
             "; ".join(pc1_trends) + "."
             if pc1_trends else
             "Factor levels have been broadly stable — no significant directional "
-            "shifts detected in ROA, ROE, or Cash-to-Debt."
+            f"shifts detected in {', '.join([FEATURE_DISPLAY_NAMES.get(f, f) for f in PCA_DRIVER_GROUPS.get('PC1', [])])}."
         ),
         "",
         "**Valuation Style Trajectory (PC2 drivers):** " + (
