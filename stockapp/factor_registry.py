@@ -68,9 +68,9 @@ FACTOR_CATEGORIES = {
 
 # For narrative / PCA interpretation defaults
 PCA_DRIVER_GROUPS = {
-    'PC1': ['roa', 'roe', 'cash_debt'],
-    'PC2': ['sales_to_price', 'bm', 'earnings_yield'],
-    'PC3': ['debt_assets', 'vol_60d_ann', 'gprof'],
+    'PC1': [ROA, ROE, CASH_DEBT],
+    'PC2': [SP, BM, EY],
+    'PC3': [DEBT_ASSETS, VOL, GPROF],
 }
 
 # KG / ontology data-source mapping
