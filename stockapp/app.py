@@ -70,6 +70,9 @@ from period_analysis import (
     get_features_from_df,
     PERIOD_KEYS,
 )
+
+st.write("Peer DF size passed to AI:", len(peer_df))
+
 from narrative_engine import generate_narrative  # ARCH: intentional NE boundary — app.py is the sole authorized caller
 
 
