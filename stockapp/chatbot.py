@@ -122,6 +122,7 @@ class StockAnalysisChatbot:
         cluster_summary: pd.DataFrame,
         # ── Phase 4: KG context (Tier 2) ──────────────────────────────────────
         kg_subgraph: Optional[Dict] = None,
+        total_universe: Optional[int] = None,
     ):
         """
         Set the current stock context for the chatbot.
@@ -152,9 +153,7 @@ class StockAnalysisChatbot:
             'factors':         factor_data,
             'percentiles':     percentiles,
             'peer_count':      peer_count,
-            'total_universe': sum(
-                v.get('count', 0) for v in cluster_summary.values()
-            ) if isinstance(cluster_summary, dict) else None,
+            'total_universe': total_universe,
             'cluster_summary': (
                 cluster_summary.to_dict()
                 if isinstance(cluster_summary, pd.DataFrame)
