@@ -101,7 +101,6 @@ from visualizations import (
     plot_crowding_score
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
-from structural_analyst import run_structural_analysis
 from structural_context_builder import build_structural_evidence_packet
 from kg_visualizer import render_kg_tab, render_structural_intelligence_tab
 from period_analysis import (
@@ -1958,6 +1957,13 @@ def main():
     # ============================================================
     # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
     # ============================================================
+
+    # Lazy import to avoid Streamlit module cache issues
+    try:
+        from structural_analyst import run_structural_analysis
+    except Exception as e:
+        st.error(f"Structural Analyst failed to load: {e}")
+    run_structural_analysis = None
 
     st.markdown("---")
     st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
