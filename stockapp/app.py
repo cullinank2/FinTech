@@ -143,7 +143,7 @@ from narrative_engine import generate_narrative  # ARCH: intentional NE boundary
 # ============================================================
 # STEP 1A — STRUCTURAL FORMATTER TEST (TEMP)
 # ============================================================
-from utils.structural_report_formatter import build_structural_report
+from stockapp.utils.structural_report_formatter import build_structural_report
 
 # TEMP test data (safe, no dependencies)
 _structural_test_data = {
