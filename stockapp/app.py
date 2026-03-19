@@ -1977,6 +1977,9 @@ def main():
                 key="structural_input"
             )
 
+        # Initialize chatbot for structural analysis
+        chatbot = create_chatbot()
+
         with col2:
             run_structural = st.button("Analyze", key="structural_btn")
 
