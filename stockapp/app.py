@@ -56,6 +56,8 @@ Auditable                     Non-auditable
 """
 
 import streamlit as st
+st.markdown("## 🚨 GLOBAL TEST — APP IS EXECUTING THIS FILE")
+st.stop()
 import pandas as pd
 import os
 
@@ -114,6 +116,23 @@ from period_analysis import (
     PERIOD_KEYS,
 )
 from narrative_engine import generate_narrative  # ARCH: intentional NE boundary — app.py is the sole authorized caller
+
+# ============================================================
+# STEP 1A — STRUCTURAL FORMATTER TEST (TEMP)
+# ============================================================
+from utils.structural_report_formatter import build_structural_report
+
+# TEMP test data (safe, no dependencies)
+_structural_test_data = {
+    "regime_transition": {
+        "from": "post_covid",
+        "to": "disinflation",
+        "quadrant_from": "profitable_value",
+        "quadrant_to": "quality_growth",
+        "crowding_score": 65.9,
+        "crowding_label": "elevated"
+    }
+}
 
 
 # =============================================================================
@@ -1506,9 +1525,29 @@ def render_chatbot_section(
 
 def main():
     """Main application entry point."""
-    
+
     # Initialize session state
     init_session_state()
+
+    # ============================================================
+    # STEP 1A TEST OUTPUT (TEMP — REMOVE LATER)
+    # ============================================================
+    from utils.structural_report_formatter import build_structural_report
+
+    _structural_test_data = {
+        "regime_transition": {
+            "from": "post_covid",
+            "to": "disinflation",
+            "quadrant_from": "profitable_value",
+            "quadrant_to": "quality_growth",
+            "crowding_score": 65.9,
+            "crowding_label": "elevated"
+        }
+    }
+
+    st.container().markdown("## 🚨 TOP TEST — FORMATTER OUTPUT")
+    st.container().json(build_structural_report(_structural_test_data))
+    st.stop()
     
     # Render main header
     render_main_header()
