@@ -101,6 +101,7 @@ from visualizations import (
     plot_crowding_score
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
+from structural_analyst import run_structural_analysis
 from kg_visualizer import render_kg_tab, render_structural_intelligence_tab
 from period_analysis import (
     create_loading_comparison_chart,
@@ -1928,9 +1929,70 @@ def main():
 
     # Render chatbot section
     render_chatbot_section(
-        ticker, permno, cluster, quadrant, pc1, pc2,
-        pca_row, percentiles, len(quadrant_peers), cluster_summary
-    )
+    ticker, permno, cluster, quadrant, pc1, pc2,
+    pca_row, percentiles, len(quadrant_peers), cluster_summary
+)
+
+# ============================================================
+# STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
+# ============================================================
+
+st.markdown("---")
+st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
+
+kg = st.session_state.get("kg_instance")
+kg_regime = st.session_state.get("kg_current_regime")
+
+if kg is None or kg_regime is None:
+    st.info("Structural Analyst requires Knowledge Graph context.")
+else:
+    col1, col2 = st.columns([4, 1])
+
+    with col1:
+        structural_question = st.text_input(
+            "Ask a structural question:",
+            placeholder="e.g., What changed structurally in this regime?",
+            key="structural_input"
+        )
+
+    with col2:
+        run_structural = st.button("Analyze", key="structural_btn")
+
+    if run_structural and structural_question:
+
+        with st.spinner("Running KG-backed structural analysis..."):
+
+            try:
+                result = run_structural_analysis(
+                    ticker=ticker,
+                    question=structural_question,
+                    kg=kg,
+                    regime=kg_regime
+                )
+
+                st.markdown("### 📊 Structural Answer")
+                st.write(result.get("answer", "No answer returned."))
+
+                if result.get("summary_bullets"):
+                    st.markdown("### 🔑 Key Points")
+                    for b in result["summary_bullets"]:
+                        st.markdown(f"- {b}")
+
+                with st.expander("🔍 Evidence"):
+                    for e in result.get("evidence", []):
+                        st.markdown(
+                            f"- **{e.get('source_name')}**: {e.get('fact')}"
+                        )
+
+                with st.expander("⚠️ Limits"):
+                    st.write(result.get("limits", "None stated"))
+
+                st.caption(f"Confidence: {result.get('confidence')}")
+
+            except Exception as e:
+                st.error(f"Structural analysis failed: {str(e)}")
+
+# Footer
     
     # Footer
     st.markdown("---")
