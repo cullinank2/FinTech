@@ -175,7 +175,17 @@ Provide concise, actionable insights for stakeholders. Use the provided context 
 selected stock and its cluster to give specific, data-driven answers.
 When numeric context is available, answer directly and concisely.
 Avoid explaining basic arithmetic unless explicitly asked.
-Present results in a professional, analytical tone."""
+Present results in a professional, analytical tone.
+If a question about "all quadrants" is ambiguous:
+
+- Interpret it as both:
+  (1) total universe size
+  (2) peers outside the current quadrant
+
+- Provide both numbers clearly and concisely.
+
+Avoid repeating the question logic or showing formulas.
+Do not explain basic arithmetic unless explicitly requested."""
 
 # =============================================================================
 # TEMPORARY TEST - DELETE AFTER TESTING
