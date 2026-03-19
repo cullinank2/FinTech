@@ -508,6 +508,36 @@ peer clusters), prefer citing these KG facts over general commentary.
         self._kg_subgraph = None
 
 
+    def call_llm_structural(self, system_prompt: str, user_prompt: str) -> str:
+        """
+        LLM callable for Structural Analyst (strict contract).
+
+        Accepts:
+            system_prompt, user_prompt
+
+        Returns:
+            raw text response (should be JSON)
+        """
+        if not self.is_available():
+            return ""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0,  # deterministic for structural analysis
+                max_tokens=1500,
+            )
+
+            return response.choices[0].message.content or ""
+
+        except Exception:
+            return ""
+
+
 def create_chatbot(api_key: Optional[str] = None) -> StockAnalysisChatbot:
     """
     Factory function to create a chatbot instance.
