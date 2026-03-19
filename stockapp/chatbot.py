@@ -99,7 +99,8 @@ class StockAnalysisChatbot:
 
         if self.api_key and self.api_key != OPENAI_API_KEY_PLACEHOLDER:
             try:
-                self.client = OpenAI(api_key=self.api_key)
+                print("DEBUG RAW API KEY:", repr(self.api_key))
+                self.client = OpenAI(api_key=self.api_key.strip())
             except Exception as e:
                 print(f"Failed to initialize OpenAI client: {e}")
 
@@ -450,7 +451,7 @@ peer clusters), prefer citing these KG facts over general commentary.
                 formatted_input.append({
                     "role": m["role"],
                     "content": [
-                        {"type": "text", "text": m["content"]}
+                        {"type": "input_text", "text": m["content"]}
                     ]
                 })
 
@@ -540,21 +541,36 @@ peer clusters), prefer citing these KG facts over general commentary.
             return ""
 
         try:
-            response = self.client.chat.completions.create(
+            formatted_input = [
+                {
+                    "role": "system",
+                    "content": [{"type": "input_text", "text": system_prompt}]
+                },
+                {
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": user_prompt}]
+                }
+            ]
+
+            response = self.client.responses.create(
                 model=OPENAI_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0,  # deterministic for structural analysis
-                max_tokens=1500,
+                input=formatted_input,
+                max_output_tokens=1500
             )
 
-            return response.choices[0].message.content or ""
+            output_text = ""
+
+            if hasattr(response, "output") and response.output:
+                for item in response.output:
+                    if hasattr(item, "content") and item.content:
+                        for c in item.content:
+                            if hasattr(c, "type") and c.type == "output_text":
+                                output_text += getattr(c, "text", "")
+
+            return output_text.strip()
 
         except Exception:
             return ""
-
 
 def create_chatbot(api_key: Optional[str] = None) -> StockAnalysisChatbot:
     """
