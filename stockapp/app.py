@@ -59,7 +59,7 @@ import streamlit as st
 # ============================================================
 # STRUCTURAL REPORT TEST (TEMP — REMOVE AFTER UI INTEGRATION)
 # ============================================================
-from utils.structural_report_formatter import build_structural_report
+from stockapp.utils.structural_report_formatter import build_structural_report
 
 _structural_test_data = {
     "regime_transition": {
@@ -1555,7 +1555,7 @@ def main():
     # ============================================================
     # STEP 1A TEST OUTPUT (TEMP — REMOVE LATER)
     # ============================================================
-    from utils.structural_report_formatter import build_structural_report
+    from stockapp.utils.structural_report_formatter import build_structural_report
 
     _structural_test_data = {
         "regime_transition": {
