@@ -172,7 +172,10 @@ Key interpretations:
 - PC2 (Y-axis): Size/Leverage - High values = large/liquid, leveraged; Low values = cash-rich, efficient
 
 Provide concise, actionable insights for stakeholders. Use the provided context about the 
-selected stock and its cluster to give specific, data-driven answers."""
+selected stock and its cluster to give specific, data-driven answers.
+When numeric context is available, answer directly and concisely.
+Avoid explaining basic arithmetic unless explicitly asked.
+Present results in a professional, analytical tone."""
 
 # =============================================================================
 # TEMPORARY TEST - DELETE AFTER TESTING
