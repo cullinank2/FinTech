@@ -1,4 +1,4 @@
-#Force rebuild - 2026-02-08
+def set_st#Force rebuild - 2026-02-08
 """
 ARCHITECTURE: PCA + Knowledge Graph + Narrative System
 
@@ -1379,7 +1379,8 @@ def render_chatbot_section(
     pca_row: pd.Series,
     percentiles: dict,
     peer_count: int,
-    cluster_summary: pd.DataFrame
+    cluster_summary: pd.DataFrame,
+    total_universe=None
 ):
     """Render the AI chatbot section."""
     
@@ -1425,7 +1426,7 @@ def render_chatbot_section(
         peer_count=peer_count,
         cluster_summary=cluster_summary,
         kg_subgraph=kg_subgraph,
-        total_universe=len(gics_filtered_pca),
+        total_universe=total_universe,
     )
     
     # Quick analysis button
