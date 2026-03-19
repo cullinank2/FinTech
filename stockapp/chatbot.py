@@ -444,14 +444,32 @@ peer clusters), prefer citing these KG facts over general commentary.
         messages.append({"role": "user", "content": user_message})
 
         try:
-            response = self.client.chat.completions.create(
+            formatted_input = []
+
+            for m in messages:
+                formatted_input.append({
+                    "role": m["role"],
+                    "content": [
+                        {"type": "text", "text": m["content"]}
+                    ]
+                })
+
+            response = self.client.responses.create(
                 model=OPENAI_MODEL,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=1000
+                input=formatted_input,
+                max_output_tokens=1000
             )
 
-            assistant_message = response.choices[0].message.content
+            assistant_message = ""
+
+            if hasattr(response, "output") and response.output:
+                for item in response.output:
+                    if hasattr(item, "content") and item.content:
+                        for c in item.content:
+                            if hasattr(c, "type") and c.type == "output_text":
+                                assistant_message += getattr(c, "text", "")
+
+            assistant_message = assistant_message.strip() or "⚠️ Empty model response"
 
             self.conversation_history.append({"role": "user",      "content": user_message})
             self.conversation_history.append({"role": "assistant", "content": assistant_message})
