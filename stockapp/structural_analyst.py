@@ -108,6 +108,15 @@ def run_structural_analysis(
         else:
             raw_text = str(raw)
         parsed = _parse_response_json(raw_text)
+
+        # ------------------------------------------------------------
+        # Normalize model output to match strict schema
+        # ------------------------------------------------------------
+        if isinstance(parsed.get("answer"), dict):
+            parsed["answer"] = json.dumps(parsed["answer"], indent=2)
+
+        if isinstance(parsed.get("limits"), str):
+            parsed["limits"] = [parsed["limits"]]
         validated = _validate_structural_response(parsed, evidence_packet)
 
         return validated
