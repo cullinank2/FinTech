@@ -5,6 +5,8 @@ Single source of truth for factor definitions used across the app,
 knowledge graph, narrative engine, and period analysis modules.
 """
 
+from types import MappingProxyType
+
 # ============================================================
 # Feature Key Constants (true single source of truth)
 # ------------------------------------------------------------
@@ -54,7 +56,9 @@ FEATURE_COLUMNS = PCA_FEATURES
 # ============================================================
 # Feature Metadata (single structured definition layer)
 # ============================================================
-FEATURE_METADATA = {
+
+# Internal mutable definition (never import directly)
+_FEATURE_METADATA = {
     EY: {
         'display': 'Earnings Yield (V)',
         'category': 'Value',
@@ -120,6 +124,9 @@ FEATURE_METADATA = {
         'source': 'WRDS/CRSP',
     }
 }
+
+# Enforce immutability (read-only registry)
+FEATURE_METADATA = MappingProxyType(_FEATURE_METADATA)
 
 # Derived display names (backward-compatible)
 FEATURE_DISPLAY_NAMES = {
