@@ -1425,6 +1425,7 @@ def render_chatbot_section(
         peer_count=peer_count,
         cluster_summary=cluster_summary,
         kg_subgraph=kg_subgraph,
+        total_universe=len(gics_filtered_pca),
     )
     
     # Quick analysis button
@@ -1951,7 +1952,11 @@ def main():
     # Render chatbot section
     render_chatbot_section(
     ticker, permno, cluster, quadrant, pc1, pc2,
-    pca_row, percentiles, len(quadrant_peers), cluster_summary
+    pca_row,
+    percentiles,
+    len(quadrant_peers),
+    cluster_summary,
+    total_universe=len(gics_filtered_pca)
 )
 
     # ============================================================
