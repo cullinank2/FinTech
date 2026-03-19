@@ -80,12 +80,7 @@ def run_structural_analysis(
         # ------------------------------------------------------------
         # DEBUG: inspect raw LLM response in Streamlit UI
         # ------------------------------------------------------------
-        try:
-            import streamlit as st
-            st.write("DEBUG LLM RAW TYPE:", type(raw))
-            st.write("DEBUG LLM RAW VALUE:", raw)
-        except Exception:
-            pass
+        # Debug logging removed for production
 
         # ------------------------------------------------------------
         # Normalize LLM output to raw text
