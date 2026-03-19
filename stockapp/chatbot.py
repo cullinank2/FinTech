@@ -1,20 +1,51 @@
 """
-OpenAI-powered Chatbot for Stock PCA Cluster Analysis.
-Provides context-aware responses about cluster analysis and stock comparisons.
+ARCHITECTURE: PCA + Knowledge Graph + Narrative System
 
-Phase 4 update: KG subgraph injection (Tier 2 integration)
-    set_stock_context() now accepts an optional kg_subgraph dict produced by
-    kg_interface.KnowledgeGraph.serialize_subgraph(). When present, this
-    structured graph context is appended to _build_context_message() as a
-    clearly labeled block — giving the LLM explicit structural facts (regime
-    transitions, crowding scores, quadrant history, cluster membership) that
-    it would otherwise have to infer or hallucinate.
+ARCH: TIER2_CHATBOT
+ARCH: KG_SERIALIZATION_ONLY
+ARCH: NO_LIVE_GRAPH_IN_CHATBOT
 
-    Governance separation is maintained structurally:
-      - The chatbot never receives a live KnowledgeGraph object.
-      - It receives only a serialized JSON-compatible dict — a bounded snapshot.
-      - This is Tier 2: configurable, session-specific, non-reportable output.
-      - Tier 1 Narrative Engine (deterministic, auditable module).  # ARCH: intentional NE boundary — doc reference only, no import
+====================================================================
+TIER 2 — CHATBOT (LLM, Non-Deterministic, Exploratory)
+====================================================================
+
+BOUNDARY:
+- Chatbot is a USER-INTERACTION TOOL only
+- Outputs are NOT governance-grade
+- Used for exploration, not reporting
+
+AUTHORIZED FLOW:
+- app.py → render_chatbot_section(...)
+- chatbot.py → StockAnalysisChatbot
+
+RULES:
+- Must NEVER be used as a source of truth
+- Must NOT override Narrative Engine conclusions
+- Must NOT access raw system objects directly
+
+CONTEXT INPUTS (STRICTLY CONTROLLED):
+- stock_context (dict)
+- kg_subgraph (serialized dict ONLY)
+
+CRITICAL CONSTRAINT:
+- Chatbot MUST NEVER receive:
+    ❌ live KnowledgeGraph object
+    ❌ raw PCA model
+    ❌ unrestricted dataset access
+
+It ONLY receives:
+    ✅ bounded snapshots (JSON-serializable)
+
+====================================================================
+KNOWLEDGE GRAPH INTEGRATION (TIER 2)
+====================================================================
+
+- Graph must ALWAYS be passed as a SERIALIZED DICT
+- Injected via:
+    set_stock_context(..., kg_subgraph=...)
+
+RULE:
+- NEVER pass live graph instances across boundaries
 """
 
 import os

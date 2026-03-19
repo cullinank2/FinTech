@@ -1,17 +1,58 @@
 #Force rebuild - 2026-02-08
 """
-Stock PCA Cluster Analysis - Streamlit Web Application
+ARCHITECTURE: PCA + Knowledge Graph + Narrative System
 
-A comprehensive interactive dashboard for analyzing stock clusters using
-Principal Component Analysis (PCA). Features include:
-- Interactive 2D/3D PCA visualizations
-- Quadrant-based peer comparison
-- Factor breakdown analysis
-- Time-lapse animations
-- AI-powered chatbot for contextual questions
+ARCH: TIER1_NARRATIVE_ENGINE
+ARCH: APP_IS_SOLE_NE_CALLER
+ARCH: KG_SERIALIZATION_ONLY
 
-Author: Beautiful Mind FinTech
-Date: 2024
+====================================================================
+TIER 1 — NARRATIVE ENGINE (Deterministic, Auditable, Reportable)
+====================================================================
+
+BOUNDARY:
+- The Narrative Engine is the ONLY component allowed to produce
+  deterministic, governance-safe explanations.
+
+AUTHORIZED CALL SITE:
+- app.py → generate_narrative(...)
+
+RULES:
+- Must NOT depend on LLM output
+- Must be reproducible across runs
+- Must be explainable and auditable
+
+INPUTS:
+- PCA outputs (PC scores, loadings)
+- Percentiles
+- Factor breakdowns
+- Knowledge Graph (optional, structured only)
+
+OUTPUT:
+- Structured narrative sections:
+    - summary
+    - factors
+    - trajectory
+    - peers
+    - structural
+
+ENFORCEMENT:
+- Narrative Engine is NEVER imported or called outside app.py
+
+
+====================================================================
+DATA FLOW SUMMARY
+====================================================================
+
+RAW DATA → PCA → CLUSTERS → FACTORS
+                      ↓
+              KNOWLEDGE GRAPH
+                      ↓
+        ┌─────────────┴─────────────┐
+        ↓                           ↓
+TIER 1 (Narrative Engine)     TIER 2 (Chatbot)
+Deterministic Output          LLM Exploration
+Auditable                     Non-auditable
 """
 
 import streamlit as st
