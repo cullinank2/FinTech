@@ -1963,7 +1963,7 @@ def main():
         from structural_analyst import run_structural_analysis
     except Exception as e:
         st.error(f"Structural Analyst failed to load: {e}")
-    run_structural_analysis = None
+        run_structural_analysis = None
 
     st.markdown("---")
     st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
@@ -2001,18 +2001,24 @@ def main():
                         question_type="structural_drift",
                     )
 
-                    result = run_structural_analysis(
-                        evidence_packet=evidence_packet,
-                        llm_callable=chatbot.call_llm_structural,
-                    )
+                    if run_structural_analysis is not None:
+                        result = run_structural_analysis(
+                            evidence_packet=evidence_packet,
+                            llm_callable=chatbot.call_llm_structural,
+                        )
+                    else:
+                        st.error("Structural Analyst unavailable.")
+                        result = None
+                    if result:
+                        st.markdown("### 📊 Structural Answer")
+                        st.write(result.get("answer", "No answer returned."))
 
-                    st.markdown("### 📊 Structural Answer")
-                    st.write(result.get("answer", "No answer returned."))
-
-                    if result.get("summary_bullets"):
-                        st.markdown("### 🔑 Key Points")
-                        for b in result["summary_bullets"]:
-                            st.markdown(f"- {b}")
+                        if result.get("summary_bullets"):
+                            st.markdown("### 🔑 Key Points")
+                            for b in result["summary_bullets"]:
+                                st.markdown(f"- {b}")    st.markdown("### 🔑 Key Points")
+                                for b in result["summary_bullets"]:
+                                    st.markdown(f"- {b}")
 
                     with st.expander("🔍 Evidence"):
                         for e in result.get("evidence", []):
