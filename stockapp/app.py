@@ -115,23 +115,6 @@ from period_analysis import (
 )
 from narrative_engine import generate_narrative  # ARCH: intentional NE boundary — app.py is the sole authorized caller
 
-# ============================================================
-# STEP 1A — STRUCTURAL FORMATTER TEST (TEMP)
-# ============================================================
-from utils.structural_report_formatter import build_structural_report
-
-# TEMP test data (safe, no dependencies)
-_structural_test_data = {
-    "regime_transition": {
-        "from": "post_covid",
-        "to": "disinflation",
-        "quadrant_from": "profitable_value",
-        "quadrant_to": "quality_growth",
-        "crowding_score": 65.9,
-        "crowding_label": "elevated"
-    }
-}
-
 
 # =============================================================================
 # PAGE CONFIGURATION 
