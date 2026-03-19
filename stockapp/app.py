@@ -56,7 +56,30 @@ Auditable                     Non-auditable
 """
 
 import streamlit as st
-st.markdown("## 🚨 GLOBAL TEST — APP IS EXECUTING THIS FILE")
+# ============================================================
+# STRUCTURAL REPORT TEST (TEMP — REMOVE AFTER UI INTEGRATION)
+# ============================================================
+from utils.structural_report_formatter import build_structural_report
+
+_structural_test_data = {
+    "regime_transition": {
+        "from": "post_covid",
+        "to": "disinflation",
+        "quadrant_from": "profitable_value",
+        "quadrant_to": "quality_growth",
+        "crowding_score": 65.9,
+        "crowding_label": "elevated"
+    }
+}
+
+st.markdown("## 🧠 Structural Report (Formatter Test)")
+report = build_structural_report(_structural_test_data)
+
+for section, lines in report.items():
+    st.markdown(f"### {section}")
+    for line in lines:
+        st.markdown(f"- {line}")
+
 st.stop()
 import pandas as pd
 import os
