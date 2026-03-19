@@ -1994,7 +1994,7 @@ def main():
 
                     result = run_structural_analysis(
                         evidence_packet=evidence_packet,
-                        llm_callable=call_structural_llm,
+                        llm_callable=chatbot.call_llm_structural,
                     )
 
                     st.markdown("### 📊 Structural Answer")
