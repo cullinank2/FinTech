@@ -59,7 +59,7 @@ import streamlit as st
 # ============================================================
 # STRUCTURAL REPORT TEST (TEMP — REMOVE AFTER UI INTEGRATION)
 # ============================================================
-from stockapp.utils.structural_report_formatter import build_structural_report
+from utils.structural_report_formatter import build_structural_report
 
 _structural_test_data = {
     "regime_transition": {
@@ -143,7 +143,7 @@ from narrative_engine import generate_narrative  # ARCH: intentional NE boundary
 # ============================================================
 # STEP 1A — STRUCTURAL FORMATTER TEST (TEMP)
 # ============================================================
-from stockapp.utils.structural_report_formatter import build_structural_report
+from utils.structural_report_formatter import build_structural_report
 
 # TEMP test data (safe, no dependencies)
 _structural_test_data = {
@@ -1555,7 +1555,7 @@ def main():
     # ============================================================
     # STEP 1A TEST OUTPUT (TEMP — REMOVE LATER)
     # ============================================================
-    from stockapp.utils.structural_report_formatter import build_structural_report
+    from utils.structural_report_formatter import build_structural_report
 
     _structural_test_data = {
         "regime_transition": {
