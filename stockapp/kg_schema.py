@@ -299,12 +299,8 @@ def _build_catalogs():
             )
 
         # ── FACTOR_NODES ──────────────────────────────────────────────────────
-        _cat_map = {
-            code: cat
-            for cat, codes in FACTOR_CATEGORIES.items()
-            for code in codes
-        }
-        _data_src = FEATURE_DATA_SOURCES
+        from factor_registry import FEATURE_METADATA
+
         _cat_enum_map = {
             'Value':              FactorCategoryName.VALUE,
             'Quality':            FactorCategoryName.QUALITY,
@@ -313,16 +309,20 @@ def _build_catalogs():
             'Risk/Volatility':    FactorCategoryName.RISK_VOL,
             'Liquidity':          FactorCategoryName.LIQUIDITY,
         }
+
         factor_nodes: Dict[str, FactorNode] = {}
-        for code in FEATURE_COLUMNS:
-            cat_str  = _cat_map.get(code, 'Quality')
+
+        for code, meta in FEATURE_METADATA.items():
+            cat_str  = meta.get('category', 'Quality')
             cat_enum = _cat_enum_map.get(cat_str, FactorCategoryName.QUALITY)
+
             factor_nodes[code] = FactorNode(
                 node_id      = f"factor:{code}",
                 code         = code,
-                display_name = FEATURE_DISPLAY_NAMES.get(code, code),
+                display_name = meta.get('display', code),
                 category     = cat_enum,
-                data_source  = _data_src.get(code, 'WRDS'),
+                data_source  = meta.get('source', 'WRDS'),
+                description  = f"{cat_str} factor | Source: {meta.get('source', 'WRDS')}",
             )
 
         # ── QUADRANT_NODES ────────────────────────────────────────────────────
