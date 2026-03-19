@@ -102,6 +102,7 @@ from visualizations import (
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
 from structural_analyst import run_structural_analysis
+from structural_context_builder import build_structural_evidence_packet
 from kg_visualizer import render_kg_tab, render_structural_intelligence_tab
 from period_analysis import (
     create_loading_comparison_chart,
@@ -636,6 +637,26 @@ def render_sidebar():
 # =============================================================================
 # MAIN CONTENT COMPONENTS
 # =============================================================================
+
+def call_structural_llm(system_prompt: str, user_prompt: str) -> str:
+    """LLM adapter for the KG-backed Structural Analyst."""
+    chatbot = st.session_state.get("chatbot")
+
+    if chatbot is None or not chatbot.is_available():
+        raise ValueError("Chatbot/OpenAI client is not available")
+
+    response = chatbot.client.chat.completions.create(
+        model="gpt-5",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0,
+        max_tokens=1200,
+    )
+
+    return response.choices[0].message.content
+
 
 def render_main_header():
     """Render the main page header."""
@@ -1963,11 +1984,16 @@ def main():
             with st.spinner("Running KG-backed structural analysis..."):
 
                 try:
-                    result = run_structural_analysis(
-                        ticker=ticker,
-                        question=structural_question,
+                    evidence_packet = build_structural_evidence_packet(
                         kg=kg,
-                        regime=kg_regime
+                        ticker=ticker,
+                        regime=kg_regime,
+                        question_type="structural_drift",
+                    )
+
+                    result = run_structural_analysis(
+                        evidence_packet=evidence_packet,
+                        llm_callable=call_structural_llm,
                     )
 
                     st.markdown("### 📊 Structural Answer")
