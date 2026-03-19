@@ -1510,26 +1510,6 @@ def main():
     # Initialize session state
     init_session_state()
 
-    # ============================================================
-    # STEP 1A TEST OUTPUT (TEMP — REMOVE LATER)
-    # ============================================================
-    from utils.structural_report_formatter import build_structural_report
-
-    _structural_test_data = {
-        "regime_transition": {
-            "from": "post_covid",
-            "to": "disinflation",
-            "quadrant_from": "profitable_value",
-            "quadrant_to": "quality_growth",
-            "crowding_score": 65.9,
-            "crowding_label": "elevated"
-        }
-    }
-
-    st.container().markdown("## 🚨 TOP TEST — FORMATTER OUTPUT")
-    st.container().json(build_structural_report(_structural_test_data))
-    st.stop()
-    
     # Render main header
     render_main_header()
     
