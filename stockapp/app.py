@@ -2014,12 +2014,13 @@ def main():
                         st.write(result.get("answer", "No answer returned."))
 
                         if result.get("summary_bullets"):
-                            st.markdown("### 🔑 Key Points")
-                            for b in result["summary_bullets"]:
-                                st.markdown(f"- {b}")    
-                                st.markdown("### 🔑 Key Points")
-                                for b in result["summary_bullets"]:
-                                    st.markdown(f"- {b}")
+                        st.markdown("### 🔑 Key Points")
+
+                        # Deduplicate bullets (preserve order)
+                        unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
+
+                        for b in unique_bullets:
+                            st.markdown(f"- {b}")
 
                     with st.expander("🔍 Evidence"):
                         for e in result.get("evidence", []):
