@@ -1,4 +1,4 @@
-def set_st#Force rebuild - 2026-02-08
+#Force rebuild - 2026-02-08
 """
 ARCHITECTURE: PCA + Knowledge Graph + Narrative System
 
