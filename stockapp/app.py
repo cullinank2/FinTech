@@ -2016,7 +2016,8 @@ def main():
                         if result.get("summary_bullets"):
                             st.markdown("### 🔑 Key Points")
                             for b in result["summary_bullets"]:
-                                st.markdown(f"- {b}")    st.markdown("### 🔑 Key Points")
+                                st.markdown(f"- {b}")    
+                                st.markdown("### 🔑 Key Points")
                                 for b in result["summary_bullets"]:
                                     st.markdown(f"- {b}")
 
