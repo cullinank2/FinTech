@@ -25,18 +25,6 @@ This module keeps prompt logic out of orchestration code so it can be
 versioned and audited cleanly.
 """
 
-Design intent
--------------
-The analyst must:
-- use ONLY the evidence packet supplied
-- avoid outside knowledge
-- avoid speculation
-- explicitly surface limits
-- return JSON-compatible output
-
-This module keeps prompt logic out of orchestration code so it can be
-versioned and audited cleanly.
-"""
 
 from __future__ import annotations
 
