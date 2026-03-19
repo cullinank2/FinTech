@@ -645,15 +645,17 @@ def call_structural_llm(system_prompt: str, user_prompt: str) -> str:
     if chatbot is None or not chatbot.is_available():
         raise ValueError("Chatbot/OpenAI client is not available")
 
-    response = chatbot.client.chat.completions.create(
+    response = chatbot.client.responses.create(
         model="gpt-5",
-        messages=[
+        input=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
         temperature=0,
-        max_tokens=1200,
+        max_output_tokens=1200,
     )
+
+    return response.output_text
 
     return response.choices[0].message.content
 
