@@ -75,7 +75,28 @@ def run_structural_analysis(
         system_prompt = STRUCTURAL_ANALYST_SYSTEM_PROMPT
         user_prompt = build_structural_user_prompt(evidence_packet)
 
-        raw_text = llm_callable(system_prompt, user_prompt)
+        raw = llm_callable(system_prompt, user_prompt)
+
+        # ------------------------------------------------------------
+        # Normalize LLM output to raw text
+        # ------------------------------------------------------------
+        if isinstance(raw, str):
+            raw_text = raw
+
+        elif isinstance(raw, dict):
+            raw_text = raw.get("output_text", "") or str(raw)
+
+        elif hasattr(raw, "output_text"):
+            raw_text = getattr(raw, "output_text", "")
+
+        elif hasattr(raw, "choices"):
+            try:
+                raw_text = raw.choices[0].message.content
+            except Exception:
+                raw_text = str(raw)
+
+        else:
+            raw_text = str(raw)
         parsed = _parse_response_json(raw_text)
         validated = _validate_structural_response(parsed, evidence_packet)
 
