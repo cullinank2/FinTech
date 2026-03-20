@@ -137,11 +137,12 @@ st.markdown("""
     }
 
     .tab-header {
-        font-size: 3rem;!important;
-        font-weight: 600;
-        padding: 0.5rem 0;
-        border-bottom: 2px solid #1f77b4;
-        margin-bottom: 1rem;
+        font-size: 2rem !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        padding: 0.5rem 0 !important;
+        border-bottom: 3px solid red !important;
+        margin-bottom: 1rem !important;
     }
 
     /* Main header styling */
