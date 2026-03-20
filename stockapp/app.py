@@ -286,7 +286,7 @@ html[data-theme="dark"] {
    ALL TAB LABELS
 --------------------------------*/
 button[data-baseweb="tab"] * {
-    font-size: 1.2rem !important;
+    font-size: 1rem !important;
     color: var(--tab-color) !important;
     font-weight: 700 !important;
 }
@@ -295,7 +295,7 @@ button[data-baseweb="tab"] * {
    ACTIVE TAB
 --------------------------------*/
 button[aria-selected="true"] * {
-    font-size: 1.7rem !important;
+    font-size: 1.5rem !important;
     color: var(--tab-color) !important;
     font-weight: 700 !important;
 }
