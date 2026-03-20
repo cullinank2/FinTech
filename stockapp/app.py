@@ -292,7 +292,7 @@ button[aria-selected="true"] * {
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(1) p {
     font-size: 1.4rem !important;
-    color: #00FFFF !important;
+    color: #ff4b4b !important;
     font-weight: 800 !important;
 }
 
