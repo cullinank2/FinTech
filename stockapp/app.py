@@ -275,7 +275,7 @@ st.markdown("""
    THEME VARIABLES
 =============================== */
 :root {
-    --tab-color: #065fd4;
+    --tab-color: #1f77b4;
 }
 
 html[data-theme="dark"] {
