@@ -135,7 +135,15 @@ st.markdown("""
         margin-top: 0.5rem;
         margin-bottom: 1rem;
     }
-         
+
+    .tab-header {
+        font-size: 1.4rem;
+        font-weight: 600;
+        padding: 0.5rem 0;
+        border-bottom: 2px solid #1f77b4;
+        margin-bottom: 1rem;
+    }
+
     /* Main header styling */
     .main-header {
         font-size: 2.5rem;
@@ -262,6 +270,16 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+
+# =============================================================================
+# UI HELPERS
+# =============================================================================
+
+def render_tab_header(text):
+    st.markdown(f"""
+    <div class="tab-header">{text}</div>
+    """, unsafe_allow_html=True)
 
 
 # =============================================================================
