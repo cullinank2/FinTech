@@ -271,6 +271,18 @@ st.markdown("""
 st.markdown("""
 <style>
 
+/* ===============================
+   THEME VARIABLES
+=============================== */
+:root {
+    --tab-color: #065fd4;
+}
+
+html[data-theme="dark"] {
+    --tab-color: #4da3ff;
+}
+            
+
 /* -------------------------------
    ALL TAB LABELS
 --------------------------------*/
@@ -292,7 +304,7 @@ button[aria-selected="true"] * {
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(1) p {
     font-size: 1.3rem !important;
-    color: #065fd4 !important;
+    color: var(--tab-color) !important;
     font-weight: 500 !important;
 }
 
