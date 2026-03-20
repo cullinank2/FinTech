@@ -716,8 +716,7 @@ def render_main_header():
     
     st.markdown("""
     <div class="hero-text">
-    Analyze equities using Principal Component Analysis (PCA) to understand factor exposures  
-    characteristics across quality, time and size dimensions.
+    Identifiy emerging equity market structural risks by quantifying factor crowding, regime shifts, and cross-sectional instability using PCA-based diagnostics.
     </div>
     """, unsafe_allow_html=True)
 
