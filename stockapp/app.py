@@ -301,24 +301,6 @@ button[aria-selected="true"] * {
     font-weight: 800 !important;
 }
 
-/* -------------------------------
-   TAB 3 — Knowledge Graph
---------------------------------*/
-div[role="tablist"] > button:nth-of-type(3) p {
-    font-size: 1.3rem !important;
-    color: var(--tab-color) !important;
-    font-weight: 500 !important;        
-}
-
-/* -------------------------------
-   TAB 4 — Structural Intelligence
---------------------------------*/
-div[role="tablist"] > button:nth-of-type(4) p {
-    font-size: 1.3rem !important;
-    color: var(--tab-color) !important;
-    font-weight: 500 !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
