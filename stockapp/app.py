@@ -296,7 +296,7 @@ button[data-baseweb="tab"] * {
    ACTIVE TAB
 --------------------------------*/
 button[aria-selected="true"] * {
-    font-size: 2rem !important;
+    font-size: 1.7rem !important;
     color: var(--tab-color) !important;
     font-weight: 800 !important;
 }
