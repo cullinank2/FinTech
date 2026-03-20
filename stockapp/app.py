@@ -296,7 +296,7 @@ button[data-baseweb="tab"] * {
 --------------------------------*/
 button[aria-selected="true"] * {
     color: #ff4b4b !important;
-    font-weight: 1200 !important;
+    font-weight: 800 !important;
 }
 
 /* -------------------------------
