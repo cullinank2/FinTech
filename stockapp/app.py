@@ -129,7 +129,7 @@ st.set_page_config(**PAGE_CONFIG)
 st.markdown("""
 <style>
     .hero-text {
-        font-size: 1.25rem;   /* increase size */
+        font-size: 1.4rem;   /* increase size */
         font-weight: 500;
         text-align: center;
         margin-top: 0.5rem;
