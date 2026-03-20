@@ -137,7 +137,7 @@ st.markdown("""
     }
 
     .tab-header {
-        font-size: 1.4rem;
+        font-size: 3rem;
         font-weight: 600;
         padding: 0.5rem 0;
         border-bottom: 2px solid #1f77b4;
