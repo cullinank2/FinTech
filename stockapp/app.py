@@ -138,7 +138,7 @@ st.markdown("""
 
     /* Main header styling */
     .main-header {
-        font-size: 2.5rem;
+        font-size: 5rem;
         color: #1f77b4;
         text-align: center;
         padding: 1rem 0;
