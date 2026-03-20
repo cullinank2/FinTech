@@ -1600,7 +1600,7 @@ def main():
                     sector_label = f" — {selected_sector} ({total_count})"
                 else:
                     sector_label = f" — All Sectors ({total_count})"
-                render_tab_header("📊 Cluster Overview")
+                st.markdown(f"### 📊 Cluster Overview{sector_label}")
 
                 fig = create_pca_scatter_plot(plot_df)
                 st.plotly_chart(fig, use_container_width=True)
