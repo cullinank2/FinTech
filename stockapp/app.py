@@ -288,7 +288,7 @@ html[data-theme="dark"] {
 --------------------------------*/
 button[data-baseweb="tab"] * {
     font-size: 1.2rem !important;
-    font-weight: 900 !important;
+    font-weight: 100 !important;
 }
 
 /* -------------------------------
