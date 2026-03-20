@@ -716,8 +716,8 @@ def render_main_header():
     
     st.markdown("""
     <div class="hero-text">
-    Analyze stocks using Principal Component Analysis (PCA) to understand their 
-    characteristics across quality, stability, leverage, and size dimensions.
+    Analyze equities using Principal Component Analysis (PCA) to understand factor exposures  
+    characteristics across quality, time and size dimensions.
     </div>
     """, unsafe_allow_html=True)
 
