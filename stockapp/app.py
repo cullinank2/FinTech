@@ -1585,7 +1585,6 @@ def main():
             ])
 
             with landing_tab1:
-                render_tab_header("📊 Cluster Overview")
                 # Apply GICS sector filter if selected on landing page
                 plot_df = st.session_state.pca_df.copy()
                 selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
@@ -1601,7 +1600,7 @@ def main():
                     sector_label = f" — {selected_sector} ({total_count})"
                 else:
                     sector_label = f" — All Sectors ({total_count})"
-                st.markdown(f"### 📊 Cluster Overview{sector_label}")
+                render_tab_header("📊 Cluster Overview")
 
                 fig = create_pca_scatter_plot(plot_df)
                 st.plotly_chart(fig, use_container_width=True)
