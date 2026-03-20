@@ -129,12 +129,13 @@ st.set_page_config(**PAGE_CONFIG)
 st.markdown("""
 <style>
     .hero-text {
-        font-size: 1.25rem;   /* increase size */
-        font-weight: 500;
-        text-align: center;
-        margin-top: 0.5rem;
-        margin-bottom: 1rem;
-    }
+    font-size: 1.25rem;   /* increase size */
+    font-weight: 500;
+    text-align: center;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
             
     /* Main header styling */
     .main-header {
@@ -675,11 +676,9 @@ def render_main_header():
     """, unsafe_allow_html=True)
     
     st.markdown("""
-    <div class="hero-text">
     Analyze stocks using Principal Component Analysis (PCA) to understand their 
     characteristics across quality, stability, leverage, and size dimensions.
-    </div>
-    """, unsafe_allow_html=True)
+    """)
 
 
 def _build_quadrant_history_html(stock_data: pd.DataFrame, ticker: str) -> str:
