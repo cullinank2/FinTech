@@ -265,6 +265,65 @@ st.markdown("""
 
 
 # =============================================================================
+# TAB HEADER STYLING (STREAMLIT DOM OVERRIDE)
+# =============================================================================
+
+st.markdown("""
+<style>
+
+/* -------------------------------
+   ALL TAB LABELS
+--------------------------------*/
+button[data-baseweb="tab"] * {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+}
+
+/* -------------------------------
+   ACTIVE TAB
+--------------------------------*/
+button[aria-selected="true"] * {
+    color: #ff4b4b !important;
+    font-weight: 800 !important;
+}
+
+/* -------------------------------
+   TAB 1 — Cluster Overview
+--------------------------------*/
+div[role="tablist"] > button:nth-of-type(1) p {
+    font-size: 1.4rem !important;
+    color: #00d4ff !important;
+    font-weight: 800 !important;
+}
+
+/* -------------------------------
+   TAB 2 — Period Comparison
+--------------------------------*/
+div[role="tablist"] > button:nth-of-type(2) p {
+    font-size: 1.1rem !important;
+    color: #aaaaaa !important;
+}
+
+/* -------------------------------
+   TAB 3 — Knowledge Graph
+--------------------------------*/
+div[role="tablist"] > button:nth-of-type(3) p {
+    color: #ff69b4 !important;
+}
+
+/* -------------------------------
+   TAB 4 — Structural Intelligence
+--------------------------------*/
+div[role="tablist"] > button:nth-of-type(4) p {
+    color: #ff4b4b !important;
+    font-weight: 700 !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# =============================================================================
 # SESSION STATE INITIALIZATION
 # =============================================================================
 
