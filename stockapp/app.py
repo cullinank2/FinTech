@@ -288,7 +288,7 @@ html[data-theme="dark"] {
 --------------------------------*/
 button[data-baseweb="tab"] * {
     font-size: 1.2rem !important;
-    font-weight: 250 !important;
+    font-weight: 700 !important;
 }
 
 /* -------------------------------
@@ -312,23 +312,27 @@ div[role="tablist"] > button:nth-of-type(1) p {
    TAB 2 — Period Comparison
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(2) p {
-    font-size: 1.1rem !important;
+    font-size: 1.3rem !important;
     color: var(--tab-color) !important;
+    font-weight: 500 !important;
 }
 
 /* -------------------------------
    TAB 3 — Knowledge Graph
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(3) p {
+    font-size: 1.3rem !important;
     color: var(--tab-color) !important;
+    font-weight: 500 !important;        
 }
 
 /* -------------------------------
    TAB 4 — Structural Intelligence
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(4) p {
+    font-size: 1.3rem !important;
     color: var(--tab-color) !important;
-    font-weight: 700 !important;
+    font-weight: 500 !important;
 }
 
 </style>
