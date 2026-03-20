@@ -135,8 +135,7 @@ st.markdown("""
         margin-top: 0.5rem;
         margin-bottom: 1rem;
     }
-    
-            
+         
     /* Main header styling */
     .main-header {
         font-size: 2.5rem;
