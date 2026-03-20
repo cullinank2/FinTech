@@ -287,7 +287,8 @@ html[data-theme="dark"] {
    ALL TAB LABELS
 --------------------------------*/
 button[data-baseweb="tab"] * {
-    font-size: 1.2rem !important;
+    font-size: 1rem !important;
+    color: var(--tab-color) !important;
     font-weight: 700 !important;
 }
 
@@ -295,7 +296,8 @@ button[data-baseweb="tab"] * {
    ACTIVE TAB
 --------------------------------*/
 button[aria-selected="true"] * {
-    color: #ff4b4b !important;
+    font-size: 2rem !important;
+    color: var(--tab-color) !important;
     font-weight: 800 !important;
 }
 
@@ -303,7 +305,6 @@ button[aria-selected="true"] * {
    TAB 1 — Cluster Overview
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(1) p {
-    font-size: 1.3rem !important;
     color: var(--tab-color) !important;
 }
 
