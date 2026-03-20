@@ -302,15 +302,6 @@ button[aria-selected="true"] * {
 }
 
 /* -------------------------------
-   TAB 2 — Period Comparison
---------------------------------*/
-div[role="tablist"] > button:nth-of-type(2) p {
-    font-size: 1.3rem !important;
-    color: var(--tab-color) !important;
-    font-weight: 500 !important;
-}
-
-/* -------------------------------
    TAB 3 — Knowledge Graph
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(3) p {
