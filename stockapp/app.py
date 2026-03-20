@@ -716,7 +716,8 @@ def render_main_header():
     
     st.markdown("""
     <div class="hero-text">
-    Identifiy emerging structural risk in equities by quantifying factor crowding, regime shifts, and cross-sectional instability using PCA-based diagnostics.
+    Identifiy emerging structural risk in equities by quantifying factor crowding, regime shifts, 
+                and cross-sectional instability using PCA-based diagnostics.
     </div>
     """, unsafe_allow_html=True)
 
