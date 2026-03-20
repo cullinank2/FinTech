@@ -297,7 +297,7 @@ button[data-baseweb="tab"] * {
 button[aria-selected="true"] * {
     font-size: 1.5rem !important;
     color: var(--tab-color) !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
 }
 
 </style>
