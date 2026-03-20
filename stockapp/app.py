@@ -313,21 +313,21 @@ div[role="tablist"] > button:nth-of-type(1) p {
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(2) p {
     font-size: 1.1rem !important;
-    color: #aaaaaa !important;
+    color: var(--tab-color) !important;
 }
 
 /* -------------------------------
    TAB 3 — Knowledge Graph
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(3) p {
-    color: #ff69b4 !important;
+    color: var(--tab-color) !important;
 }
 
 /* -------------------------------
    TAB 4 — Structural Intelligence
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(4) p {
-    color: #ff4b4b !important;
+    color: var(--tab-color) !important;
     font-weight: 700 !important;
 }
 
