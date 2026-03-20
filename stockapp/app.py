@@ -291,9 +291,9 @@ button[aria-selected="true"] * {
    TAB 1 — Cluster Overview
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(1) p {
-    font-size: 2rem !important;
+    font-size: 1.5rem !important;
     color: #ff4b4b !important;
-    font-weight: 800 !important;
+    font-weight: 500 !important;
 }
 
 /* -------------------------------
