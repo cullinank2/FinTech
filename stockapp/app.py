@@ -302,13 +302,6 @@ button[aria-selected="true"] * {
 }
 
 /* -------------------------------
-   TAB 1 — Cluster Overview
---------------------------------*/
-div[role="tablist"] > button:nth-of-type(1) p {
-    color: var(--tab-color) !important;
-}
-
-/* -------------------------------
    TAB 2 — Period Comparison
 --------------------------------*/
 div[role="tablist"] > button:nth-of-type(2) p {
