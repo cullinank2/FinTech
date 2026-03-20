@@ -1585,6 +1585,8 @@ def main():
             ])
 
             with landing_tab1:
+                render_tab_header("📊 Cluster Overview")
+
                 # Apply GICS sector filter if selected on landing page
                 plot_df = st.session_state.pca_df.copy()
                 selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
