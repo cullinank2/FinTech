@@ -1360,7 +1360,7 @@ def render_full_universe_loadings_table():
     Render Appendix B.1-style full-universe PCA loadings table
     from the main PCA model (time-averaged cross-section).
     """
-    st.markdown("### B.1 · Full-Universe PC Loadings")
+    st.markdown("### 4 · Full-Universe PC Loadings")
     st.caption(
         "Main PCA — time-averaged cross-section of the full universe. "
         "This is the operative coordinate system used for stock positioning, "
