@@ -1355,6 +1355,129 @@ def render_visualizations(
             st.info("3D visualization requires PC3 data.")
 
 
+def render_full_universe_loadings_table():
+    """
+    Render Appendix B.1-style full-universe PCA loadings table
+    from the main PCA model (time-averaged cross-section).
+    """
+    st.markdown("### B.1 · Full-Universe PC Loadings")
+    st.caption(
+        "Main PCA — time-averaged cross-section of the full universe. "
+        "This is the operative coordinate system used for stock positioning, "
+        "quadrant assignment, cluster mapping, and peer comparison."
+    )
+
+    pca_model = st.session_state.get("pca_model")
+    if pca_model is None:
+        st.warning("Main PCA model is not available.")
+        return
+
+    if not hasattr(pca_model, "components_"):
+        st.warning("PCA components are not available on the current model.")
+        return
+
+    if len(FEATURE_COLUMNS) == 0:
+        st.warning("No feature columns were found.")
+        return
+
+    # Build raw loading matrix: rows = factors, cols = PCs
+    n_components = min(3, pca_model.components_.shape[0])
+    component_names = [f"PC{i+1}" for i in range(n_components)]
+
+    loadings_df = pd.DataFrame(
+        pca_model.components_[:n_components].T,
+        index=FEATURE_COLUMNS,
+        columns=component_names
+    ).reset_index().rename(columns={"index": "Code"})
+
+    # Factor display names
+    loadings_df["Factor"] = loadings_df["Code"].map(FEATURE_DISPLAY_NAMES).fillna(loadings_df["Code"])
+
+    # Domain mapping from FACTOR_CATEGORIES
+    code_to_domain = {}
+    for domain, codes in FACTOR_CATEGORIES.items():
+        for code in codes:
+            code_to_domain[code] = domain
+
+    loadings_df["Domain"] = loadings_df["Code"].map(code_to_domain).fillna("Other")
+
+    # Clean column order
+    ordered_cols = ["Factor", "Code", "Domain"] + component_names
+    loadings_df = loadings_df[ordered_cols]
+
+    # Variance explained
+    variance_text = ""
+    if hasattr(pca_model, "explained_variance_ratio_"):
+        ratios = pca_model.explained_variance_ratio_
+        pieces = []
+        total = 0.0
+        for i in range(min(3, len(ratios))):
+            pct = round(ratios[i] * 100, 1)
+            total += pct
+            pieces.append(f"PC{i+1} ≈ {pct}%")
+        variance_text = " · ".join(pieces) + f" · Combined ≈ {round(total, 1)}%"
+
+    if variance_text:
+        st.markdown(f"**Variance explained:** {variance_text}")
+
+    def _style_loading(val):
+        if not isinstance(val, (int, float)):
+            return ""
+        if abs(val) < 0.08:
+            return ""
+        if val >= 0.30:
+            return "background-color: rgba(84,162,75,0.75); color: white; font-weight: bold;"
+        if val > 0:
+            return "background-color: rgba(84,162,75,0.30);"
+        if val <= -0.30:
+            return "background-color: rgba(228,87,86,0.75); color: white; font-weight: bold;"
+        return "background-color: rgba(228,87,86,0.30);"
+
+    numeric_cols = [c for c in ["PC1", "PC2", "PC3"] if c in loadings_df.columns]
+
+    styled = (
+        loadings_df.style
+        .applymap(_style_loading, subset=numeric_cols)
+        .format({col: "{:+.2f}" for col in numeric_cols})
+        .set_properties(subset=["Factor", "Code", "Domain"], **{"text-align": "left"})
+        .set_properties(subset=numeric_cols, **{"text-align": "center"})
+        .set_table_styles([
+            {
+                "selector": "th",
+                "props": [
+                    ("background-color", "#1e1e2e"),
+                    ("color", "#ffffff"),
+                    ("font-size", "12px"),
+                    ("text-align", "center"),
+                    ("padding", "6px 10px"),
+                ],
+            },
+            {
+                "selector": "td",
+                "props": [
+                    ("font-size", "12px"),
+                    ("padding", "4px 10px"),
+                ],
+            },
+            {
+                "selector": "tr:hover td",
+                "props": [("background-color", "rgba(255,255,255,0.05)")],
+            },
+        ])
+    )
+
+    st.dataframe(styled, use_container_width=True)
+
+    with st.expander("📖 How to read B.1"):
+        st.markdown("""
+- **PC1 / PC2 / PC3** are the principal component loadings from the **main PCA**.
+- **Positive loading** means the factor pushes stocks higher on that axis.
+- **Negative loading** means the factor pushes stocks lower on that axis.
+- **Higher absolute values** indicate stronger structural contribution.
+- Cells with **|loading| < 0.08** are left unshaded to match your appendix convention.
+        """)
+
+
 def render_narrative_section(
     ticker: str,
     pca_row: pd.Series,
@@ -1839,9 +1962,13 @@ def main():
                             else:
                                 st.warning("Not enough common tickers across all three sub-periods to compute migration.")
 
-                            # Section 4: Factor Loadings by Sub-Period
+                            # Section 4: Full-Universe PC Loadings (Main PCA)
                             st.markdown("---")
-                            st.markdown("### 4 · Factor Loadings by Sub-Period")
+                            render_full_universe_loadings_table()
+                            
+                            # Section 5: Factor Loadings by Sub-Period
+                            st.markdown("---")
+                            st.markdown("### 5 · Factor Loadings by Sub-Period")
                             st.caption("If bars change size or flip sign across periods, the factor structure shifted.")
 
                             pc_choice = st.radio(
