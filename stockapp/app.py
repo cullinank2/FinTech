@@ -1420,6 +1420,11 @@ def render_full_universe_loadings_table():
     if variance_text:
         st.markdown(f"**Variance explained:** {variance_text}")
 
+        st.caption(
+            "Note: PCA component signs may differ from Appendix B due to sign indeterminacy, "
+            "but structural interpretations are identical."
+    )
+
     def _style_loading(val):
         if not isinstance(val, (int, float)):
             return ""
