@@ -1473,7 +1473,7 @@ def render_full_universe_loadings_table():
 
     st.dataframe(styled, use_container_width=True)
 
-    with st.expander("📖 How to read B.1"):
+    with st.expander("📖 How to read this table"):
         st.markdown("""
 - **PC1 / PC2 / PC3** are the principal component loadings from the **main PCA**.
 - **Positive loading** means the factor pushes stocks higher on that axis.
