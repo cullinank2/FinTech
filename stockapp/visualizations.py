@@ -272,28 +272,28 @@ def create_pca_scatter_plot(
         if 'PC1' in loadings and 'positive' in loadings['PC1']:
             top_pos = list(loadings['PC1']['positive'].items())[:3]
             pc1_pos_hover = "<br>".join([
-                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.2f}"
                 for feat, val in top_pos
             ])
 
         if 'PC1' in loadings and 'negative' in loadings['PC1']:
             top_neg = list(loadings['PC1']['negative'].items())[:3]
             pc1_neg_hover = "<br>".join([
-                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.2f}"
                 for feat, val in top_neg
             ])
 
         if 'PC2' in loadings and 'positive' in loadings['PC2']:
             top_pos = list(loadings['PC2']['positive'].items())[:3]
             pc2_pos_hover = "<br>".join([
-                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.2f}"
                 for feat, val in top_pos
             ])
 
         if 'PC2' in loadings and 'negative' in loadings['PC2']:
             top_neg = list(loadings['PC2']['negative'].items())[:3]
             pc2_neg_hover = "<br>".join([
-                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.3f}"
+                f"{FEATURE_DISPLAY_NAMES.get(feat, feat)}: {val:.2f}"
                 for feat, val in top_neg
             ])
 
