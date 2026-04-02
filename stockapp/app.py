@@ -1442,7 +1442,7 @@ def render_full_universe_loadings_table():
 
     styled = (
         loadings_df.style
-        .applymap(_style_loading, subset=numeric_cols)
+        .map(_style_loading, subset=numeric_cols)
         .format({col: "{:+.2f}" for col in numeric_cols})
         .set_properties(subset=["Factor", "Code", "Domain"], **{"text-align": "left"})
         .set_properties(subset=numeric_cols, **{"text-align": "center"})
@@ -2018,8 +2018,8 @@ def main():
 
                                     styled = (
                                         loadings_table.style
-                                        .applymap(_style_loading, subset=period_cols)
-                                        .applymap(_style_delta,   subset=delta_cols)
+                                        .map(_style_loading, subset=period_cols)
+                                        .map(_style_delta,   subset=delta_cols)
                                         .format('{:+.3f}', subset=delta_cols)
                                         .format('{:.3f}',  subset=period_cols)
                                         .set_properties(**{'text-align': 'center'})
