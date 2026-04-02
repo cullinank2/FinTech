@@ -1726,12 +1726,12 @@ def main():
             st.session_state.pca_loadings = loadings
             st.session_state.data_loaded = True
     
-    # Render sidebar AFTER data is loaded so counts and filters work on first click
-    render_sidebar()
-
     # Initialize analysis scope (Phase 1)
     if "analysis_scope" not in st.session_state:
         st.session_state.analysis_scope = "Universe / Portfolio Level"
+
+    # Render sidebar AFTER data is loaded so counts and filters work on first click
+    render_sidebar()
 
     # Universe / Portfolio Level view
     if st.session_state.analysis_scope == "Universe / Portfolio Level":
