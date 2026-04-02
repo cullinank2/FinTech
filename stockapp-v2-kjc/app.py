@@ -2098,162 +2098,160 @@ def main():
         
         # Render stock overview
         ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
-        st.session_state.raw_data, 
-        pca_row
-    )
+            st.session_state.raw_data,
+            pca_row
+        )
     
-    # Get quadrant peers (GICS-filtered universe for consistency)
-    gics_filtered_pca = filter_by_gics_sector(
-        pca_df,
-        st.session_state.raw_data,
-        ticker,
-        st.session_state.get('gics_filter_mode', 'All Stocks')
-    )
+        # Get quadrant peers (GICS-filtered universe for consistency)
+        gics_filtered_pca = filter_by_gics_sector(
+            pca_df,
+            st.session_state.raw_data,
+            ticker,
+            st.session_state.get('gics_filter_mode', 'All Stocks')
+        )
 
-    quadrant_peers = get_stocks_in_same_quadrant(
-        gics_filtered_pca, pc1, pc2, exclude_ticker=ticker
-    )
-    
-    # Render visualizations
-    render_visualizations(
-        pca_df,
-        ticker,
-        pca_row,
-        quadrant_peers,
-        st.session_state.raw_data,  # ← CORRECT! This has gicdesc column
-        st.session_state.pca_model,
-        st.session_state.scaler
-    )
-    
-    # Build GICS sector filtered peers — used consistently for all percentiles and narratives
-    gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
-    narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
+        quadrant_peers = get_stocks_in_same_quadrant(
+            gics_filtered_pca, pc1, pc2, exclude_ticker=ticker
+        )
+        
+        # Render visualizations
+        render_visualizations(
+            pca_df,
+            ticker,
+            pca_row,
+            quadrant_peers,
+            st.session_state.raw_data,  # ← CORRECT! This has gicdesc column
+            st.session_state.pca_model,
+            st.session_state.scaler
+        )
+        
+        # Build GICS sector filtered peers — used consistently for all percentiles and narratives
+        gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
+        narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
 
-    # Get cluster summary and percentiles — using GICS sector peers only
-    cluster_summary = get_cluster_summary(pca_df)
-    available_features = [c for c in FEATURE_COLUMNS if c in pca_row.index]
-    percentiles = compute_percentile_ranks(narrative_peers, pca_row, available_features)
+        # Get cluster summary and percentiles — using GICS sector peers only
+        cluster_summary = get_cluster_summary(pca_df)
+        available_features = [c for c in FEATURE_COLUMNS if c in pca_row.index]
+        percentiles = compute_percentile_ranks(narrative_peers, pca_row, available_features)
 
-    # Store for narrative engine
-    st.session_state.current_percentiles = percentiles
-    st.session_state.current_factor_data = get_factor_breakdown(pca_row)
+        # Store for narrative engine
+        st.session_state.current_percentiles = percentiles
+        st.session_state.current_factor_data = get_factor_breakdown(pca_row)
 
-    # Get GICS sector name for narrative
-    gics_sector = 'N/A'
-    if 'gicdesc' in st.session_state.raw_data.columns:
-        ticker_rows = st.session_state.raw_data[st.session_state.raw_data['ticker'].str.upper() == ticker.upper()]
-        if not ticker_rows.empty:
-            gics_sector = ticker_rows['gicdesc'].iloc[0]
+        # Get GICS sector name for narrative
+        gics_sector = 'N/A'
+        if 'gicdesc' in st.session_state.raw_data.columns:
+            ticker_rows = st.session_state.raw_data[st.session_state.raw_data['ticker'].str.upper() == ticker.upper()]
+            if not ticker_rows.empty:
+                gics_sector = ticker_rows['gicdesc'].iloc[0]
 
-    # Render narrative engine section
-    render_narrative_section(ticker, pca_row, narrative_peers, gics_sector)
+        # Render narrative engine section
+        render_narrative_section(ticker, pca_row, narrative_peers, gics_sector)
 
-    # Render chatbot section
-    render_chatbot_section(
-    ticker, permno, cluster, quadrant, pc1, pc2,
-    pca_row,
-    percentiles,
-    len(quadrant_peers),
-    cluster_summary,
-    total_universe=len(gics_filtered_pca)
-)
+        # Render chatbot section
+        render_chatbot_section(
+            ticker, permno, cluster, quadrant, pc1, pc2,
+            pca_row,
+            percentiles,
+            len(quadrant_peers),
+            cluster_summary,
+            total_universe=len(gics_filtered_pca)
+        )
 
-    # ============================================================
-    # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
-    # ============================================================
+        # ============================================================
+        # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
+        # ============================================================
 
-    # Lazy import to avoid Streamlit module cache issues
-    try:
-        from structural_analyst import run_structural_analysis
-    except Exception as e:
-        st.error(f"Structural Analyst failed to load: {e}")
-        run_structural_analysis = None
+        # Lazy import to avoid Streamlit module cache issues
+        try:
+            from structural_analyst import run_structural_analysis
+        except Exception as e:
+            st.error(f"Structural Analyst failed to load: {e}")
+            run_structural_analysis = None
 
-    st.markdown("---")
-    st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
+        st.markdown("---")
+        st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
 
-    kg = st.session_state.get("kg_instance")
-    kg_regime = st.session_state.get("kg_current_regime")
+        kg = st.session_state.get("kg_instance")
+        kg_regime = st.session_state.get("kg_current_regime")
 
-    if kg is None or kg_regime is None:
-        st.info("Structural Analyst requires Knowledge Graph context.")
-    else:
-        col1, col2 = st.columns([4, 1])
+        if kg is None or kg_regime is None:
+            st.info("Structural Analyst requires Knowledge Graph context.")
+        else:
+            col1, col2 = st.columns([4, 1])
 
-        with col1:
-            structural_question = st.text_input(
-                "Ask a structural question:",
-                placeholder="e.g., What changed structurally in this regime?",
-                key="structural_input"
-            )
+            with col1:
+                structural_question = st.text_input(
+                    "Ask a structural question:",
+                    placeholder="e.g., What changed structurally in this regime?",
+                    key="structural_input"
+                )
 
-        # Initialize chatbot for structural analysis
-        chatbot = create_chatbot()
+            # Initialize chatbot for structural analysis
+            chatbot = create_chatbot()
 
-        with col2:
-            run_structural = st.button("Analyze", key="structural_btn")
+            with col2:
+                run_structural = st.button("Analyze", key="structural_btn")
 
-        if run_structural and structural_question:
+            if run_structural and structural_question:
 
-            with st.spinner("Running KG-backed structural analysis..."):
+                with st.spinner("Running KG-backed structural analysis..."):
 
-                try:
-                    evidence_packet = build_structural_evidence_packet(
-                        kg=kg,
-                        ticker=ticker,
-                        regime=kg_regime,
-                        question_type="structural_drift",
-                    )
-
-                    if run_structural_analysis is not None:
-                        result = run_structural_analysis(
-                            evidence_packet=evidence_packet,
-                            llm_callable=chatbot.call_llm_structural,
+                    try:
+                        evidence_packet = build_structural_evidence_packet(
+                            kg=kg,
+                            ticker=ticker,
+                            regime=kg_regime,
+                            question_type="structural_drift",
                         )
-                    else:
-                        st.error("Structural Analyst unavailable.")
-                        result = None
-                    if result:
-                        st.markdown("### 📊 Structural Answer")
-                        st.write(result.get("answer", "No answer returned."))
 
-                        if result.get("summary_bullets"):
-                            st.markdown("### 🔑 Key Points")
-
-                            # Deduplicate bullets (preserve order)
-                            unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
-
-                            for b in unique_bullets:
-                                st.markdown(f"- {b}")
-
-                    with st.expander("🔍 Evidence"):
-                        for e in result.get("evidence", []):
-                            st.markdown(
-                                f"- **{e.get('source_name')}**: {e.get('fact')}"
+                        if run_structural_analysis is not None:
+                            result = run_structural_analysis(
+                                evidence_packet=evidence_packet,
+                                llm_callable=chatbot.call_llm_structural,
                             )
+                        else:
+                            st.error("Structural Analyst unavailable.")
+                            result = None
+                        if result:
+                            st.markdown("### 📊 Structural Answer")
+                            st.write(result.get("answer", "No answer returned."))
 
-                    with st.expander("⚠️ Limits"):
-                        st.write(result.get("limits", "None stated"))
+                            if result.get("summary_bullets"):
+                                st.markdown("### 🔑 Key Points")
 
-                    st.caption(f"Confidence: {result.get('confidence')}")
+                                # Deduplicate bullets (preserve order)
+                                unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
 
-                except Exception as e:
-                    st.error(f"Structural analysis failed: {str(e)}")
+                                for b in unique_bullets:
+                                    st.markdown(f"- {b}")
+
+                        with st.expander("🔍 Evidence"):
+                            for e in result.get("evidence", []):
+                                st.markdown(
+                                    f"- **{e.get('source_name')}**: {e.get('fact')}"
+                                )
+
+                        with st.expander("⚠️ Limits"):
+                            st.write(result.get("limits", "None stated"))
+
+                        st.caption(f"Confidence: {result.get('confidence')}")
+
+                    except Exception as e:
+                        st.error(f"Structural analysis failed: {str(e)}")
 
 
 
-# Footer
-    
     # Footer
     st.markdown("---")
     st.markdown("""
-    <div style="text-align: center; color: gray; font-size: 0.8rem;">
-        Stock PCA Cluster Analysis | Built with Streamlit | 
-        Data Source: GitHub Repository
-    </div>
-    """, unsafe_allow_html=True)
+        <div style="text-align: center; color: gray; font-size: 0.8rem;">
+            Stock PCA Cluster Analysis | Built with Streamlit | 
+            Data Source: GitHub Repository
+        </div>
+        """, unsafe_allow_html=True)
 
 
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()
 
