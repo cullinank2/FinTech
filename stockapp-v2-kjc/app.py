@@ -2073,32 +2073,31 @@ def main():
         with landing_tab4:
                 render_structural_intelligence_tab()
 
-        return
-    
-    # Get selected stock data
-    stock_info = st.session_state.selected_stock
-
-    if stock_info is None:
-        st.info("👆 Select a stock ticker or PERMNO in the sidebar to use Stock / Individual Ticker Level.")
-        return
-    pca_df = st.session_state.pca_df
-    
-    # Find stock in PCA DataFrame
-    if stock_info['type'] == 'ticker':
-        mask = pca_df['ticker'].str.upper() == stock_info['value'].upper()
     else:
-        mask = pca_df['permno'] == stock_info['value']
-    
-    stock_pca_data = pca_df[mask]
-    
-    if stock_pca_data.empty:
-        st.error(f"Could not find {stock_info['value']} in the PCA results.")
-        return
-    
-    pca_row = stock_pca_data.iloc[0]
-    
-    # Render stock overview
-    ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
+        # Get selected stock data
+        stock_info = st.session_state.selected_stock
+
+        if stock_info is None:
+            st.info("👆 Select a stock ticker or PERMNO in the sidebar to use Stock / Individual Ticker Level.")
+            return
+        pca_df = st.session_state.pca_df
+        
+        # Find stock in PCA DataFrame
+        if stock_info['type'] == 'ticker':
+            mask = pca_df['ticker'].str.upper() == stock_info['value'].upper()
+        else:
+            mask = pca_df['permno'] == stock_info['value']
+        
+        stock_pca_data = pca_df[mask]
+        
+        if stock_pca_data.empty:
+            st.error(f"Could not find {stock_info['value']} in the PCA results.")
+            return
+        
+        pca_row = stock_pca_data.iloc[0]
+        
+        # Render stock overview
+        ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
         st.session_state.raw_data, 
         pca_row
     )
