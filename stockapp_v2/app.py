@@ -18,7 +18,7 @@ AUTHORIZED CALL SITE:
 - app.py → generate_narrative(...)
 
 RULES:
-- Must NOT depend on LLM output
+- Must NOT depend on LLM output 
 - Must be reproducible across runs
 - Must be explainable and auditable
 
