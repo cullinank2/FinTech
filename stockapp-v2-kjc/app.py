@@ -360,6 +360,15 @@ def load_and_process_data():
 def render_sidebar():
     """Render the sidebar with stock selection and controls."""
     
+    st.session_state.analysis_scope = st.sidebar.radio(
+        "Analysis Scope",
+        [
+            "Universe / Portfolio Level",
+            "Stock / Individual Ticker Level",
+        ],
+        index=0 if st.session_state.analysis_scope == "Universe / Portfolio Level" else 1,
+    )
+
     st.sidebar.markdown("## 📊 Stock Selection")
     
     # Stock input
@@ -1720,18 +1729,9 @@ def main():
     # Render sidebar AFTER data is loaded so counts and filters work on first click
     render_sidebar()
 
-    # Top-level app scope selector (Phase 1)
+    # Initialize analysis scope (Phase 1)
     if "analysis_scope" not in st.session_state:
         st.session_state.analysis_scope = "Universe / Portfolio Level"
-
-    st.session_state.analysis_scope = st.sidebar.radio(
-        "Analysis Scope",
-        [
-            "Universe / Portfolio Level",
-            "Stock / Individual Ticker Level",
-        ],
-        index=0 if st.session_state.analysis_scope == "Universe / Portfolio Level" else 1,
-    )
 
     # Check for selected stock
     if st.session_state.selected_stock is None:
