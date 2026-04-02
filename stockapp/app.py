@@ -1442,7 +1442,7 @@ def render_full_universe_loadings_table():
 
     styled = (
         loadings_df.style
-        .map(_style_loading, subset=numeric_cols)
+        .applymap(_style_loading, subset=numeric_cols)
         .format({col: "{:+.2f}" for col in numeric_cols})
         .set_properties(subset=["Factor", "Code", "Domain"], **{"text-align": "left"})
         .set_properties(subset=numeric_cols, **{"text-align": "center"})
