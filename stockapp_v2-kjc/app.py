@@ -1,4 +1,5 @@
 #Force rebuild - 2026-02-08
+# V2 BUILD TEST — DO NOT REMOVE
 """
 ARCHITECTURE: PCA + Knowledge Graph + Narrative System
 
