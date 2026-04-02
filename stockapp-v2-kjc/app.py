@@ -2095,12 +2095,21 @@ def main():
             return
         
         pca_row = stock_pca_data.iloc[0]
+
+        stock_tab1, stock_tab2, stock_tab3, stock_tab4, stock_tab5 = st.tabs([
+            "📌 Overview",
+            "📊 Visuals",
+            "👥 Peers & Positioning",
+            "🧾 Narrative",
+            "🧠 AI / Structural",
+        ])
         
-        # Render stock overview
-        ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
-            st.session_state.raw_data,
-            pca_row
-        )
+        with stock_tab1:
+            # Render stock overview
+            ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
+                st.session_state.raw_data,
+                pca_row
+            )
     
         # Get quadrant peers (GICS-filtered universe for consistency)
         gics_filtered_pca = filter_by_gics_sector(
