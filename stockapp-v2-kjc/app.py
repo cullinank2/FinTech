@@ -2077,6 +2077,10 @@ def main():
     
     # Get selected stock data
     stock_info = st.session_state.selected_stock
+
+    if stock_info is None:
+        st.info("👆 Select a stock ticker or PERMNO in the sidebar to use Stock / Individual Ticker Level.")
+        return
     pca_df = st.session_state.pca_df
     
     # Find stock in PCA DataFrame
