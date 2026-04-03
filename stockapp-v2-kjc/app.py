@@ -1518,8 +1518,9 @@ def render_narrative_section(
     show_pc3 = timelapse_is_3d or cluster_3d
 
     with st.spinner("Generating narrative analysis..."):
-        kg           = st.session_state.get("kg_instance")
-        kg_regime    = st.session_state.get("kg_current_regime")
+        kg                  = st.session_state.get("kg_instance")
+        kg_regime           = st.session_state.get("kg_current_regime")
+        structural_drivers  = st.session_state.get("current_structural_drivers", [])
         # --- FIX: Align AI peer group with filtered universe ---
         peer_df = peer_df.copy()
         # peer_df already contains quadrant-filtered peers
