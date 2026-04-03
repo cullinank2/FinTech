@@ -349,9 +349,9 @@ def generate_factor_highlights(
                 interpretation = ""
 
                 if "positive" in direction:
-                    interpretation = "increasing exposure to this factor"
+                    interpretation = "increasing exposure"
                 elif "negative" in direction:
-                    interpretation = "introducing structural headwinds from this factor"
+                    interpretation = "introducing structural headwinds"
 
                 if "strong" in strength:
                     intensity = "a primary structural driver of positioning"
