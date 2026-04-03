@@ -2191,13 +2191,13 @@ def main():
                 st.error(f"Structural Analyst failed to load: {e}")
                 run_structural_analysis = None
 
-        kg = st.session_state.get("kg_instance")
-        kg_regime = st.session_state.get("kg_current_regime")
+            kg = st.session_state.get("kg_instance")
+            kg_regime = st.session_state.get("kg_current_regime")
 
-        if kg is None or kg_regime is None:
-            st.info("Structural Analyst requires Knowledge Graph context.")
-        else:
-            col1, col2 = st.columns([4, 1])
+            if kg is None or kg_regime is None:
+                st.info("Structural Analyst requires Knowledge Graph context.")
+            else:
+                col1, col2 = st.columns([4, 1])
 
             with col1:
                 structural_question = st.text_input(
