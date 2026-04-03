@@ -2223,6 +2223,15 @@ def main():
                         .head(15)
                     )
 
+                    # --- Distance Percentile (Crowding Signal) ---
+                    all_distances = peer_universe["distance"]
+
+                    target_distance = peer_universe[
+                        peer_universe["ticker"] == ticker
+                    ]["distance"].values[0]
+
+                    percentile = (all_distances < target_distance).mean() * 100
+
                     # Interpret crowding
                     if percentile <= 10:
                         crowd_label = "🔴 Highly Crowded"
@@ -2242,7 +2251,6 @@ def main():
                         f"{percentile:.1f}%",
                         help="Lower = more crowded (closer to other stocks)"
                     )
-
                     st.caption(crowd_label)
                     st.caption(crowd_text)
 
@@ -2267,6 +2275,19 @@ def main():
 
                     st.caption(dispersion_label)
                     st.caption(dispersion_text)
+
+                    display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
+
+                    st.dataframe(
+                        nearest_peers[display_cols],
+                        width="stretch",
+                        hide_index=True
+                    )
+                else:
+                    st.info("Selected stock not found in PCA dataset.")
+
+            except Exception as e:
+                st.warning(f"Nearest peer calculation unavailable: {e}")
             # Lazy import to avoid Streamlit module cache issues
             try:
                 from structural_analyst import run_structural_analysis
