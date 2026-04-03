@@ -563,12 +563,15 @@ peer clusters), prefer citing these KG facts over general commentary.
 
             output_text = ""
 
-            if hasattr(response, "output") and response.output:
+            if hasattr(response, "output_text") and response.output_text:
+                output_text = response.output_text
+            elif hasattr(response, "output") and response.output:
                 for item in response.output:
                     if hasattr(item, "content") and item.content:
                         for c in item.content:
-                            if hasattr(c, "type") and c.type == "output_text":
-                                output_text += getattr(c, "text", "")
+                            text_value = getattr(c, "text", "")
+                            if text_value:
+                                output_text += text_value
 
             return output_text.strip()
 
