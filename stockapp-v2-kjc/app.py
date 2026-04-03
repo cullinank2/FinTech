@@ -2189,6 +2189,17 @@ def main():
             with pos_col3:
                 st.metric("Quadrant + Cluster Overlap", overlap_count)
 
+            st.markdown("#### PCA Positioning")
+
+            try:
+                fig = create_pca_scatter_plot(
+                    pca_df,
+                    highlight_ticker=ticker
+                )
+                st.plotly_chart(fig, width="stretch")
+            except Exception as e:
+                st.warning(f"PCA visualization unavailable: {e}")
+
             st.markdown("#### Quadrant Peer Preview")
 
             if quadrant_peers is not None and not quadrant_peers.empty:
