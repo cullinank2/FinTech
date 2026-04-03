@@ -2121,18 +2121,19 @@ def main():
             gics_filtered_pca, pc1, pc2, exclude_ticker=ticker
         )
         
-        # stock_tab2 placeholder (no content yet)
+        # 📊 Visuals Tab
+        with stock_tab2:
+            st.markdown("### 📊 Visuals")
 
-        # Render visualizations
-        render_visualizations(
-            pca_df,
-            ticker,
-            pca_row,
-            quadrant_peers,
-            st.session_state.raw_data,  # ← CORRECT! This has gicdesc column
-            st.session_state.pca_model,
-            st.session_state.scaler
-        )
+            render_visualizations(
+                pca_df,
+                ticker,
+                pca_row,
+                quadrant_peers,
+                st.session_state.raw_data,
+                st.session_state.pca_model,
+                st.session_state.scaler
+            )
         
         # Build GICS sector filtered peers — used consistently for all percentiles and narratives
         gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
