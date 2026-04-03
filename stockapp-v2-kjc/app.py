@@ -2381,6 +2381,8 @@ def main():
 
                             st.markdown("#### 🔬 Structural Drivers")
 
+                            structural_drivers = []
+
                             for factor in top_factors:
                                 display_name = (
                                     FEATURE_DISPLAY_NAMES.get(
@@ -2405,9 +2407,21 @@ def main():
                                 else:
                                     strength = "Light"
 
+                                structural_drivers.append({
+                                    "factor": factor,
+                                    "display_name": display_name,
+                                    "direction": direction_word,
+                                    "strength": strength,
+                                    "directional_score": directional_score,
+                                    "pc1_loading": pc1_loading,
+                                    "pc2_loading": pc2_loading,
+                                })
+
                                 st.markdown(
                                     f"- **{display_name}**: {direction_word}, {strength} influence"
                                 )
+
+                            st.session_state.current_structural_drivers = structural_drivers
 
                         except Exception as e:
                             st.caption(f"Driver calculation unavailable: {e}")
