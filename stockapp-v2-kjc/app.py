@@ -2496,6 +2496,9 @@ def main():
                 peer_df=narrative_peers,
                 gics_sector=gics_sector,
             )
+
+        # 🧠 AI / Structural Tab
+        with stock_tab5:
             # Lazy import to avoid Streamlit module cache issues
             try:
                 from structural_analyst import run_structural_analysis
