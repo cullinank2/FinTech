@@ -282,7 +282,7 @@ def compute_pca_and_clusters(
         result_df[f'PC{i+1}'] = X_pca[:, i]
     result_df['cluster'] = clusters
     
-    return result_df, pca, kmeans, scaler, loadings_dict
+    return result_df, pca, kmeans, scaler, loadings_dict, loadings_df
 
 
 def get_pca_loadings(pca: PCA, feature_names: List[str]) -> pd.DataFrame:
