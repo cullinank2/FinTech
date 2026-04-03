@@ -40,6 +40,7 @@ from typing import Dict, Optional, Any
 
 from factor_registry import (
     FEATURE_DISPLAY_NAMES,
+    FEATURE_ECONOMIC_MEANINGS,
     PCA_DRIVER_GROUPS,
     REGIME_ORDER,
 )
