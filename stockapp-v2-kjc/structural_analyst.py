@@ -155,6 +155,10 @@ def _parse_response_json(raw_text: str) -> Dict[str, Any]:
     if not isinstance(parsed, dict):
         raise ValueError("Model output JSON must be an object")
 
+    parsed["question_type"] = evidence_packet.get("question_type")
+    parsed["ticker"] = evidence_packet.get("ticker")
+    parsed["regime"] = evidence_packet.get("regime")
+
     return parsed
 
 
