@@ -2285,10 +2285,28 @@ def main():
 
                     structural_risk_score = 0.6 * crowding_risk + 0.4 * dispersion_risk
 
+                    # Define risk label BEFORE using it
+                    if structural_risk_score >= 75:
+                        risk_label = "🔴 High Structural Risk"
+                        bar_color = "red"
+                    elif structural_risk_score >= 40:
+                        risk_label = "🟠 Moderate Structural Risk"
+                        bar_color = "orange"
+                    else:
+                        risk_label = "🟢 Low Structural Risk"
+                        bar_color = "green"
+
                     st.metric(
                         "Structural Risk Score",
                         f"{structural_risk_score:.1f}",
                         help="Composite of crowding + peer dispersion (higher = more structurally risky)"
+                    )
+
+                    st.progress(int(structural_risk_score))
+
+                    st.markdown(
+                        f"<div style='color:{bar_color}; font-weight:600;'>Risk Level: {risk_label}</div>",
+                        unsafe_allow_html=True
                     )
 
                     # Visual emphasis bar
