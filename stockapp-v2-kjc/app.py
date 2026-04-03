@@ -2349,18 +2349,28 @@ def main():
                                 .index.tolist()
                             )
 
-                            display_factor_names = [
-                                FEATURE_DISPLAY_NAMES.get(
-                                    factor,
-                                    factor.replace("_", " ").title()
-                                ) if "FEATURE_DISPLAY_NAMES" in globals()
-                                else factor.replace("_", " ").title()
-                                for factor in top_factors
-                            ]
+                            directional_driver_labels = []
+
+                            for factor in top_factors:
+                                display_name = (
+                                    FEATURE_DISPLAY_NAMES.get(
+                                        factor,
+                                        factor.replace("_", " ").title()
+                                    ) if "FEATURE_DISPLAY_NAMES" in globals()
+                                    else factor.replace("_", " ").title()
+                                )
+
+                                pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
+                                pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
+
+                                directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
+
+                                arrow = "↑" if directional_score >= 0 else "↓"
+                                directional_driver_labels.append(f"{display_name} {arrow}")
 
                             st.caption(
                                 "Primary structural drivers (PCA-weighted): "
-                                + ", ".join(display_factor_names)
+                                + ", ".join(directional_driver_labels)
                             )
 
                         except Exception as e:
