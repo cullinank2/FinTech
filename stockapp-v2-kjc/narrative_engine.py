@@ -399,11 +399,15 @@ def generate_factor_highlights(
         f"Its most notable drag is **{bot_feat}** ({_ordinal(bot_pct)} percentile).*",
     ]
 
-    # --- NEW: Cross-link strengths/weaknesses with structural positioning ---
+# --- NEW: Cross-link strengths/weaknesses with structural positioning ---
     if strengths or weaknesses:
         try:
-            strength_names = [f for f, _ in strengths[:2]]
-            weakness_names = [f for f, _ in weaknesses[:2]]
+            strength_names = [
+                FEATURE_DISPLAY_NAMES.get(f, f) for f, _ in strengths[:2]
+            ]
+            weakness_names = [
+                FEATURE_DISPLAY_NAMES.get(f, f) for f, _ in weaknesses[:2]
+            ]
 
             strength_text = ", ".join([f"**{s}**" for s in strength_names]) if strength_names else ""
             weakness_text = ", ".join([f"**{w}**" for w in weakness_names]) if weakness_names else ""
@@ -429,52 +433,6 @@ def generate_factor_highlights(
 
         except Exception:
             pass
-
-    if structural_driver_lines:
-        lines += [
-            "",
-            structural_driver_summary,
-            "",
-            *structural_driver_lines,
-        ]
-
-    # Append regime-aware interpretation if present
-    if regime_notes and regime_notes.get("notes"):
-        lines += [
-            "",
-            "**⚠️ Regime Context (Factor Reliability):**",
-            *[f"- {n}" for n in regime_notes["notes"]],
-        ]
-
-    return "\n".join(lines)
-
-
-# ===========================================================================
-# SECTION 3 — TIME TRAJECTORY NARRATIVE
-# ===========================================================================
-
-def _classify_direction(start: float, end: float, std: float) -> str:
-    delta = end - start
-    if std == 0:
-        return "flat"
-    magnitude = abs(delta) / std
-    if magnitude < 0.3:
-        return "flat"
-    elif delta > 0:
-        return "rising" if magnitude < 1.0 else "sharply rising"
-    else:
-        return "declining" if magnitude < 1.0 else "sharply declining"
-
-
-def _detect_steps(series: pd.Series, threshold_std: float = 1.2) -> int:
-    """Count discrete step-changes (e.g., cash-to-debt financing jumps)."""
-    if len(series) < 4:
-        return 0
-    diffs        = series.diff().dropna()
-    rolling_std  = diffs.rolling(window=4, min_periods=2).std()
-    return int((diffs.abs() > threshold_std * rolling_std).sum())
-
-
 def generate_trajectory_narrative(
     ticker: str,
     raw_data: pd.DataFrame,
