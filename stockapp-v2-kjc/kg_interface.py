@@ -960,6 +960,26 @@ class KnowledgeGraph:
             },
         }
 
+    def build_evidence_packet(self, node_ids: list[str]) -> dict:
+        """
+        Build a Tier 2 evidence packet from the serialized KG subgraph.
+
+        This preserves the strict architecture boundary:
+        Tier 2 receives only structured, serialized graph evidence —
+        never the live graph object.
+        """
+        subgraph = self.serialize_subgraph(node_ids)
+
+        return {
+            "evidence_type": "kg_subgraph_packet",
+            "version": "1.0",
+            "graph": {
+                "nodes": subgraph.get("nodes", []),
+                "edges": subgraph.get("edges", []),
+            },
+            "meta": subgraph.get("meta", {}),
+        }
+
     # ── Convenience: graph statistics ────────────────────────────────────────
 
     def summary(self) -> dict:
