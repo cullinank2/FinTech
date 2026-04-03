@@ -399,6 +399,37 @@ def generate_factor_highlights(
         f"Its most notable drag is **{bot_feat}** ({_ordinal(bot_pct)} percentile).*",
     ]
 
+    # --- NEW: Cross-link strengths/weaknesses with structural positioning ---
+    if strengths or weaknesses:
+        try:
+            strength_names = [f for f, _ in strengths[:2]]
+            weakness_names = [f for f, _ in weaknesses[:2]]
+
+            strength_text = ", ".join([f"**{s}**" for s in strength_names]) if strength_names else ""
+            weakness_text = ", ".join([f"**{w}**" for w in weakness_names]) if weakness_names else ""
+
+            if strength_text and weakness_text:
+                linkage_sentence = (
+                    f"*This positioning is supported by strength in {strength_text}, "
+                    f"while pressure from {weakness_text} is acting as a counterbalance.*"
+                )
+            elif strength_text:
+                linkage_sentence = (
+                    f"*This positioning is supported primarily by strength in {strength_text}.*"
+                )
+            elif weakness_text:
+                linkage_sentence = (
+                    f"*This positioning faces pressure primarily from {weakness_text}.*"
+                )
+            else:
+                linkage_sentence = ""
+
+            if linkage_sentence:
+                lines += ["", linkage_sentence]
+
+        except Exception:
+            pass
+
     if structural_driver_lines:
         lines += [
             "",
