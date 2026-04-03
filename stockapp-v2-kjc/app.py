@@ -2200,6 +2200,41 @@ def main():
             except Exception as e:
                 st.warning(f"PCA visualization unavailable: {e}")
 
+            st.markdown("#### Nearest Structural Peers (PCA Distance)")
+
+            try:
+                peer_universe = pca_df.copy()
+
+                target_row = peer_universe[peer_universe["ticker"] == ticker]
+
+                if not target_row.empty:
+                    target_pc1 = target_row.iloc[0]["PC1"]
+                    target_pc2 = target_row.iloc[0]["PC2"]
+
+                    peer_universe["distance"] = (
+                        (peer_universe["PC1"] - target_pc1) ** 2 +
+                        (peer_universe["PC2"] - target_pc2) ** 2
+                    ) ** 0.5
+
+                    nearest_peers = (
+                        peer_universe[peer_universe["ticker"] != ticker]
+                        .sort_values("distance")
+                        .head(15)
+                    )
+
+                    display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
+
+                    st.dataframe(
+                        nearest_peers[display_cols],
+                        width="stretch",
+                        hide_index=True
+                    )
+                else:
+                    st.info("Selected stock not found in PCA dataset.")
+
+            except Exception as e:
+                st.warning(f"Nearest peer calculation unavailable: {e}")
+
             st.markdown("#### Quadrant Peer Preview")
 
             if quadrant_peers is not None and not quadrant_peers.empty:
