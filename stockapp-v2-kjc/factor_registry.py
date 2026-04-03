@@ -74,6 +74,7 @@ _FEATURE_METADATA = {
     },
     SP: {
         'display': 'Sales-to-Price (V)',
+        'economic_meaning': 'revenue-based valuation relative to price',
         'category': 'Value',
         'pc': ['PC2'],
         'source': 'WRDS/Compustat',
@@ -86,6 +87,7 @@ _FEATURE_METADATA = {
     },
     ROA: {
         'display': 'Return on Assets (Q)',
+        'economic_meaning': 'operational efficiency of assets',
         'category': 'Quality',
         'pc': ['PC1'],
         'source': 'WRDS/Compustat',
