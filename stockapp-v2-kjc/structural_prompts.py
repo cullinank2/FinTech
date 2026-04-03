@@ -98,6 +98,7 @@ def build_structural_user_prompt(evidence_packet: Dict[str, Any]) -> str:
     str
         User prompt string for the model
     """
+    question_type = evidence_packet.get("question_type", "unknown")
     packet_json = json.dumps(evidence_packet, indent=2, sort_keys=True)
 
     return f"""
@@ -123,6 +124,23 @@ The response MUST include:
 - analysis_mode = "kg_grounded"
 
 If the evidence is insufficient, state that explicitly in the answer.
+
+Interpret the evidence based on question_type:
+
+- structural_drift:
+  Identify the dominant structural drivers, quadrant movement, and signs of instability or crowding.
+
+- peer_comparison:
+  Compare the target stock to peers using relative positioning, shared structure, and divergence.
+
+- quadrant_history:
+  Describe how the stock has moved across quadrants over time and what that implies structurally.
+
+- factor_rotation:
+  Explain how the specified factor has changed between regimes and what that implies.
+
+- regime_transition:
+  Describe structural changes between regimes including crowding, dispersion, and systemic shifts.
 
 Evidence packet:
 {packet_json}
