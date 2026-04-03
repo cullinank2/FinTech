@@ -2161,15 +2161,18 @@ def main():
 
             render_narrative_section(ticker, pca_row, narrative_peers, gics_sector)
 
-        # Render chatbot section
-        render_chatbot_section(
-            ticker, permno, cluster, quadrant, pc1, pc2,
-            pca_row,
-            percentiles,
-            len(quadrant_peers),
-            cluster_summary,
-            total_universe=len(gics_filtered_pca)
-        )
+        # 🧠 AI / Structural Tab — Chatbot
+        with stock_tab5:
+            st.markdown("### 🤖 AI Analysis Assistant")
+
+            render_chatbot_section(
+                ticker, permno, cluster, quadrant, pc1, pc2,
+                pca_row,
+                percentiles,
+                len(quadrant_peers),
+                cluster_summary,
+                total_universe=len(gics_filtered_pca)
+            )
 
         # ============================================================
         # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
