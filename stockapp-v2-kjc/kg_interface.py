@@ -905,6 +905,17 @@ class KnowledgeGraph:
         # Edges — only between nodes in the requested set
         valid_set = set(valid)
         serialized_edges = []
+        ALLOWED_EDGE_TYPES = {
+            "regime_transition",
+            "factor_loading",
+            "quadrant_assignment",
+            "cluster_membership",
+            "crowding_level",
+            "triggers_break",
+            "triggers_warning",
+            "related_to",
+        }
+
         for u, v, attrs in self._G.edges(data=True):
             if u in valid_set and v in valid_set:
                 clean = {
@@ -918,6 +929,9 @@ class KnowledgeGraph:
                     or clean.get("type")
                     or "related_to"
                 )
+
+                if edge_type not in ALLOWED_EDGE_TYPES:
+                    continue
 
                 serialized_edges.append({
                     "src": u,
