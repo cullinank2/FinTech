@@ -2321,7 +2321,7 @@ def main():
                     st.info(summary_text)
 
                     # --- PCA Loading-Based Structural Drivers (ROBUST VERSION) ---
-                    loadings = st.session_state.get("pca_loadings")
+                    loadings = st.session_state.get("pca_loadings_df")
 
                     if loadings is not None:
                         try:
