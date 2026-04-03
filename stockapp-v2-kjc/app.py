@@ -345,7 +345,7 @@ def load_and_process_data():
         processed_data = preprocess_data(raw_data)
         
         # Compute PCA and clustering
-        pca_df, pca_model, kmeans_model, scaler, loadings = compute_pca_and_clusters(processed_data)
+        pca_df, pca_model, kmeans_model, scaler, loadings, loadings_df = compute_pca_and_clusters(processed_data)
         
         return raw_data, processed_data, pca_df, pca_model, kmeans_model, scaler, loadings, None
         
