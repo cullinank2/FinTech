@@ -2276,6 +2276,30 @@ def main():
                     st.caption(dispersion_label)
                     st.caption(dispersion_text)
 
+                    # --- Structural Risk Score ---
+                    # Invert percentile (lower percentile = higher risk)
+                    crowding_risk = 100 - percentile
+
+                    # Normalize dispersion (simple scaling assumption)
+                    dispersion_risk = max(0, min(100, (0.15 - avg_peer_distance) / 0.15 * 100))
+
+                    structural_risk_score = 0.6 * crowding_risk + 0.4 * dispersion_risk
+
+                    st.metric(
+                        "Structural Risk Score",
+                        f"{structural_risk_score:.1f}",
+                        help="Composite of crowding + peer dispersion (higher = more structurally risky)"
+                    )
+
+                    if structural_risk_score >= 75:
+                        risk_label = "🔴 High Structural Risk"
+                    elif structural_risk_score >= 40:
+                        risk_label = "🟠 Moderate Structural Risk"
+                    else:
+                        risk_label = "🟢 Low Structural Risk"
+
+                    st.caption(risk_label)
+
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
 
                     st.dataframe(
