@@ -228,7 +228,10 @@ def _validate_structural_response(
 
     for field in required_fields:
         if field not in response:
-            raise ValueError(f"Missing required response field: {field}")
+            if field in ["question_type", "ticker", "regime"]:
+                response[field] = evidence_packet.get(field)
+            else:
+                raise ValueError(f"Missing required response field: {field}")
 
     if response["question_type"] != evidence_packet["question_type"]:
         raise ValueError("Response question_type mismatch")
