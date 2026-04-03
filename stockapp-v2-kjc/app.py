@@ -1600,7 +1600,12 @@ def render_narrative_section(
     if sections.get('factors'):
         st.markdown("---")
         st.subheader("🧾 Deterministic Stock Narrative (Tier 1)")
-        st.markdown(sections['factors'])
+
+        factors_section = sections['factors']
+        if isinstance(factors_section, dict):
+            st.markdown(factors_section.get('text', ''))
+        else:
+            st.markdown(factors_section)
 
     if sections.get('structural') and kg is not None:
         with st.expander("🧠 Structural Context (Knowledge Graph — Tier 1)", expanded=False):
