@@ -81,6 +81,7 @@ _FEATURE_METADATA = {
     },
     ROE: {
         'display': 'Return on Equity (Q)',
+        'economic_meaning': 'shareholder profitability and capital efficiency',
         'category': 'Quality',
         'pc': ['PC1'],
         'source': 'WRDS/Compustat',
