@@ -2259,22 +2259,72 @@ def main():
 
                     st.metric(
                         "Peer Dispersion (Avg Distance)",
-                    # --- PCA Loading-Based Structural Drivers (ROBUST VERSION) ---
+                        f"{avg_peer_distance:.4f}",
+                        help="Lower = tightly clustered peers (higher fragility)"
+                    )
+
+                    if avg_peer_distance < 0.05:
+                        dispersion_label = "🔴 Very Tight Cluster"
+                        dispersion_text = "Peers are extremely close — elevated fragility and crowding risk."
+                    elif avg_peer_distance < 0.15:
+                        dispersion_label = "🟠 Moderate Dispersion"
+                        dispersion_text = "Peers are somewhat clustered with moderate structural similarity."
+                    else:
+                        dispersion_label = "🟢 Broadly Distributed"
+                        dispersion_text = "Peers are more spread out — lower structural fragility."
+
+                    st.caption(dispersion_label)
+                    st.caption(dispersion_text)
+
+                    # --- Structural Risk Score ---
+                    # Invert percentile (lower percentile = higher risk)
+                    crowding_risk = 100 - percentile
+
+                    # Normalize dispersion (simple scaling assumption)
+                    dispersion_risk = max(0, min(100, (0.15 - avg_peer_distance) / 0.15 * 100))
+
+                    structural_risk_score = 0.6 * crowding_risk + 0.4 * dispersion_risk
+
+                    # Define risk label BEFORE using it
+                    if structural_risk_score >= 75:
+                        risk_label = "🔴 High Structural Risk"
+                        bar_color = "red"
+                    elif structural_risk_score >= 40:
+                        risk_label = "🟠 Moderate Structural Risk"
+                        bar_color = "orange"
+                    else:
+                        risk_label = "🟢 Low Structural Risk"
+                        bar_color = "green"
+
+                    st.metric(
+                        "Structural Risk Score",
+                        f"{structural_risk_score:.1f}",
+                        help="Composite of crowding + peer dispersion (higher = more structurally risky)"
+                    )
+
+                    st.progress(int(structural_risk_score))
+
+                    st.markdown(
+                        f"<div style='color:{bar_color}; font-weight:600;'>Risk Level: {risk_label}</div>",
+                        unsafe_allow_html=True
+                    )
+
+                    # --- Executive Summary ---
+                    if structural_risk_score >= 75:
+                        summary_text = "This stock exhibits elevated structural risk due to high crowding and tightly aligned peer positioning."
+                    elif structural_risk_score >= 40:
+                        summary_text = "This stock shows moderate structural risk, with some crowding and partial peer alignment."
+                    else:
+                        summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
+
+                    st.info(summary_text)
+
+                    # --- PCA Loading-Based Structural Drivers (CORRECT METHOD) ---
                     loadings = st.session_state.get("pca_loadings")
 
                     if loadings is not None:
                         try:
                             loadings_df = pd.DataFrame(loadings)
-
-                            # Fix orientation if needed
-                            if "PC1" not in loadings_df.columns:
-                                loadings_df = loadings_df.T
-
-                            # Ensure numeric values
-                            loadings_df = loadings_df.apply(pd.to_numeric, errors="coerce")
-
-                            # Drop invalid rows
-                            loadings_df = loadings_df.dropna(how="all")
 
                             # Combine PC1 + PC2 importance
                             loadings_df["importance"] = (
@@ -2295,6 +2345,106 @@ def main():
 
                         except Exception as e:
                             st.caption(f"Driver calculation unavailable: {e}")
-
                     else:
                         st.caption("PCA loadings not available for structural driver analysis.")
+
+                    display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
+
+                    st.dataframe(
+                        nearest_peers[display_cols],
+                        width="stretch",
+                        hide_index=True
+                    )
+                else:
+                    st.info("Selected stock not found in PCA dataset.")
+
+            except Exception as e:
+                st.warning(f"Nearest peer calculation unavailable: {e}")
+            # Lazy import to avoid Streamlit module cache issues
+            try:
+                from structural_analyst import run_structural_analysis
+            except Exception as e:
+                st.error(f"Structural Analyst failed to load: {e}")
+                run_structural_analysis = None
+
+            kg = st.session_state.get("kg_instance")
+            kg_regime = st.session_state.get("kg_current_regime")
+
+            if kg is None or kg_regime is None:
+                st.info("Structural Analyst requires Knowledge Graph context.")
+            else:
+                col1, col2 = st.columns([4, 1])
+
+                with col1:
+                    structural_question = st.text_input(
+                        "Ask a structural question:",
+                        placeholder="e.g., What changed structurally in this regime?",
+                        key="structural_input"
+                    )
+
+                # Initialize chatbot for structural analysis
+                chatbot = create_chatbot()
+
+                with col2:
+                    run_structural = st.button("Analyze", key="structural_btn")
+
+                if run_structural and structural_question:
+                    with st.spinner("Running KG-backed structural analysis..."):
+                        try:
+                            evidence_packet = build_structural_evidence_packet(
+                                kg=kg,
+                                ticker=ticker,
+                                regime=kg_regime,
+                                question_type="structural_drift",
+                            )
+
+                            if run_structural_analysis is not None:
+                                result = run_structural_analysis(
+                                    evidence_packet=evidence_packet,
+                                    llm_callable=chatbot.call_llm_structural,
+                                )
+                            else:
+                                st.error("Structural Analyst unavailable.")
+                                result = None
+
+                            if result:
+                                st.markdown("### 📊 Structural Answer")
+                                st.write(result.get("answer", "No answer returned."))
+
+                                if result.get("summary_bullets"):
+                                    st.markdown("### 🔑 Key Points")
+
+                                    # Deduplicate bullets (preserve order)
+                                    unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
+
+                                    for b in unique_bullets:
+                                        st.markdown(f"- {b}")
+
+                                with st.expander("🔍 Evidence"):
+                                    for e in result.get("evidence", []):
+                                        st.markdown(
+                                            f"- **{e.get('source_name')}**: {e.get('fact')}"
+                                        )
+
+                                with st.expander("⚠️ Limits"):
+                                    st.write(result.get("limits", "None stated"))
+
+                                st.caption(f"Confidence: {result.get('confidence')}")
+
+                        except Exception as e:
+                            st.error(f"Structural analysis failed: {str(e)}")
+
+
+    # Footer
+    st.markdown("---")
+    st.markdown("""
+        <div style="text-align: center; color: gray; font-size: 0.8rem;">
+            Stock PCA Cluster Analysis | Built with Streamlit | 
+            Data Source: GitHub Repository
+        </div>
+        """, unsafe_allow_html=True)
+
+
+if __name__ == "__main__":
+    main()
+
