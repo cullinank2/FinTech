@@ -95,6 +95,7 @@ _FEATURE_METADATA = {
     },
     GPROF: {
         'display': 'Gross Profitability (Q)',
+        'economic_meaning': 'core operating profitability before financing effects',
         'category': 'Quality',
         'pc': ['PC3'],
         'source': 'WRDS/Compustat',
