@@ -58,7 +58,9 @@ def run_structural_analysis(
     Parameters
     ----------
     evidence_packet : StructuralEvidencePacket
-        Deterministic context bundle built from structural_context_builder.py
+        Deterministic, serialized evidence bundle supplied to Tier 2 analysis.
+        This may be built from a KG-derived evidence packet, but Tier 2
+        never receives direct access to the live graph object.
     llm_callable : Callable[[str, str], str]
         Injected model-call function.
         Must accept:
@@ -163,6 +165,30 @@ def _parse_response_json(raw_text: str) -> Dict[str, Any]:
 def _validate_evidence_packet_minimum(
     evidence_packet: StructuralEvidencePacket,
 ) -> None:
+    if not isinstance(evidence_packet, dict):
+        raise ValueError("Evidence packet must be a dict")
+
+    # Accept new KG-derived evidence packet format
+    if evidence_packet.get("evidence_type") == "kg_subgraph_packet":
+        if "graph" not in evidence_packet or not isinstance(evidence_packet["graph"], dict):
+            raise ValueError("KG evidence packet missing graph")
+
+        graph = evidence_packet["graph"]
+        if "nodes" not in graph or "edges" not in graph:
+            raise ValueError("KG evidence packet graph must include nodes and edges")
+
+        if not isinstance(graph["nodes"], list):
+            raise ValueError("KG evidence packet graph.nodes must be a list")
+
+        if not isinstance(graph["edges"], list):
+            raise ValueError("KG evidence packet graph.edges must be a list")
+
+        if "meta" not in evidence_packet or not isinstance(evidence_packet["meta"], dict):
+            raise ValueError("KG evidence packet missing meta")
+
+        return
+
+    # Accept legacy structural evidence packet format
     required_fields = ["question_type", "ticker", "regime"]
 
     for field in required_fields:
