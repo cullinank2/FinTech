@@ -225,7 +225,10 @@ def generate_summary(ticker: str, pca_row: Any, show_pc3: bool = False) -> str:
         pc3 = float(pca_row.get('PC3', 0) if isinstance(pca_row, dict) else pca_row.get('PC3', 0))
         lines += ["", "**Leverage & Risk Profile (PC3):** " + _describe_pc3(pc3)]
 
-    return "\n".join(lines)
+    try:
+        return "\n".join(lines)
+    except Exception:
+        return "Narrative generation error in factor highlights section."
 
 # ---------------------------------------------------------------------------
 # FACTOR-LEVEL REGIME INTERPRETATION
@@ -433,6 +436,26 @@ def generate_factor_highlights(
 
         except Exception:
             pass
+
+    if structural_driver_lines:
+        lines += [
+            "",
+            structural_driver_summary,
+            "",
+            *structural_driver_lines,
+        ]
+
+    # Append regime-aware interpretation if present
+    if regime_notes and regime_notes.get("notes"):
+        lines += [
+            "",
+            "**⚠️ Regime Context (Factor Reliability):**",
+            *[f"- {n}" for n in regime_notes["notes"]],
+        ]
+
+    return "\n".join(lines)
+
+
 def generate_trajectory_narrative(
     ticker: str,
     raw_data: pd.DataFrame,
