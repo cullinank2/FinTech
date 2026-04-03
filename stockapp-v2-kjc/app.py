@@ -2309,30 +2309,6 @@ def main():
                         unsafe_allow_html=True
                     )
 
-                    # Visual emphasis bar
-                    if structural_risk_score >= 75:
-                        bar_color = "red"
-                    elif structural_risk_score >= 40:
-                        bar_color = "orange"
-                    else:
-                        bar_color = "green"
-
-                    st.progress(int(structural_risk_score))
-
-                    st.markdown(
-                        f"<div style='color:{bar_color}; font-weight:600;'>Risk Level: {risk_label}</div>",
-                        unsafe_allow_html=True
-                    )
-
-                    if structural_risk_score >= 75:
-                        risk_label = "🔴 High Structural Risk"
-                    elif structural_risk_score >= 40:
-                        risk_label = "🟠 Moderate Structural Risk"
-                    else:
-                        risk_label = "🟢 Low Structural Risk"
-
-                    st.caption(risk_label)
-
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
 
                     st.dataframe(
