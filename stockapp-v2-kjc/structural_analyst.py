@@ -104,7 +104,7 @@ def run_structural_analysis(
 
         else:
             raw_text = str(raw)
-        parsed = _parse_response_json(raw_text)
+        parsed = _parse_response_json(raw_text, evidence_packet)
 
         # ------------------------------------------------------------
         # Normalize model output to match strict schema
@@ -129,7 +129,7 @@ def run_structural_analysis(
 # Parsing
 # ============================================================
 
-def _parse_response_json(raw_text: str) -> Dict[str, Any]:
+def _parse_response_json(raw_text: str, evidence_packet: StructuralEvidencePacket) -> Dict[str, Any]:
     """
     Parse model output as JSON.
 
