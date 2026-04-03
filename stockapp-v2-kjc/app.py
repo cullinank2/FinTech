@@ -103,6 +103,7 @@ from visualizations import (
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
 from structural_context_builder import build_structural_evidence_packet
 from kg_visualizer import render_kg_tab, render_structural_intelligence_tab
+from kg_interface import serialize_subgraph
 from period_analysis import (
     create_loading_comparison_chart,
     compute_procrustes_table,
