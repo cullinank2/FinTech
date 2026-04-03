@@ -144,7 +144,7 @@ Interpret the evidence based on question_type:
 
 Example required JSON format:
 
-{
+{{
   "question_type": "...",
   "ticker": "...",
   "regime": "...",
@@ -155,7 +155,7 @@ Example required JSON format:
   "limits": ["what cannot be concluded"],
   "confidence": "low | medium | high",
   "analysis_mode": "kg_grounded"
-}
+}}
 
 Evidence packet:
 {packet_json}
