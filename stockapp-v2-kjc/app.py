@@ -2199,20 +2199,20 @@ def main():
             else:
                 col1, col2 = st.columns([4, 1])
 
-            with col1:
-                structural_question = st.text_input(
-                    "Ask a structural question:",
-                    placeholder="e.g., What changed structurally in this regime?",
-                    key="structural_input"
-                )
+                with col1:
+                    structural_question = st.text_input(
+                        "Ask a structural question:",
+                        placeholder="e.g., What changed structurally in this regime?",
+                        key="structural_input"
+                    )
 
-            # Initialize chatbot for structural analysis
-            chatbot = create_chatbot()
+                # Initialize chatbot for structural analysis
+                chatbot = create_chatbot()
 
-            with col2:
-                run_structural = st.button("Analyze", key="structural_btn")
+                with col2:
+                    run_structural = st.button("Analyze", key="structural_btn")
 
-            if run_structural and structural_question:
+                if run_structural and structural_question:
 
                 with st.spinner("Running KG-backed structural analysis..."):
 
