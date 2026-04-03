@@ -330,10 +330,14 @@ def generate_factor_highlights(
     regime_notes = _get_factor_regime_notes(kg, current_regime)
 
     structural_driver_lines = []
+    structural_driver_summary = ""
     if structural_drivers:
         structural_driver_lines = [
             "**🧭 Structural Drivers** *(top PCA-aligned forces shaping current position)*"
         ]
+
+        summary_parts = []
+
         for driver in structural_drivers[:3]:
             factor_key = driver.get("factor_name")
             factor_name = driver.get("display_name") or factor_key or "Unknown Driver"
@@ -345,28 +349,44 @@ def generate_factor_highlights(
             descriptor_parts = [part for part in [strength, direction] if part]
             descriptor = " ".join(descriptor_parts).strip()
 
+            if "positive" in direction:
+                interpretation = "increasing exposure"
+            elif "negative" in direction:
+                interpretation = "introducing structural headwinds"
+            else:
+                interpretation = "shaping current positioning"
+
+            if "strong" in strength:
+                intensity = "a primary structural driver of positioning"
+            elif "moderate" in strength:
+                intensity = "a meaningful structural contributor"
+            else:
+                intensity = "a secondary structural influence"
+
             if descriptor:
-                interpretation = ""
-
-                if "positive" in direction:
-                    interpretation = "increasing exposure"
-                elif "negative" in direction:
-                    interpretation = "introducing structural headwinds"
-
-                if "strong" in strength:
-                    intensity = "a primary structural driver of positioning"
-                elif "moderate" in strength:
-                    intensity = "a meaningful structural contributor"
-                else:
-                    intensity = "a secondary structural influence"
-
                 structural_driver_lines.append(
                     f"- **{factor_name}** ({economic_meaning}) is {intensity}, {interpretation}."
-                    )
+                )
             else:
                 structural_driver_lines.append(
-                    f"- **{factor_name}** is influencing current structural positioning."
+                    f"- **{factor_name}** ({economic_meaning}) is {intensity}, shaping current positioning."
                 )
+
+            summary_parts.append(f"**{factor_name}**")
+
+        if len(summary_parts) == 1:
+            structural_driver_summary = (
+                f"*Current positioning is being defined primarily by {summary_parts[0]}.*"
+            )
+        elif len(summary_parts) == 2:
+            structural_driver_summary = (
+                f"*Current positioning is being defined primarily by {summary_parts[0]} and {summary_parts[1]}.*"
+            )
+        elif len(summary_parts) >= 3:
+            structural_driver_summary = (
+                f"*Current positioning is being defined primarily by {summary_parts[0]}, "
+                f"{summary_parts[1]}, and {summary_parts[2]}.*"
+            )
 
     lines = [
         "**🟢 Top 3 Strengths** *(highest percentile ranks vs. GICS sector peers)*",
@@ -381,6 +401,8 @@ def generate_factor_highlights(
 
     if structural_driver_lines:
         lines += [
+            "",
+            structural_driver_summary,
             "",
             *structural_driver_lines,
         ]
