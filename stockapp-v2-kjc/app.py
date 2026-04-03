@@ -2583,15 +2583,15 @@ def main():
                 if run_structural and structural_question:
                     with st.spinner("Running KG-backed structural analysis..."):
                         try:
-                            narrative_subgraph = st.session_state.get("last_narrative_subgraph")
+                            evidence_packet = st.session_state.get("last_narrative_subgraph")
 
-                            if not narrative_subgraph:
+                            if not evidence_packet:
                                 st.error("No narrative-grounded KG subgraph is available for structural analysis.")
                                 result = None
                             else:
                                 if run_structural_analysis is not None:
                                     result = run_structural_analysis(
-                                        evidence_packet=narrative_subgraph,
+                                        evidence_packet=evidence_packet,
                                         llm_callable=chatbot.call_llm_structural,
                                     )
                                 else:
