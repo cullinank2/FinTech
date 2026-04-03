@@ -2599,6 +2599,7 @@ def main():
 
                             if result:
                                 st.markdown("### 📊 Structural Answer")
+                                st.caption("Grounded only in narrative-derived KG evidence.")
                                 st.write(result.get("answer", "No answer returned."))
 
                                 if result.get("summary_bullets"):
