@@ -454,7 +454,20 @@ def generate_factor_highlights(
             *[f"- {n}" for n in regime_notes["notes"]],
         ]
 
-    return "\n".join(lines)
+    narrative_text = "\n".join(lines)
+
+    # --- NEW: Extract KG reference tokens for downstream grounding ---
+    kg_references = []
+    try:
+        import re
+        kg_references = re.findall(r"\[\[KG:[^\]]+\]\]", narrative_text)
+    except Exception:
+        kg_references = []
+
+    return {
+        "text": narrative_text,
+        "kg_references": kg_references,
+    }
 
 
 def generate_trajectory_narrative(
