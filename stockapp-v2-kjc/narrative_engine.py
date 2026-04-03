@@ -379,16 +379,16 @@ def generate_factor_highlights(
 
         if len(summary_parts) == 1:
             structural_driver_summary = (
-                f"*Current positioning is being defined primarily by {summary_parts[0]}.*"
+                f"**Structural Drivers:** Current positioning is being defined primarily by {summary_parts[0]}."
             )
         elif len(summary_parts) == 2:
             structural_driver_summary = (
-                f"*Current positioning is being defined primarily by {summary_parts[0]} and {summary_parts[1]}.*"
+                f"**Structural Drivers:** Current positioning is being defined primarily by {summary_parts[0]} and {summary_parts[1]}."
             )
         elif len(summary_parts) >= 3:
             structural_driver_summary = (
-                f"*Current positioning is being defined primarily by {summary_parts[0]}, "
-                f"{summary_parts[1]}, and {summary_parts[2]}.*"
+                f"**Structural Drivers:** Current positioning is being defined primarily by {summary_parts[0]}, "
+                f"{summary_parts[1]}, and {summary_parts[2]}."
             )
 
     lines = [
