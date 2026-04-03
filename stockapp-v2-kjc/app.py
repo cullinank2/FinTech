@@ -2329,17 +2329,22 @@ def main():
                         st.caption(f"DEBUG factor column count: {len(factor_cols)}")
 
                         if factor_cols:
-                            top_factors = (
-                                pca_row[factor_cols]
-                                .abs()
-                                .sort_values(ascending=False)
-                                .head(3)
-                                .index.tolist()
-                            )
+                            numeric_factors = pca_row[factor_cols].select_dtypes(include=["number"])
 
-                            st.caption(
-                                "Primary structural drivers: " + ", ".join(top_factors)
-                            )
+                            if not numeric_factors.empty:
+                                top_factors = (
+                                    numeric_factors
+                                    .abs()
+                                    .sort_values(ascending=False)
+                                    .head(3)
+                                    .index.tolist()
+                                )
+
+                                st.caption(
+                                    "Primary structural drivers: " + ", ".join(top_factors)
+                                )
+                            else:
+                                st.caption("DEBUG: no numeric factor columns found")
                         else:
                             st.caption("DEBUG: no factor columns found in pca_row")
                     except Exception as e:
