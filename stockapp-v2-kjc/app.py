@@ -2573,7 +2573,11 @@ def main():
                 chatbot = create_chatbot()
 
                 with col2:
-                    run_structural = st.button("Analyze", key="structural_btn")
+                    run_structural = st.button(
+                        "Analyze",
+                        key="structural_btn",
+                        disabled=not bool(st.session_state.get("last_narrative_subgraph"))
+                    )
 
                 if run_structural and structural_question:
                     with st.spinner("Running KG-backed structural analysis..."):
