@@ -2319,12 +2319,22 @@ def main():
 
                     st.info(summary_text)
 
-                    # --- PCA Loading-Based Structural Drivers (CORRECT METHOD) ---
+                    # --- PCA Loading-Based Structural Drivers (ROBUST VERSION) ---
                     loadings = st.session_state.get("pca_loadings")
 
                     if loadings is not None:
                         try:
                             loadings_df = pd.DataFrame(loadings)
+
+                            # 🔧 Fix orientation (handles dict vs DataFrame cases)
+                            if "PC1" not in loadings_df.columns:
+                                loadings_df = loadings_df.T
+
+                            # 🔧 Force numeric (prevents abs() crash)
+                            loadings_df = loadings_df.apply(pd.to_numeric, errors="coerce")
+
+                            # 🔧 Drop empty rows
+                            loadings_df = loadings_df.dropna(how="all")
 
                             # Combine PC1 + PC2 importance
                             loadings_df["importance"] = (
@@ -2345,6 +2355,7 @@ def main():
 
                         except Exception as e:
                             st.caption(f"Driver calculation unavailable: {e}")
+
                     else:
                         st.caption("PCA loadings not available for structural driver analysis.")
 
