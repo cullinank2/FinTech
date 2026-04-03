@@ -342,9 +342,27 @@ def generate_factor_highlights(
             descriptor = " ".join(descriptor_parts).strip()
 
             if descriptor:
-                structural_driver_lines.append(f"- **{factor_name}** ({descriptor})")
+                interpretation = ""
+
+                if "positive" in direction:
+                    interpretation = "reinforcing exposure"
+                elif "negative" in direction:
+                    interpretation = "creating structural drag"
+
+                if "strong" in strength:
+                    intensity = "a dominant driver"
+                elif "moderate" in strength:
+                    intensity = "a meaningful contributor"
+                else:
+                    intensity = "a secondary influence"
+
+                structural_driver_lines.append(
+                    f"- **{factor_name}** is {intensity}, {interpretation} within the current PCA positioning."
+                )
             else:
-                structural_driver_lines.append(f"- **{factor_name}**")
+                structural_driver_lines.append(
+                    f"- **{factor_name}** is influencing current structural positioning."
+                )
 
     lines = [
         "**🟢 Top 3 Strengths** *(highest percentile ranks vs. GICS sector peers)*",
