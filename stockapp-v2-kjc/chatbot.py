@@ -541,7 +541,7 @@ peer clusters), prefer citing these KG facts over general commentary.
             raw text response (should be JSON)
         """
         if not self.is_available():
-            return ""
+            return "ERROR: LLM NOT AVAILABLE (CHECK OPENAI_API_KEY)"
 
         try:
             formatted_input = [
