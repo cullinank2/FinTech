@@ -912,6 +912,7 @@ def generate_narrative(
     ticker=ticker,
     percentiles=percentiles,
     factor_data=factor_data,
+    structural_drivers=structural_drivers,
     kg=kg,
     current_regime=current_regime,
 ),
