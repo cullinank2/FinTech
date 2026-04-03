@@ -2349,9 +2349,18 @@ def main():
                                 .index.tolist()
                             )
 
+                            display_factor_names = [
+                                FEATURE_DISPLAY_NAMES.get(
+                                    factor,
+                                    factor.replace("_", " ").title()
+                                ) if "FEATURE_DISPLAY_NAMES" in globals()
+                                else factor.replace("_", " ").title()
+                                for factor in top_factors
+                            ]
+
                             st.caption(
                                 "Primary structural drivers (PCA-weighted): "
-                                + ", ".join(top_factors)
+                                + ", ".join(display_factor_names)
                             )
 
                         except Exception as e:
