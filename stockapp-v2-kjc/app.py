@@ -2232,11 +2232,23 @@ def main():
 
                     percentile = (all_distances < target_distance).mean() * 100
 
+                    # Interpret crowding
+                    if percentile <= 10:
+                        crowd_label = "🔴 Highly Crowded"
+                    elif percentile <= 40:
+                        crowd_label = "🟠 Moderately Crowded"
+                    elif percentile <= 70:
+                        crowd_label = "🟡 Neutral"
+                    else:
+                        crowd_label = "🟢 Structurally Isolated"
+
                     st.metric(
                         "Structural Crowding Percentile",
                         f"{percentile:.1f}%",
                         help="Lower = more crowded (closer to other stocks)"
                     )
+
+                    st.caption(crowd_label)
 
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
 
