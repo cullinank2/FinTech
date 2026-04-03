@@ -99,7 +99,7 @@ def build_structural_user_prompt(evidence_packet: Dict[str, Any]) -> str:
         User prompt string for the model
     """
     question_type = evidence_packet.get("question_type", "unknown")
-    packet_json = json.dumps(evidence_packet, indent=2, sort_keys=True)
+    packet_json = json.dumps(evidence_packet, separators=(",", ":"), sort_keys=True)
 
     return f"""
 You are a Structural Analyst operating under strict constraints.
