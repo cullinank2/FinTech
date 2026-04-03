@@ -1525,17 +1525,18 @@ def render_narrative_section(
         # peer_df already contains quadrant-filtered peers
 
         sections = generate_narrative(  # ARCH: intentional NE boundary — sole authorized call site
-            ticker          = ticker,
-            pca_row         = pca_row,
-            percentiles     = percentiles,
-            factor_data     = factor_data,
-            peer_df         = peer_df,
-            raw_data        = raw_data,
-            loadings        = loadings,
-            gics_sector     = gics_sector,
-            show_pc3        = show_pc3,
-            kg              = kg,
-            current_regime  = kg_regime,
+            ticker              = ticker,
+            pca_row             = pca_row,
+            percentiles         = percentiles,
+            factor_data         = factor_data,
+            peer_df             = peer_df,
+            raw_data            = raw_data,
+            loadings            = loadings,
+            gics_sector         = gics_sector,
+            show_pc3            = show_pc3,
+            structural_drivers  = st.session_state.get("current_structural_drivers"),
+            kg                  = kg,
+            current_regime      = kg_regime,
         )
 
     current_view = st.session_state.get('current_view', '🎯 Cluster Plot')
