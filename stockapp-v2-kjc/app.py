@@ -1607,7 +1607,21 @@ def render_narrative_section(
             st.markdown(factors_section.get('text', ''))
 
             # --- NEW: Persist KG references for downstream use ---
-            st.session_state['last_narrative_kg_refs'] = factors_section.get('kg_references', [])
+            raw_refs = factors_section.get('kg_references', [])
+
+            # --- NEW: Normalize KG references into structured tuples ---
+            normalized_refs = []
+            try:
+                import re
+                for ref in raw_refs:
+                    match = re.match(r"\[\[KG:(.*?):(.*?)\]\]", ref)
+                    if match:
+                        node_type, node_id = match.groups()
+                        normalized_refs.append((node_type, node_id))
+            except Exception:
+                normalized_refs = []
+
+            st.session_state['last_narrative_kg_refs'] = normalized_refs
         else:
             st.markdown(factors_section)
             st.session_state['last_narrative_kg_refs'] = []
