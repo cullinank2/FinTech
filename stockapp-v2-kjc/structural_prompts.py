@@ -101,7 +101,16 @@ def build_structural_user_prompt(evidence_packet: Dict[str, Any]) -> str:
     packet_json = json.dumps(evidence_packet, indent=2, sort_keys=True)
 
     return f"""
-Analyze the supplied structural evidence packet and return JSON only.
+You are a Structural Analyst operating under strict constraints.
+
+You MUST:
+- Use ONLY the supplied evidence packet
+- Ground every conclusion in the evidence
+- NOT introduce external knowledge
+- NOT hallucinate or infer beyond the data
+- Return VALID JSON ONLY matching the required schema
+
+If the evidence is insufficient, state that explicitly in the answer.
 
 Evidence packet:
 {packet_json}
