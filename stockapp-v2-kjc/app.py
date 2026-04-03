@@ -2166,13 +2166,36 @@ def main():
                 f"PC coordinates: PC1 = {pc1:.2f}, PC2 = {pc2:.2f}"
             )
 
-            st.metric("Peers in Same Quadrant", len(quadrant_peers))
+            same_quadrant_count = len(quadrant_peers) if quadrant_peers is not None else 0
+
+            cluster_peers = pd.DataFrame()
+            if "cluster" in pca_df.columns:
+                cluster_peers = pca_df[
+                    (pca_df["cluster"] == cluster) & (pca_df["ticker"] != ticker)
+                ].copy()
+
+            same_cluster_count = len(cluster_peers)
+            overlap_count = 0
+            if not cluster_peers.empty and quadrant_peers is not None and not quadrant_peers.empty:
+                overlap_count = len(
+                    set(cluster_peers["ticker"]).intersection(set(quadrant_peers["ticker"]))
+                )
+
+            pos_col1, pos_col2, pos_col3 = st.columns(3)
+            with pos_col1:
+                st.metric("Same Quadrant", same_quadrant_count)
+            with pos_col2:
+                st.metric("Same Cluster", same_cluster_count)
+            with pos_col3:
+                st.metric("Quadrant + Cluster Overlap", overlap_count)
+
+            st.markdown("#### Quadrant Peer Preview")
 
             if quadrant_peers is not None and not quadrant_peers.empty:
                 peer_preview_cols = [c for c in ["ticker", "Quadrant", "cluster", "PC1", "PC2"] if c in quadrant_peers.columns]
                 st.dataframe(
                     quadrant_peers[peer_preview_cols].head(25),
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True
                 )
             else:
