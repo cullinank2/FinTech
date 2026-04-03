@@ -241,9 +241,9 @@ def create_pca_scatter_plot(
                 y=peer_df["PC2"],
                 mode="markers",
                 marker=dict(
-                    size=10,
-                    color="white",
-                    line=dict(width=2, color="black"),
+                    size=12,
+                    color="rgba(255,255,255,0.9)",
+                    line=dict(width=2, color="cyan"),
                     symbol="circle-open"
                 ),
                 name="Nearest Peers",
