@@ -2194,7 +2194,7 @@ def main():
             try:
                 fig = create_pca_scatter_plot(
                     pca_df,
-                    highlight_ticker=ticker
+                    selected_ticker=ticker
                 )
                 st.plotly_chart(fig, width="stretch")
             except Exception as e:
