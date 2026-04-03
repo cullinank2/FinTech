@@ -493,7 +493,23 @@ def generate_trajectory_narrative(
                         "equity raises, or acquisitions) rather than gradual operational drift"
                     )
                     continue
-            direction = _classify_direction(series.iloc[0], series.iloc[-1], series.std())
+            start_val = series.iloc[0]
+            end_val = series.iloc[-1]
+            std_val = series.std()
+
+            if std_val == 0:
+                direction = "flat"
+            else:
+                delta = end_val - start_val
+                magnitude = abs(delta) / std_val
+
+                if magnitude < 0.3:
+                    direction = "flat"
+                elif delta > 0:
+                    direction = "rising" if magnitude < 1.0 else "sharply rising"
+                else:
+                    direction = "declining" if magnitude < 1.0 else "sharply declining"
+
             if direction != "flat":
                 parts.append(f"**{label}** has been {direction}")
         return parts
