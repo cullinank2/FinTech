@@ -350,6 +350,8 @@ def generate_factor_highlights(
             descriptor_parts = [part for part in [strength, direction] if part]
             descriptor = " ".join(descriptor_parts).strip()
 
+            kg_node_ref = f" `[[KG_NODE:factor:{factor_key}]]`" if factor_key else ""
+
             if "positive" in direction:
                 interpretation = "increasing exposure"
             elif "negative" in direction:
@@ -366,11 +368,11 @@ def generate_factor_highlights(
 
             if descriptor:
                 structural_driver_lines.append(
-                    f"- **{factor_name}** ({economic_meaning}) is {intensity}, {interpretation}."
+                    f"- **{factor_name}**{kg_node_ref} ({economic_meaning}) is {intensity}, {interpretation}."
                 )
             else:
                 structural_driver_lines.append(
-                    f"- **{factor_name}** ({economic_meaning}) is {intensity}, shaping current positioning."
+                    f"- **{factor_name}**{kg_node_ref} ({economic_meaning}) is {intensity}, shaping current positioning."
                 )
 
             summary_parts.append(f"**{factor_name}**")
