@@ -233,14 +233,12 @@ def _validate_structural_response(
             else:
                 raise ValueError(f"Missing required response field: {field}")
 
-    if response["question_type"] != evidence_packet["question_type"]:
-        raise ValueError("Response question_type mismatch")
+    # Enforce deterministic alignment (do not rely on model echo)
+    response["question_type"] = evidence_packet.get("question_type")
 
-    if response["ticker"] != evidence_packet["ticker"]:
-        raise ValueError("Response ticker mismatch")
+    response["ticker"] = evidence_packet.get("ticker")
 
-    if response["regime"] != evidence_packet["regime"]:
-        raise ValueError("Response regime mismatch")
+    response["regime"] = evidence_packet.get("regime")
 
     if response["confidence"] not in VALID_CONFIDENCE_LEVELS:
         raise ValueError("Invalid confidence value")
