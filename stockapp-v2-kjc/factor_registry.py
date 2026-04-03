@@ -133,6 +133,11 @@ FEATURE_DISPLAY_NAMES = {
     k: v['display'] for k, v in FEATURE_METADATA.items()
 }
 
+# Derived economic meanings for narrative / structural interpretation
+FEATURE_ECONOMIC_MEANINGS = {
+    k: v.get('economic_meaning', v['display']) for k, v in FEATURE_METADATA.items()
+}
+
 # Display order follows canonical feature list
 FEATURE_DISPLAY_ORDER = FEATURE_LIST
 
