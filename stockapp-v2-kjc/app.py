@@ -860,7 +860,7 @@ def render_stock_overview(stock_data: pd.DataFrame, pca_row: pd.Series):
             gics_sector = ticker_match['gicdesc'].iloc[0]
     
     # Display header with GICS Sector inline
-    st.markdown(f"## 📊 Analysis: {ticker} &nbsp;&nbsp;&nbsp;&nbsp; **GICS Sector:** {gics_sector}")
+    st.markdown(f"## 📊 Overview: {ticker} &nbsp;&nbsp;&nbsp;&nbsp; **GICS Sector:** {gics_sector}")
     
     # Key metrics in columns
     col1, col2, col3, col4 = st.columns(4)
