@@ -2455,6 +2455,7 @@ def main():
 
                                 structural_drivers.append({
                                     "factor": factor,
+                                    "factor_name": factor,
                                     "display_name": display_name,
                                     "direction": direction_word,
                                     "strength": strength,
