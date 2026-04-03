@@ -2356,22 +2356,13 @@ def main():
                         unsafe_allow_html=True
                     )
 
-        # 🧾 Narrative Tab
-        with stock_tab4:
-            render_narrative_section(
-                ticker=ticker,
-                pca_row=pca_row,
-                peer_df=narrative_peers,
-                gics_sector=gics_sector,
-            )
-
                     # --- Executive Summary ---
                     if structural_risk_score >= 75:
                         summary_text = "This stock exhibits elevated structural risk due to high crowding and tightly aligned peer positioning."
                     elif structural_risk_score >= 40:
                         summary_text = "This stock shows moderate structural risk, with some crowding and partial peer alignment."
                     else:
-                        summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
+                        summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."tructurally differentiated, with lower crowding and more dispersed peer positioning."
 
                     st.info(summary_text)
 
@@ -2496,6 +2487,15 @@ def main():
 
             except Exception as e:
                 st.warning(f"Nearest peer calculation unavailable: {e}")
+
+        # 🧾 Narrative Tab
+        with stock_tab4:
+            render_narrative_section(
+                ticker=ticker,
+                pca_row=pca_row,
+                peer_df=narrative_peers,
+                gics_sector=gics_sector,
+            )
             # Lazy import to avoid Streamlit module cache issues
             try:
                 from structural_analyst import run_structural_analysis
