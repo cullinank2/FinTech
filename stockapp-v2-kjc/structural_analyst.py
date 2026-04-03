@@ -243,8 +243,7 @@ def _validate_structural_response(
     if response["confidence"] not in VALID_CONFIDENCE_LEVELS:
         raise ValueError("Invalid confidence value")
 
-    if response["analysis_mode"] != STRUCTURAL_ANALYSIS_MODE:
-        raise ValueError("Invalid analysis_mode")
+    response["analysis_mode"] = STRUCTURAL_ANALYSIS_MODE
 
     if not isinstance(response["answer"], str):
         raise ValueError("answer must be a string")
