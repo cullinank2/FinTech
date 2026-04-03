@@ -851,32 +851,68 @@ class KnowledgeGraph:
             edges : list[{src, tgt, edge_type, ...attrs}]
             meta  : {node_count, edge_count, missing_nodes}
         """
-        missing = [nid for nid in node_ids if not self._G.has_node(nid)]
-        valid   = [nid for nid in node_ids if self._G.has_node(nid)]
+        requested = list(dict.fromkeys(node_ids))
+        missing   = [nid for nid in requested if not self._G.has_node(nid)]
+        valid     = sorted(nid for nid in requested if self._G.has_node(nid))
 
         # Nodes
         serialized_nodes = []
         for nid in valid:
             attrs = dict(self._G.nodes[nid])
+
             # Convert any non-serializable types
-            clean = {k: (v.value if hasattr(v, "value") else v) for k, v in attrs.items()}
-            serialized_nodes.append({"id": nid, **clean})
+            clean = {
+                k: (v.value if hasattr(v, "value") else v)
+                for k, v in attrs.items()
+            }
+
+            node_type = clean.get("node_type") or nid.split(":", 1)[0]
+            label = clean.get("label") or clean.get("name") or nid
+
+            serialized_nodes.append({
+                "id": nid,
+                "node_type": node_type,
+                "label": label,
+                **clean,
+            })
 
         # Edges — only between nodes in the requested set
         valid_set = set(valid)
         serialized_edges = []
         for u, v, attrs in self._G.edges(data=True):
             if u in valid_set and v in valid_set:
-                clean = {k: (val.value if hasattr(val, "value") else val)
-                         for k, val in attrs.items()}
-                serialized_edges.append({"src": u, "tgt": v, **clean})
+                clean = {
+                    k: (val.value if hasattr(val, "value") else val)
+                    for k, val in attrs.items()
+                }
+
+                edge_type = (
+                    clean.get("edge_type")
+                    or clean.get("relationship")
+                    or clean.get("type")
+                    or "related_to"
+                )
+
+                serialized_edges.append({
+                    "src": u,
+                    "tgt": v,
+                    "edge_type": edge_type,
+                    **clean,
+                })
+
+        serialized_edges = sorted(
+            serialized_edges,
+            key=lambda e: (e["src"], e["tgt"], e["edge_type"])
+        )
 
         return {
             "nodes": serialized_nodes,
             "edges": serialized_edges,
-            "meta":  {
-                "node_count":    len(serialized_nodes),
-                "edge_count":    len(serialized_edges),
+            "meta": {
+                "requested_node_ids": requested,
+                "included_node_ids": valid,
+                "node_count": len(serialized_nodes),
+                "edge_count": len(serialized_edges),
                 "missing_nodes": missing,
             },
         }
