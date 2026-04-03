@@ -2317,7 +2317,7 @@ def main():
                     else:
                         summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
 
-                     st.info(summary_text)
+                    st.info(summary_text)
 
                     # --- PCA Loading-Based Structural Drivers (CORRECT METHOD) ---
                     loadings = st.session_state.get("pca_loadings")
