@@ -2356,6 +2356,15 @@ def main():
                         unsafe_allow_html=True
                     )
 
+        # 🧾 Narrative Tab
+        with stock_tab4:
+            render_narrative_section(
+                ticker=ticker,
+                pca_row=pca_row,
+                peer_df=narrative_peers,
+                gics_sector=gics_sector,
+            )
+
                     # --- Executive Summary ---
                     if structural_risk_score >= 75:
                         summary_text = "This stock exhibits elevated structural risk due to high crowding and tightly aligned peer positioning."
