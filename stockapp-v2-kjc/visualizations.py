@@ -31,6 +31,7 @@ from config import (
 def create_pca_scatter_plot(
     pca_df: pd.DataFrame,
     selected_ticker: Optional[str] = None,
+    highlight_peers: Optional[list] = None,
     show_quadrant_labels: bool = True
 ) -> go.Figure:
     """
@@ -230,6 +231,25 @@ def create_pca_scatter_plot(
                 hovertemplate=f"<b>{selected_ticker}</b><br>PC1: %{{x:.3f}}<br>PC2: %{{y:.3f}}<extra></extra>"
             ))
     
+    # Highlight nearest peers if provided
+    if highlight_peers is not None and "ticker" in pca_df.columns:
+        peer_df = pca_df[pca_df["ticker"].isin(highlight_peers)]
+
+        if not peer_df.empty:
+            fig.add_scatter(
+                x=peer_df["PC1"],
+                y=peer_df["PC2"],
+                mode="markers",
+                marker=dict(
+                    size=10,
+                    color="white",
+                    line=dict(width=2, color="black"),
+                    symbol="circle-open"
+                ),
+                name="Nearest Peers",
+                hovertext=peer_df["ticker"]
+            )
+
     # Add quadrant labels
     if show_quadrant_labels:
         labels = [
