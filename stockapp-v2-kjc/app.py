@@ -2174,13 +2174,19 @@ def main():
                 total_universe=len(gics_filtered_pca)
             )
 
-        # ============================================================
-        # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
-        # ============================================================
+        # 🧠 AI / Structural Tab — Structural Analyst
+        with stock_tab5:
 
-        # Lazy import to avoid Streamlit module cache issues
-        try:
-            from structural_analyst import run_structural_analysis
+            st.markdown("---")
+            st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
+
+            # ============================================================
+            # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
+            # ============================================================
+
+            # Lazy import to avoid Streamlit module cache issues
+            try:
+                from structural_analyst import run_structural_analysis
         except Exception as e:
             st.error(f"Structural Analyst failed to load: {e}")
             run_structural_analysis = None
