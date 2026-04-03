@@ -1628,14 +1628,11 @@ def render_narrative_section(
 
             st.session_state['last_narrative_kg_refs'] = normalized_refs
 
-            # --- NEW: Build KG subgraph from narrative references ---
+            # --- NEW: Build KG evidence packet from narrative references ---
             try:
                 if kg is not None and normalized_refs:
-                    subgraph = serialize_subgraph(
-                        kg=kg,
-                        nodes=normalized_refs
-                    )
-                    st.session_state['last_narrative_subgraph'] = subgraph
+                    evidence_packet = kg.build_evidence_packet(normalized_refs)
+                    st.session_state['last_narrative_subgraph'] = evidence_packet
                 else:
                     st.session_state['last_narrative_subgraph'] = None
             except Exception:
