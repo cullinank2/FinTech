@@ -2109,6 +2109,9 @@ def main():
             pca_row
         )
 
+        with stock_tab1:
+            st.markdown("### 📌 Overview")
+
         # stock_tab1 placeholder (no content yet)
         st.markdown("### 📌 Overview")
     
