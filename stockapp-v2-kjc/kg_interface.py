@@ -853,7 +853,21 @@ class KnowledgeGraph:
         """
         requested = list(dict.fromkeys(node_ids))
         missing   = [nid for nid in requested if not self._G.has_node(nid)]
-        valid     = sorted(nid for nid in requested if self._G.has_node(nid))
+        seed_nodes = sorted(nid for nid in requested if self._G.has_node(nid))
+
+        # Expand one hop from narrative-grounded seed nodes, but keep the
+        # packet bounded and deterministic for Tier 2 consumption.
+        expanded_valid = set(seed_nodes)
+
+        for nid in seed_nodes:
+            try:
+                neighbors = sorted(self._G.neighbors(nid))
+                for neighbor in neighbors[:8]:
+                    expanded_valid.add(neighbor)
+            except Exception:
+                pass
+
+        valid = sorted(expanded_valid)
 
         # Nodes
         serialized_nodes = []
@@ -910,7 +924,10 @@ class KnowledgeGraph:
             "edges": serialized_edges,
             "meta": {
                 "requested_node_ids": requested,
+                "seed_node_ids": seed_nodes,
                 "included_node_ids": valid,
+                "expansion_hops": 1,
+                "max_neighbors_per_seed": 8,
                 "node_count": len(serialized_nodes),
                 "edge_count": len(serialized_edges),
                 "missing_nodes": missing,
