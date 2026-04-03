@@ -2317,39 +2317,36 @@ def main():
                     else:
                         summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
 
-                    st.info(summary_text)
+                     st.info(summary_text)
 
-                    # --- Factor Driver Insight (Debug) ---
-                    try:
-                        factor_cols = [
-                            c for c in pca_row.index
-                            if c not in ["ticker", "cluster", "Quadrant", "PC1", "PC2", "PC3"]
-                        ]
+                    # --- PCA Loading-Based Structural Drivers (CORRECT METHOD) ---
+                    loadings = st.session_state.get("pca_loadings")
 
-                        if factor_cols:
-                            numeric_factors = {
-                                k: v for k, v in pca_row[factor_cols].items()
-                                if isinstance(v, (int, float))
-                            }
+                    if loadings is not None:
+                        try:
+                            loadings_df = pd.DataFrame(loadings)
 
-                            if numeric_factors:
-                                top_factors = (
-                                    pd.Series(numeric_factors)
-                                    .abs()
-                                    .sort_values(ascending=False)
-                                    .head(3)
-                                    .index.tolist()
-                                )
+                            # Combine PC1 + PC2 importance
+                            loadings_df["importance"] = (
+                                loadings_df["PC1"].abs() + loadings_df["PC2"].abs()
+                            )
 
-                                st.caption(
-                                    "Primary structural drivers: " + ", ".join(top_factors)
-                                )
-                            else:
-                                st.caption("DEBUG: no numeric factor columns found")
-                        else:
-                            st.caption("DEBUG: no factor columns found in pca_row")
-                    except Exception as e:
-                        st.caption(f"DEBUG factor driver error: {e}")
+                            top_factors = (
+                                loadings_df["importance"]
+                                .sort_values(ascending=False)
+                                .head(3)
+                                .index.tolist()
+                            )
+
+                            st.caption(
+                                "Primary structural drivers (PCA-weighted): "
+                                + ", ".join(top_factors)
+                            )
+
+                        except Exception as e:
+                            st.caption(f"Driver calculation unavailable: {e}")
+                    else:
+                        st.caption("PCA loadings not available for structural driver analysis.")
 
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
 
