@@ -2366,7 +2366,18 @@ def main():
                                 directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
 
                                 arrow = "↑" if directional_score >= 0 else "↓"
-                                directional_driver_labels.append(f"{display_name} {arrow}")
+
+                                abs_score = abs(directional_score)
+                                if abs_score >= 0.30:
+                                    strength = "Strong"
+                                elif abs_score >= 0.15:
+                                    strength = "Moderate"
+                                else:
+                                    strength = "Light"
+
+                                directional_driver_labels.append(
+                                    f"{display_name} {arrow} ({strength})"
+                                )
 
                             st.caption(
                                 "Primary structural drivers (PCA-weighted): "
