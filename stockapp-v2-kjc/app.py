@@ -2194,7 +2194,8 @@ def main():
             try:
                 fig = create_pca_scatter_plot(
                     pca_df,
-                    selected_ticker=ticker
+                    selected_ticker=ticker,
+                    highlight_peers=nearest_peers["ticker"].tolist() if "nearest_peers" in locals() else None
                 )
                 st.plotly_chart(fig, width="stretch")
             except Exception as e:
@@ -2220,6 +2221,21 @@ def main():
                         peer_universe[peer_universe["ticker"] != ticker]
                         .sort_values("distance")
                         .head(15)
+                    )
+
+                    # --- Distance Percentile (Crowding Signal) ---
+                    all_distances = peer_universe["distance"]
+
+                    target_distance = peer_universe[
+                        peer_universe["ticker"] == ticker
+                    ]["distance"].values[0]
+
+                    percentile = (all_distances < target_distance).mean() * 100
+
+                    st.metric(
+                        "Structural Crowding Percentile",
+                        f"{percentile:.1f}%",
+                        help="Lower = more crowded (closer to other stocks)"
                     )
 
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
