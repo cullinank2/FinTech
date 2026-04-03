@@ -2362,7 +2362,7 @@ def main():
                     elif structural_risk_score >= 40:
                         summary_text = "This stock shows moderate structural risk, with some crowding and partial peer alignment."
                     else:
-                        summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."tructurally differentiated, with lower crowding and more dispersed peer positioning."
+                        summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
 
                     st.info(summary_text)
 
