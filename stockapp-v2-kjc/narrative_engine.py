@@ -416,16 +416,16 @@ def generate_factor_highlights(
 
             if strength_text and weakness_text:
                 linkage_sentence = (
-                    f"*This positioning is supported by strength in {strength_text}, "
-                    f"while pressure from {weakness_text} is acting as a counterbalance.*"
+                    f"*Strength in {strength_text} is supporting the profile, "
+                    f"while weakness in {weakness_text} acts as a counterbalance.*"
                 )
             elif strength_text:
                 linkage_sentence = (
-                    f"*This positioning is supported primarily by strength in {strength_text}.*"
+                    f"*Strength in {strength_text} is the primary support for the current profile.*"
                 )
             elif weakness_text:
                 linkage_sentence = (
-                    f"*This positioning faces pressure primarily from {weakness_text}.*"
+                    f"*Weakness in {weakness_text} is the primary pressure point on the profile.*"
                 )
             else:
                 linkage_sentence = ""
