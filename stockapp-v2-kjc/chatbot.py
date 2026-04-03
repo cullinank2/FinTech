@@ -563,15 +563,18 @@ peer clusters), prefer citing these KG facts over general commentary.
 
             output_text = ""
 
-            if hasattr(response, "output_text") and response.output_text:
-                output_text = response.output_text
-            elif hasattr(response, "output") and response.output:
+            if hasattr(response, "output") and response.output:
                 for item in response.output:
                     if hasattr(item, "content") and item.content:
                         for c in item.content:
-                            text_value = getattr(c, "text", "")
-                            if text_value:
-                                output_text += text_value
+                            if hasattr(c, "text"):
+                                if isinstance(c.text, str):
+                                    output_text += c.text
+                                elif hasattr(c.text, "value"):
+                                    output_text += c.text.value
+
+            if not output_text and hasattr(response, "output_text"):
+                output_text = response.output_text or ""
 
             return output_text.strip()
 
