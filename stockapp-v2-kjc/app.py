@@ -2337,16 +2337,6 @@ def main():
                             # 🔧 Drop empty rows
                             loadings_df = loadings_df.dropna(how="all")
 
-                            # DEBUG — inspect loadings structure (FORCE DISPLAY)
-                            # st.write("DEBUG LOADINGS HEAD:")
-                            st.write(loadings_df.head())
-
-                            st.write("DEBUG LOADINGS COLUMNS:")
-                            st.write(loadings_df.columns)
-
-                            st.write("DEBUG LOADINGS SHAPE:")
-                            st.write(loadings_df.shape)
-
                             # Combine PC1 + PC2 importance
                             loadings_df["importance"] = (
                                 loadings_df["PC1"].abs() + loadings_df["PC2"].abs()
