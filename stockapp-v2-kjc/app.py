@@ -2309,6 +2309,16 @@ def main():
                         unsafe_allow_html=True
                     )
 
+                    # --- Executive Summary ---
+                    if structural_risk_score >= 75:
+                        summary_text = "This stock exhibits elevated structural risk due to high crowding and tightly aligned peer positioning."
+                    elif structural_risk_score >= 40:
+                        summary_text = "This stock shows moderate structural risk, with some crowding and partial peer alignment."
+                    else:
+                        summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
+
+                    st.info(summary_text)
+
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
 
                     st.dataframe(
