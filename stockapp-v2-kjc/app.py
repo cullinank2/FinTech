@@ -1724,6 +1724,7 @@ def main():
             st.session_state.kmeans_model = kmeans_model
             st.session_state.scaler = scaler
             st.session_state.pca_loadings = loadings
+            st.session_state.pca_loadings_df = loadings_df
             st.session_state.data_loaded = True
     
     # Initialize analysis scope (Phase 1)
