@@ -2187,12 +2187,9 @@ def main():
             # Lazy import to avoid Streamlit module cache issues
             try:
                 from structural_analyst import run_structural_analysis
-        except Exception as e:
-            st.error(f"Structural Analyst failed to load: {e}")
-            run_structural_analysis = None
-
-        st.markdown("---")
-        st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
+            except Exception as e:
+                st.error(f"Structural Analyst failed to load: {e}")
+                run_structural_analysis = None
 
         kg = st.session_state.get("kg_instance")
         kg_regime = st.session_state.get("kg_current_regime")
