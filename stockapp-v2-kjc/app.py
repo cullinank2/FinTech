@@ -2155,8 +2155,11 @@ def main():
             if not ticker_rows.empty:
                 gics_sector = ticker_rows['gicdesc'].iloc[0]
 
-        # Render narrative engine section
-        render_narrative_section(ticker, pca_row, narrative_peers, gics_sector)
+        # 🧾 Narrative Tab
+        with stock_tab4:
+            st.markdown("### 🧾 Narrative")
+
+            render_narrative_section(ticker, pca_row, narrative_peers, gics_sector)
 
         # Render chatbot section
         render_chatbot_section(
