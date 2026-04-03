@@ -287,6 +287,7 @@ def generate_factor_highlights(
     ticker: str,
     percentiles: Dict[str, float],
     factor_data: Optional[Dict] = None,
+    structural_drivers: Optional[list] = None,
     kg: Any = None,
     current_regime: Optional[str] = None,
 ) -> str:
