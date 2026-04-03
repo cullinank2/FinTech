@@ -2155,6 +2155,29 @@ def main():
             if not ticker_rows.empty:
                 gics_sector = ticker_rows['gicdesc'].iloc[0]
 
+        # 👥 Peers & Positioning Tab
+        with stock_tab3:
+            st.markdown("### 👥 Peers & Positioning")
+
+            st.markdown(
+                f"**{ticker}** is currently positioned in **{quadrant}** and **Cluster {cluster}**."
+            )
+            st.caption(
+                f"PC coordinates: PC1 = {pc1:.2f}, PC2 = {pc2:.2f}"
+            )
+
+            st.metric("Peers in Same Quadrant", len(quadrant_peers))
+
+            if quadrant_peers is not None and not quadrant_peers.empty:
+                peer_preview_cols = [c for c in ["ticker", "Quadrant", "cluster", "PC1", "PC2"] if c in quadrant_peers.columns]
+                st.dataframe(
+                    quadrant_peers[peer_preview_cols].head(25),
+                    use_container_width=True,
+                    hide_index=True
+                )
+            else:
+                st.info("No quadrant peers available for this stock under the current filter.")
+
         # 🧾 Narrative Tab
         with stock_tab4:
             st.markdown("### 🧾 Narrative")
