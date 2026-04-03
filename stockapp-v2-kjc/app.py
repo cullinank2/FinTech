@@ -2379,10 +2379,35 @@ def main():
                                     f"{display_name} {arrow} ({strength})"
                                 )
 
-                            st.caption(
-                                "Primary structural drivers (PCA-weighted): "
-                                + ", ".join(directional_driver_labels)
-                            )
+                            st.markdown("#### 🔬 Structural Drivers")
+
+                            for factor in top_factors:
+                                display_name = (
+                                    FEATURE_DISPLAY_NAMES.get(
+                                        factor,
+                                        factor.replace("_", " ").title()
+                                    ) if "FEATURE_DISPLAY_NAMES" in globals()
+                                    else factor.replace("_", " ").title()
+                                )
+
+                                pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
+                                pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
+
+                                directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
+
+                                direction_word = "Positive" if directional_score >= 0 else "Negative"
+
+                                abs_score = abs(directional_score)
+                                if abs_score >= 0.30:
+                                    strength = "Strong"
+                                elif abs_score >= 0.15:
+                                    strength = "Moderate"
+                                else:
+                                    strength = "Light"
+
+                                st.markdown(
+                                    f"- **{display_name}**: {direction_word}, {strength} influence"
+                                )
 
                         except Exception as e:
                             st.caption(f"Driver calculation unavailable: {e}")
