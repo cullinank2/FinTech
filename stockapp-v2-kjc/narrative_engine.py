@@ -356,6 +356,13 @@ def generate_factor_highlights(
         f"*{ticker}'s clearest edge is **{top_feat}** ({_ordinal(top_pct)} percentile). "
         f"Its most notable drag is **{bot_feat}** ({_ordinal(bot_pct)} percentile).*",
     ]
+
+    if structural_driver_lines:
+        lines += [
+            "",
+            *structural_driver_lines,
+        ]
+
     # Append regime-aware interpretation if present
     if regime_notes and regime_notes.get("notes"):
         lines += [
