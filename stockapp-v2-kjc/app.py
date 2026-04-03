@@ -1520,7 +1520,51 @@ def render_narrative_section(
     with st.spinner("Generating narrative analysis..."):
         kg                  = st.session_state.get("kg_instance")
         kg_regime           = st.session_state.get("kg_current_regime")
-        structural_drivers  = st.session_state.get("current_structural_drivers", [])
+        structural_drivers  = st.session_state.get("current_structural_drivers")
+
+        # Fallback: compute drivers if not yet available in session
+        if not structural_drivers and loadings is not None and pca_row is not None:
+            try:
+                loadings_df = pd.DataFrame(loadings)
+
+                pc1 = pca_row.get("PC1", 0)
+                pc2 = pca_row.get("PC2", 0)
+
+                drivers = []
+
+                for factor in loadings_df.index:
+                    pc1_loading = loadings_df.at[factor, "PC1"]
+                    pc2_loading = loadings_df.at[factor, "PC2"]
+
+                    directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
+
+                    direction = "Positive" if directional_score >= 0 else "Negative"
+
+                    abs_score = abs(directional_score)
+                    if abs_score >= 0.30:
+                        strength = "Strong"
+                    elif abs_score >= 0.15:
+                        strength = "Moderate"
+                    else:
+                        strength = "Light"
+
+                    display_name = FEATURE_DISPLAY_NAMES.get(factor, factor)
+
+                    drivers.append({
+                        "factor_name": display_name,
+                        "direction": direction,
+                        "strength": strength,
+                        "score": directional_score,
+                    })
+
+                # sort + keep top 3
+                drivers = sorted(drivers, key=lambda x: abs(x["score"]), reverse=True)[:3]
+
+                structural_drivers = drivers
+                st.session_state.current_structural_drivers = drivers
+
+            except Exception:
+                structural_drivers = []
         # --- FIX: Align AI peer group with filtered universe ---
         peer_df = peer_df.copy()
         # peer_df already contains quadrant-filtered peers
