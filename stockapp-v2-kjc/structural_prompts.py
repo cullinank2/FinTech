@@ -142,6 +142,21 @@ Interpret the evidence based on question_type:
 - regime_transition:
   Describe structural changes between regimes including crowding, dispersion, and systemic shifts.
 
+Example required JSON format:
+
+{
+  "question_type": "...",
+  "ticker": "...",
+  "regime": "...",
+  "answer": "...",
+  "summary_bullets": ["...", "..."],
+  "evidence": ["reference specific fields from the packet"],
+  "subgraph_snapshot": "brief structural description",
+  "limits": ["what cannot be concluded"],
+  "confidence": "low | medium | high",
+  "analysis_mode": "kg_grounded"
+}
+
 Evidence packet:
 {packet_json}
 """.strip()
