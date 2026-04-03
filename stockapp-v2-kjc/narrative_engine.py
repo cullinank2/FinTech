@@ -350,7 +350,7 @@ def generate_factor_highlights(
             descriptor_parts = [part for part in [strength, direction] if part]
             descriptor = " ".join(descriptor_parts).strip()
 
-            kg_node_ref = f" `[[KG_NODE:factor:{factor_key}]]`" if factor_key else ""
+            kg_node_ref = f" `[[KG:factor:{factor_key}]]`" if factor_key else ""
 
             if "positive" in direction:
                 interpretation = "increasing exposure"
