@@ -2111,9 +2111,6 @@ def main():
 
         with stock_tab1:
             st.markdown("### 📌 Overview")
-
-        # stock_tab1 placeholder (no content yet)
-        st.markdown("### 📌 Overview")
     
         # Get quadrant peers (GICS-filtered universe for consistency)
         gics_filtered_pca = filter_by_gics_sector(
