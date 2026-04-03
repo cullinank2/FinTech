@@ -485,7 +485,12 @@ def generate_trajectory_narrative(
                 continue
             label = FEATURE_DISPLAY_NAMES.get(feat, feat)
             if feat == 'cash_debt':
-                steps = _detect_steps(series)
+                diffs = series.diff().dropna()
+                rolling_std = diffs.rolling(window=4, min_periods=2).std()
+
+                step_flags = (diffs.abs() > 1.2 * rolling_std)
+                steps = int(step_flags.sum()) if not step_flags.empty else 0
+
                 if steps >= 2:
                     parts.append(
                         f"**{label}** shows {steps} discrete step-changes — "
