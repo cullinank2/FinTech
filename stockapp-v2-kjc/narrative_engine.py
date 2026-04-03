@@ -396,10 +396,10 @@ def generate_factor_highlights(
         f"({_ordinal(top_pct)} percentile), while its most notable drag is "
         f"**{bot_feat}** ({_ordinal(bot_pct)} percentile).",
         "",
-        "**Key Strengths** *(highest percentile ranks vs. GICS sector peers)*",
+        "**Key Strengths:**",
         *[_row(f, p) for f, p in strengths],
         "",
-        "**Key Weaknesses** *(lowest percentile ranks vs. GICS sector peers)*",
+        "**Key Weaknesses:**",
         *[_row(f, p) for f, p in weaknesses],
     ]
 
