@@ -2329,11 +2329,14 @@ def main():
                         st.caption(f"DEBUG factor column count: {len(factor_cols)}")
 
                         if factor_cols:
-                            numeric_factors = pca_row[factor_cols].select_dtypes(include=["number"])
+                            numeric_factors = {
+                                k: v for k, v in pca_row[factor_cols].items()
+                                if isinstance(v, (int, float))
+                            }
 
-                            if not numeric_factors.empty:
+                            if numeric_factors:
                                 top_factors = (
-                                    numeric_factors
+                                    pd.Series(numeric_factors)
                                     .abs()
                                     .sort_values(ascending=False)
                                     .head(3)
