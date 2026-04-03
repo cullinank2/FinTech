@@ -1602,10 +1602,15 @@ def render_narrative_section(
         st.subheader("🧾 Deterministic Stock Narrative (Tier 1)")
 
         factors_section = sections['factors']
+
         if isinstance(factors_section, dict):
             st.markdown(factors_section.get('text', ''))
+
+            # --- NEW: Persist KG references for downstream use ---
+            st.session_state['last_narrative_kg_refs'] = factors_section.get('kg_references', [])
         else:
             st.markdown(factors_section)
+            st.session_state['last_narrative_kg_refs'] = []
 
     if sections.get('structural') and kg is not None:
         with st.expander("🧠 Structural Context (Knowledge Graph — Tier 1)", expanded=False):
