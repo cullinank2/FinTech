@@ -347,7 +347,7 @@ def load_and_process_data():
         # Compute PCA and clustering
         pca_df, pca_model, kmeans_model, scaler, loadings, loadings_df = compute_pca_and_clusters(processed_data)
         
-        return raw_data, processed_data, pca_df, pca_model, kmeans_model, scaler, loadings, None
+        return raw_data, processed_data, pca_df, pca_model, kmeans_model, scaler, loadings, loadings_df, None
         
     except Exception as e:
         return None, None, None, None, None, None, None, str(e)
@@ -1705,7 +1705,7 @@ def main():
     if not st.session_state.data_loaded:
         with st.spinner("Loading data from GitHub..."):
             result = load_and_process_data()
-            raw_data, processed_data, pca_df, pca_model, kmeans_model, scaler, loadings, error = result
+            raw_data, processed_data, pca_df, pca_model, kmeans_model, scaler, loadings, loadings_df, error = result
             
             if error:
                 st.error(f"❌ Failed to load data: {error}")
