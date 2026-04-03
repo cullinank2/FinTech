@@ -2180,6 +2180,10 @@ def main():
             st.markdown("---")
             st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
 
+            # DEBUG — REMOVE LATER
+            st.write("DEBUG KG:", st.session_state.get("kg_instance"))
+            st.write("DEBUG REGIME:", st.session_state.get("kg_current_regime"))
+
             # ============================================================
             # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
             # ============================================================
