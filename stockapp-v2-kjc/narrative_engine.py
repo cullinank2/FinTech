@@ -349,19 +349,19 @@ def generate_factor_highlights(
                 interpretation = ""
 
                 if "positive" in direction:
-                    interpretation = "reinforcing exposure"
+                    interpretation = "increasing exposure to this factor"
                 elif "negative" in direction:
-                    interpretation = "creating structural drag"
+                    interpretation = "introducing structural headwinds from this factor"
 
                 if "strong" in strength:
-                    intensity = "a dominant driver"
+                    intensity = "a primary structural driver of positioning"
                 elif "moderate" in strength:
-                    intensity = "a meaningful contributor"
+                    intensity = "a meaningful structural contributor"
                 else:
-                    intensity = "a secondary influence"
+                    intensity = "a secondary structural influence"
 
                 structural_driver_lines.append(
-                    f"- **{factor_name}** ({economic_meaning}) is {intensity}, {interpretation} within the current PCA positioning."
+                    f"- **{factor_name}** ({economic_meaning}) is {intensity}, {interpretation}."
                     )
             else:
                 structural_driver_lines.append(
