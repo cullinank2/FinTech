@@ -458,7 +458,7 @@ def prepare_time_series_data(
     available_features = [col for col in FEATURE_COLUMNS if col in stock_df.columns]
     
     # Extract features and transform
-    X = stock_df[available_features].fillna(method='ffill').fillna(method='bfill')
+    X = stock_df[available_features].ffill().bfill()
     X_scaled = scaler.transform(X)
     X_pca = pca.transform(X_scaled)
     
