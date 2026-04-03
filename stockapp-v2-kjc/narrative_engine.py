@@ -854,6 +854,7 @@ def generate_narrative(
     loadings: Optional[Dict] = None,
     gics_sector: str = 'N/A',
     show_pc3: bool = False,
+    structural_drivers: Optional[list] = None,
     # ── KG parameters (Tier 1 Section 5) ─────────────────────────────────────
     kg: Optional[Any] = None,
     current_regime: Optional[str] = None,
@@ -874,6 +875,8 @@ def generate_narrative(
         loadings:             st.session_state.pca_loadings (for trajectory driver labels).
         gics_sector:          GICS sector label for peer context header.
         show_pc3:             Whether to include PC3 axis descriptions.
+        structural_drivers:   Optional precomputed structural driver list from app.py.
+                              Tier 1 deterministic input only; no LLM dependency.
         kg:                   KnowledgeGraph instance from kg_interface.py (Tier 1).
                               Pass None to skip Section 5 gracefully.
         current_regime:       Active regime string — "Post-COVID" | "Rate Shock" |
