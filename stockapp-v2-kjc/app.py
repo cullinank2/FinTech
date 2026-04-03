@@ -2326,8 +2326,6 @@ def main():
                             if c not in ["ticker", "cluster", "Quadrant", "PC1", "PC2", "PC3"]
                         ]
 
-                        st.caption(f"DEBUG factor column count: {len(factor_cols)}")
-
                         if factor_cols:
                             numeric_factors = {
                                 k: v for k, v in pca_row[factor_cols].items()
