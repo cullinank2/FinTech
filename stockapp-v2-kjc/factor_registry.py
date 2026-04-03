@@ -67,6 +67,7 @@ _FEATURE_METADATA = {
     },
     BM: {
         'display': 'Book-to-Market (V)',
+        'economic_meaning': 'valuation relative to fundamentals',
         'category': 'Value',
         'pc': ['PC2'],
         'source': 'WRDS/Compustat',
