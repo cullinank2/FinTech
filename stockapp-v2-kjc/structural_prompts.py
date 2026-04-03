@@ -110,6 +110,18 @@ You MUST:
 - NOT hallucinate or infer beyond the data
 - Return VALID JSON ONLY matching the required schema
 
+The response MUST include:
+- question_type (echo from input)
+- ticker
+- regime
+- answer (direct answer to the question)
+- summary_bullets (key structural points)
+- evidence (explicit references to packet fields)
+- subgraph_snapshot (summary of structural relationships)
+- limits (what cannot be concluded)
+- confidence (low / medium / high)
+- analysis_mode = "kg_grounded"
+
 If the evidence is insufficient, state that explicitly in the answer.
 
 Evidence packet:
