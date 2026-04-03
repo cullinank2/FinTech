@@ -2319,6 +2319,20 @@ def main():
 
                     st.info(summary_text)
 
+                    # --- Factor Driver Insight (Top PCA Contributors) ---
+                    try:
+                        loadings = st.session_state.get("pca_loadings")
+
+                        if loadings is not None:
+                            pc1_loadings = loadings["PC1"].abs().sort_values(ascending=False)
+                            top_factors = pc1_loadings.head(3).index.tolist()
+
+                            st.caption(
+                                "Primary structural drivers: " + ", ".join(top_factors)
+                            )
+                    except Exception:
+                        pass
+
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
 
                     st.dataframe(
