@@ -2319,12 +2319,14 @@ def main():
 
                     st.info(summary_text)
 
-                    # --- Factor Driver Insight (Fallback using factor values) ---
+                    # --- Factor Driver Insight (Debug) ---
                     try:
                         factor_cols = [
                             c for c in pca_row.index
                             if c not in ["ticker", "cluster", "Quadrant", "PC1", "PC2", "PC3"]
                         ]
+
+                        st.caption(f"DEBUG factor column count: {len(factor_cols)}")
 
                         if factor_cols:
                             top_factors = (
@@ -2338,8 +2340,10 @@ def main():
                             st.caption(
                                 "Primary structural drivers: " + ", ".join(top_factors)
                             )
-                    except Exception:
-                        pass
+                        else:
+                            st.caption("DEBUG: no factor columns found in pca_row")
+                    except Exception as e:
+                        st.caption(f"DEBUG factor driver error: {e}")
 
                     display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
 
