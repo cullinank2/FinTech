@@ -392,14 +392,15 @@ def generate_factor_highlights(
             )
 
     lines = [
-        "**🟢 Top 3 Strengths** *(highest percentile ranks vs. GICS sector peers)*",
+        f"**Factor Positioning Summary:** {ticker}'s clearest edge is **{top_feat}** "
+        f"({_ordinal(top_pct)} percentile), while its most notable drag is "
+        f"**{bot_feat}** ({_ordinal(bot_pct)} percentile).",
+        "",
+        "**Key Strengths** *(highest percentile ranks vs. GICS sector peers)*",
         *[_row(f, p) for f, p in strengths],
         "",
-        "**🔴 Top 3 Weaknesses** *(lowest percentile ranks vs. GICS sector peers)*",
+        "**Key Weaknesses** *(lowest percentile ranks vs. GICS sector peers)*",
         *[_row(f, p) for f, p in weaknesses],
-        "",
-        f"*{ticker}'s clearest edge is **{top_feat}** ({_ordinal(top_pct)} percentile). "
-        f"Its most notable drag is **{bot_feat}** ({_ordinal(bot_pct)} percentile).*",
     ]
 
 # --- NEW: Cross-link strengths/weaknesses with structural positioning ---
