@@ -334,7 +334,10 @@ def generate_factor_highlights(
             "**🧭 Structural Drivers** *(top PCA-aligned forces shaping current position)*"
         ]
         for driver in structural_drivers[:3]:
-            factor_name = driver.get("factor_name") or driver.get("display_name") or "Unknown Driver"
+            factor_key = driver.get("factor_name")
+            factor_name = driver.get("display_name") or factor_key or "Unknown Driver"
+
+            economic_meaning = FEATURE_ECONOMIC_MEANINGS.get(factor_key, factor_name)
             direction = driver.get("direction", "").strip().lower()
             strength = driver.get("strength", "").strip().lower()
 
