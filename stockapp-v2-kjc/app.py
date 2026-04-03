@@ -2217,52 +2217,50 @@ def main():
                     run_structural = st.button("Analyze", key="structural_btn")
 
                 if run_structural and structural_question:
-
-                with st.spinner("Running KG-backed structural analysis..."):
-
-                    try:
-                        evidence_packet = build_structural_evidence_packet(
-                            kg=kg,
-                            ticker=ticker,
-                            regime=kg_regime,
-                            question_type="structural_drift",
-                        )
-
-                        if run_structural_analysis is not None:
-                            result = run_structural_analysis(
-                                evidence_packet=evidence_packet,
-                                llm_callable=chatbot.call_llm_structural,
+                    with st.spinner("Running KG-backed structural analysis..."):
+                        try:
+                            evidence_packet = build_structural_evidence_packet(
+                                kg=kg,
+                                ticker=ticker,
+                                regime=kg_regime,
+                                question_type="structural_drift",
                             )
-                        else:
-                            st.error("Structural Analyst unavailable.")
-                            result = None
-                        if result:
-                            st.markdown("### 📊 Structural Answer")
-                            st.write(result.get("answer", "No answer returned."))
 
-                            if result.get("summary_bullets"):
-                                st.markdown("### 🔑 Key Points")
-
-                                # Deduplicate bullets (preserve order)
-                                unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
-
-                                for b in unique_bullets:
-                                    st.markdown(f"- {b}")
-
-                        with st.expander("🔍 Evidence"):
-                            for e in result.get("evidence", []):
-                                st.markdown(
-                                    f"- **{e.get('source_name')}**: {e.get('fact')}"
+                            if run_structural_analysis is not None:
+                                result = run_structural_analysis(
+                                    evidence_packet=evidence_packet,
+                                    llm_callable=chatbot.call_llm_structural,
                                 )
+                            else:
+                                st.error("Structural Analyst unavailable.")
+                                result = None
 
-                        with st.expander("⚠️ Limits"):
-                            st.write(result.get("limits", "None stated"))
+                            if result:
+                                st.markdown("### 📊 Structural Answer")
+                                st.write(result.get("answer", "No answer returned."))
 
-                        st.caption(f"Confidence: {result.get('confidence')}")
+                                if result.get("summary_bullets"):
+                                    st.markdown("### 🔑 Key Points")
 
-                    except Exception as e:
-                        st.error(f"Structural analysis failed: {str(e)}")
+                                    # Deduplicate bullets (preserve order)
+                                    unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
 
+                                    for b in unique_bullets:
+                                        st.markdown(f"- {b}")
+
+                                with st.expander("🔍 Evidence"):
+                                    for e in result.get("evidence", []):
+                                        st.markdown(
+                                            f"- **{e.get('source_name')}**: {e.get('fact')}"
+                                        )
+
+                                with st.expander("⚠️ Limits"):
+                                    st.write(result.get("limits", "None stated"))
+
+                                st.caption(f"Confidence: {result.get('confidence')}")
+
+                        except Exception as e:
+                            st.error(f"Structural analysis failed: {str(e)}")
 
 
     # Footer
