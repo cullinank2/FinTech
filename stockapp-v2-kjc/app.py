@@ -2108,10 +2108,7 @@ def main():
             st.session_state.raw_data,
             pca_row
         )
-
-        with stock_tab1:
-            st.markdown("### 📌 Overview")
-    
+  
         # Get quadrant peers (GICS-filtered universe for consistency)
         gics_filtered_pca = filter_by_gics_sector(
             pca_df,
