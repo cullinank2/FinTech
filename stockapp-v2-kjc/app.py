@@ -2223,24 +2223,19 @@ def main():
                         .head(15)
                     )
 
-                    # --- Distance Percentile (Crowding Signal) ---
-                    all_distances = peer_universe["distance"]
-
-                    target_distance = peer_universe[
-                        peer_universe["ticker"] == ticker
-                    ]["distance"].values[0]
-
-                    percentile = (all_distances < target_distance).mean() * 100
-
                     # Interpret crowding
                     if percentile <= 10:
                         crowd_label = "🔴 Highly Crowded"
+                        crowd_text = "This stock sits in a densely packed region of PCA space — elevated crowding risk."
                     elif percentile <= 40:
                         crowd_label = "🟠 Moderately Crowded"
+                        crowd_text = "This stock has meaningful structural proximity to peers."
                     elif percentile <= 70:
                         crowd_label = "🟡 Neutral"
+                        crowd_text = "This stock is neither especially crowded nor especially isolated."
                     else:
                         crowd_label = "🟢 Structurally Isolated"
+                        crowd_text = "This stock is more structurally differentiated from peers."
 
                     st.metric(
                         "Structural Crowding Percentile",
@@ -2249,62 +2244,29 @@ def main():
                     )
 
                     st.caption(crowd_label)
+                    st.caption(crowd_text)
 
-                    display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
+                    # --- Peer Dispersion Metric ---
+                    avg_peer_distance = nearest_peers["distance"].mean()
 
-                    st.dataframe(
-                        nearest_peers[display_cols],
-                        width="stretch",
-                        hide_index=True
+                    st.metric(
+                        "Peer Dispersion (Avg Distance)",
+                        f"{avg_peer_distance:.4f}",
+                        help="Lower = tightly clustered peers (higher fragility)"
                     )
-                else:
-                    st.info("Selected stock not found in PCA dataset.")
 
-            except Exception as e:
-                st.warning(f"Nearest peer calculation unavailable: {e}")
+                    if avg_peer_distance < 0.05:
+                        dispersion_label = "🔴 Very Tight Cluster"
+                        dispersion_text = "Peers are extremely close — elevated fragility and crowding risk."
+                    elif avg_peer_distance < 0.15:
+                        dispersion_label = "🟠 Moderate Dispersion"
+                        dispersion_text = "Peers are somewhat clustered with moderate structural similarity."
+                    else:
+                        dispersion_label = "🟢 Broadly Distributed"
+                        dispersion_text = "Peers are more spread out — lower structural fragility."
 
-            st.markdown("#### Quadrant Peer Preview")
-
-            if quadrant_peers is not None and not quadrant_peers.empty:
-                peer_preview_cols = [c for c in ["ticker", "Quadrant", "cluster", "PC1", "PC2"] if c in quadrant_peers.columns]
-                st.dataframe(
-                    quadrant_peers[peer_preview_cols].head(25),
-                    width="stretch",
-                    hide_index=True
-                )
-            else:
-                st.info("No quadrant peers available for this stock under the current filter.")
-
-        # 🧾 Narrative Tab
-        with stock_tab4:
-            st.markdown("### 🧾 Narrative")
-
-            render_narrative_section(ticker, pca_row, narrative_peers, gics_sector)
-
-        # 🧠 AI / Structural Tab — Chatbot
-        with stock_tab5:
-            st.markdown("### 🤖 AI Analysis Assistant")
-
-            render_chatbot_section(
-                ticker, permno, cluster, quadrant, pc1, pc2,
-                pca_row,
-                percentiles,
-                len(quadrant_peers),
-                cluster_summary,
-                total_universe=len(gics_filtered_pca)
-            )
-
-        # 🧠 AI / Structural Tab — Structural Analyst
-        with stock_tab5:
-
-            st.markdown("---")
-            st.markdown("## 🧠 Structural Analyst (KG-Backed, No Hallucination)")
-
-
-            # ============================================================
-            # STRUCTURAL ANALYST (KG-GROUNDED, ZERO-HALLUCINATION MODE)
-            # ============================================================
-
+                    st.caption(dispersion_label)
+                    st.caption(dispersion_text)
             # Lazy import to avoid Streamlit module cache issues
             try:
                 from structural_analyst import run_structural_analysis
