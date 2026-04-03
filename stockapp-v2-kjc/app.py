@@ -2578,21 +2578,20 @@ def main():
                 if run_structural and structural_question:
                     with st.spinner("Running KG-backed structural analysis..."):
                         try:
-                            evidence_packet = build_structural_evidence_packet(
-                                kg=kg,
-                                ticker=ticker,
-                                regime=kg_regime,
-                                question_type="structural_drift",
-                            )
+                            narrative_subgraph = st.session_state.get("last_narrative_subgraph")
 
-                            if run_structural_analysis is not None:
-                                result = run_structural_analysis(
-                                    evidence_packet=evidence_packet,
-                                    llm_callable=chatbot.call_llm_structural,
-                                )
-                            else:
-                                st.error("Structural Analyst unavailable.")
+                            if not narrative_subgraph:
+                                st.error("No narrative-grounded KG subgraph is available for structural analysis.")
                                 result = None
+                            else:
+                                if run_structural_analysis is not None:
+                                    result = run_structural_analysis(
+                                        evidence_packet=narrative_subgraph,
+                                        llm_callable=chatbot.call_llm_structural,
+                                    )
+                                else:
+                                    st.error("Structural Analyst unavailable.")
+                                    result = None
 
                             if result:
                                 st.markdown("### 📊 Structural Answer")
