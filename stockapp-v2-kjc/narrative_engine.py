@@ -361,8 +361,8 @@ def generate_factor_highlights(
                     intensity = "a secondary influence"
 
                 structural_driver_lines.append(
-                    f"- **{factor_name}** is {intensity}, {interpretation} within the current PCA positioning."
-                )
+                    f"- **{factor_name}** ({economic_meaning}) is {intensity}, {interpretation} within the current PCA positioning."
+                    )
             else:
                 structural_driver_lines.append(
                     f"- **{factor_name}** is influencing current structural positioning."
