@@ -106,6 +106,11 @@ def run_structural_analysis(
             raw_text = str(raw)
         parsed = _parse_response_json(raw_text, evidence_packet)
 
+        # Ensure required structural fields exist BEFORE validation
+        parsed["question_type"] = evidence_packet.get("question_type")
+        parsed["ticker"] = evidence_packet.get("ticker")
+        parsed["regime"] = evidence_packet.get("regime")
+
         # ------------------------------------------------------------
         # Normalize model output to match strict schema
         # ------------------------------------------------------------
