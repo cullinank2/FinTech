@@ -2509,7 +2509,7 @@ def main():
                                     "directional_score": directional_score,
                                     "pc1_loading": pc1_loading,
                                     "pc2_loading": pc2_loading,
-                                })
+                                }) 
 
                                 st.markdown(
                                     f"- **{display_name}**: {direction_word}, {strength} influence"
