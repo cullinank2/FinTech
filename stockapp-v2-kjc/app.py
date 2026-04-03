@@ -2319,13 +2319,21 @@ def main():
 
                     st.info(summary_text)
 
-                    # --- Factor Driver Insight (Top PCA Contributors) ---
+                    # --- Factor Driver Insight (Fallback using factor values) ---
                     try:
-                        loadings = st.session_state.get("pca_loadings")
+                        factor_cols = [
+                            c for c in pca_row.index
+                            if c not in ["ticker", "cluster", "Quadrant", "PC1", "PC2", "PC3"]
+                        ]
 
-                        if loadings is not None:
-                            pc1_loadings = loadings["PC1"].abs().sort_values(ascending=False)
-                            top_factors = pc1_loadings.head(3).index.tolist()
+                        if factor_cols:
+                            top_factors = (
+                                pca_row[factor_cols]
+                                .abs()
+                                .sort_values(ascending=False)
+                                .head(3)
+                                .index.tolist()
+                            )
 
                             st.caption(
                                 "Primary structural drivers: " + ", ".join(top_factors)
