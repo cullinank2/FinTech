@@ -80,7 +80,12 @@ Output rules:
   - node_count
   - edge_count
   - included_node_ids
-- Return JSON only. No markdown. No code fence. No prose outside JSON.
+- Return JSON only. No markdown. No code fence. No prose outside JSON.trimmed_packet = {
+    k: v for k, v in evidence_packet.items()
+    if k not in ["serialized_subgraph"]
+}
+
+packet_json = json.dumps(trimmed_packet, separators=(",", ":"), sort_keys=True)
 """.strip()
 
 
@@ -99,7 +104,11 @@ def build_structural_user_prompt(evidence_packet: Dict[str, Any]) -> str:
         User prompt string for the model
     """
     question_type = evidence_packet.get("question_type", "unknown")
-    packet_json = json.dumps(evidence_packet, separators=(",", ":"), sort_keys=True)
+    trimmed_packet = {
+        k: v for k, v in evidence_packet.items()
+        if k not in ["serialized_subgraph"]
+    }
+    packet_json = json.dumps(trimmed_packet, separators=(",", ":"), sort_keys=True)
 
     return f"""
 You are a Structural Analyst operating under strict constraints.
