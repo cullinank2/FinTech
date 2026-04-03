@@ -1589,7 +1589,11 @@ def render_narrative_section(
     if current_view == '🎯 Cluster Plot':
         st.markdown(sections['summary'])
     elif current_view == '📊 Factor Analysis':
-        st.markdown(sections['factors'])
+        factors_section = sections['factors']
+        if isinstance(factors_section, dict):
+            st.markdown(factors_section.get('text', ''))
+        else:
+            st.markdown(factors_section)
     elif current_view == '🕐 2D or 3D Time-Lapse':
         st.markdown(sections['trajectory'])
     elif current_view in ['👥 Quadrant Peers', '🌐 3D Quadrant Peers']:
@@ -1622,9 +1626,23 @@ def render_narrative_section(
                 normalized_refs = []
 
             st.session_state['last_narrative_kg_refs'] = normalized_refs
+
+            # --- NEW: Build KG subgraph from narrative references ---
+            try:
+                if kg is not None and normalized_refs:
+                    subgraph = serialize_subgraph(
+                        kg=kg,
+                        nodes=normalized_refs
+                    )
+                    st.session_state['last_narrative_subgraph'] = subgraph
+                else:
+                    st.session_state['last_narrative_subgraph'] = None
+            except Exception:
+                st.session_state['last_narrative_subgraph'] = None
         else:
             st.markdown(factors_section)
             st.session_state['last_narrative_kg_refs'] = []
+            st.session_state['last_narrative_subgraph'] = None
 
     if sections.get('structural') and kg is not None:
         with st.expander("🧠 Structural Context (Knowledge Graph — Tier 1)", expanded=False):
