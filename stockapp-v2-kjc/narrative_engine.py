@@ -328,6 +328,24 @@ def generate_factor_highlights(
 
     regime_notes = _get_factor_regime_notes(kg, current_regime)
 
+    structural_driver_lines = []
+    if structural_drivers:
+        structural_driver_lines = [
+            "**🧭 Structural Drivers** *(top PCA-aligned forces shaping current position)*"
+        ]
+        for driver in structural_drivers[:3]:
+            factor_name = driver.get("factor_name", "Unknown Driver")
+            direction = driver.get("direction", "").strip().lower()
+            strength = driver.get("strength", "").strip().lower()
+
+            descriptor_parts = [part for part in [strength, direction] if part]
+            descriptor = " ".join(descriptor_parts).strip()
+
+            if descriptor:
+                structural_driver_lines.append(f"- **{factor_name}** ({descriptor})")
+            else:
+                structural_driver_lines.append(f"- **{factor_name}**")
+
     lines = [
         "**🟢 Top 3 Strengths** *(highest percentile ranks vs. GICS sector peers)*",
         *[_row(f, p) for f, p in strengths],
