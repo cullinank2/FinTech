@@ -1535,7 +1535,7 @@ def render_narrative_section(
             loadings            = loadings,
             gics_sector         = gics_sector,
             show_pc3            = show_pc3,
-            structural_drivers  = st.session_state.get("current_structural_drivers"),
+            structural_drivers  = structural_drivers,
             kg                  = kg,
             current_regime      = kg_regime,
         )
