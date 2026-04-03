@@ -2341,6 +2341,10 @@ def main():
                                 loadings_df["PC1"].abs() + loadings_df["PC2"].abs()
                             )
 
+                            # DEBUG — inspect loadings structure
+                            # st.write(loadings_df.head())
+                            # st.write(loadings_df.columns)
+
                             top_factors = (
                                 loadings_df["importance"]
                                 .sort_values(ascending=False)
