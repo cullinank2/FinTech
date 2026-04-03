@@ -95,36 +95,41 @@ _FEATURE_METADATA = {
     },
     GPROF: {
         'display': 'Gross Profitability (Q)',
-        'economic_meaning': 'balance sheet leverage and financial risk burden',
+        'economic_meaning': 'core operating profitability before financing effects',
         'category': 'Quality',
         'pc': ['PC3'],
         'source': 'WRDS/Compustat',
     },
     DEBT_ASSETS: {
         'display': 'Debt-to-Assets(FS)',
+        'economic_meaning': 'balance sheet leverage and financial risk burden',
         'category': 'Financial Strength',
         'pc': ['PC3'],
         'source': 'WRDS/Compustat',
     },
     CASH_DEBT: {
         'display': 'Cash-to-Debt (FS)',
+        'economic_meaning': 'liquidity buffer relative to outstanding debt',
         'category': 'Financial Strength',
         'pc': ['PC1'],
         'source': 'WRDS/Compustat',
     },
     MOMENTUM: {
         'display': '12-Mo. Momentum (R)',
+        'economic_meaning': 'price trend persistence and investor sentiment',
         'category': 'Momentum',
         'source': 'WRDS/CRSP',
     },
     VOL: {
         'display': '60-Day Volatility (R)',
+        'economic_meaning': 'recent price variability and realized risk',
         'category': 'Risk/Volatility',
         'pc': ['PC3'],
         'source': 'WRDS/CRSP',
     },
     LIQUIDITY: {
         'display': 'Liquidity (R)',
+        'economic_meaning': 'trading capacity and ease of entering or exiting positions',
         'category': 'Liquidity',
         'source': 'WRDS/CRSP',
     }
