@@ -335,9 +335,7 @@ def generate_factor_highlights(
     structural_driver_lines = []
     structural_driver_summary = ""
     if structural_drivers:
-        structural_driver_lines = [
-            "**🧭 Structural Drivers** *(top PCA-aligned forces shaping current position)*"
-        ]
+        structural_driver_lines = []
 
         summary_parts = []
 
