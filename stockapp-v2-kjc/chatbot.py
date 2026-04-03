@@ -578,8 +578,8 @@ peer clusters), prefer citing these KG facts over general commentary.
 
             return output_text.strip()
 
-        except Exception:
-            return ""
+        except Exception as e:
+            return f"ERROR: {str(e)}"
 
 def create_chatbot(api_key: Optional[str] = None) -> StockAnalysisChatbot:
     """
