@@ -2000,19 +2000,18 @@ def main():
                                 st.session_state["crowding_df"] = crowding_df
                                 st.session_state["crowding_results"] = crowding_df
 
-                                # Build KG instance for Tier 1 narrative + Tier 2 chatbot
-                                try:
-                                    from kg_builder import build_kg
-                                    from kg_interface import KnowledgeGraph
-                                    kg_result = build_kg(
-                                        period_data          = st.session_state.get("period_scores"),
-                                        migration_df         = st.session_state.get("migration_wide"),
-                                        include_equity_nodes = True,
-                                    )
-                                    st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
-                                    st.session_state["kg_current_regime"] = "Disinflation"
-                                except Exception:
-                                    pass
+                                # FORCE rebuild KG after period_scores is created (critical for Tier 2)
+                                from kg_builder import build_kg
+                                from kg_interface import KnowledgeGraph
+
+                                kg_result = build_kg(
+                                    period_data=st.session_state.get("period_scores"),
+                                    migration_df=st.session_state.get("migration_wide"),
+                                    include_equity_nodes=True,
+                                )
+
+                                st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
+                                st.session_state["kg_current_regime"] = "Disinflation"
 
                                 if not crowding_df.empty:
                                     # Metric cards — one per regime
