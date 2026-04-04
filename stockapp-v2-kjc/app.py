@@ -350,7 +350,7 @@ def load_and_process_data():
         return raw_data, processed_data, pca_df, pca_model, kmeans_model, scaler, loadings, loadings_df, None
         
     except Exception as e:
-        return None, None, None, None, None, None, None, str(e)
+        return None, None, None, None, None, None, None, None, str(e)
 
 
 # =============================================================================
@@ -711,8 +711,6 @@ def call_structural_llm(system_prompt: str, user_prompt: str) -> str:
     )
 
     return response.output_text
-
-    return response.choices[0].message.content
 
 
 def render_main_header():
