@@ -1694,7 +1694,7 @@ def render_chatbot_section(
 
             # DEBUG
             st.write("KG Subgraph:", kg_subgraph)
-            
+
         except Exception:
             kg_subgraph = None
     chatbot.set_stock_context(
@@ -2616,10 +2616,10 @@ def main():
                 if run_structural and structural_question:
                     with st.spinner("Running KG-backed structural analysis..."):
                         try:
-                            evidence_packet = st.session_state.get("last_narrative_subgraph")
+                            evidence_packet = st.session_state.get("stock_subgraph")
 
                             if not evidence_packet:
-                                st.error("No narrative-grounded KG subgraph is available for structural analysis.")
+                                st.error("No stock-centered KG subgraph is available for structural analysis.")
                                 result = None
                             else:
                                 if run_structural_analysis is not None:
@@ -2633,7 +2633,7 @@ def main():
 
                             if result:
                                 st.markdown("### 📊 Structural Answer")
-                                st.caption("Grounded only in narrative-derived KG evidence.")
+                                st.caption("Grounded only in stock-centered KG structural evidence.")
                                 st.write(result.get("answer", "No answer returned."))
 
                                 if result.get("summary_bullets"):
