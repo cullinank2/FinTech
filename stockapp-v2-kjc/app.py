@@ -2643,7 +2643,9 @@ def main():
                             if result:
                                 st.markdown("## 🧠 Structural Analysis (KG-Grounded AI)")
                                 st.caption("LLM-based interpretation grounded strictly in Knowledge Graph evidence (Tier 2).")
-                                st.write(result.get("answer", "No answer returned."))
+
+                                structural_answer = result.get("answer", "No answer returned.")
+                                st.markdown(f"**Assessment:** {structural_answer}")
 
                                 if result.get("summary_bullets"):
                                     st.markdown("### 🔑 Key Points")
