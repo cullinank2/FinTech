@@ -2613,7 +2613,7 @@ def main():
                     run_structural = st.button(
                         "Analyze",
                         key="structural_btn",
-                        disabled=not bool(st.session_state.get("stock_subgraph"))
+                        disabled=False
                     )
 
                 if run_structural and structural_question:
