@@ -2660,6 +2660,29 @@ def main():
                                         else:
                                             st.markdown(f"- {str(e)}")
 
+                                with st.expander("🕸️ Subgraph Snapshot"):
+                                    snapshot = result.get("subgraph_snapshot", {})
+
+                                    if isinstance(snapshot, dict):
+                                        node_count = snapshot.get("node_count", 0)
+                                        edge_count = snapshot.get("edge_count", 0)
+                                        included_node_ids = snapshot.get("included_node_ids", [])
+
+                                        snap_col1, snap_col2 = st.columns(2)
+                                        with snap_col1:
+                                            st.metric("Nodes", node_count)
+                                        with snap_col2:
+                                            st.metric("Edges", edge_count)
+
+                                        if included_node_ids:
+                                            st.markdown("**Included Node IDs**")
+                                            for node_id in included_node_ids:
+                                                st.markdown(f"- `{node_id}`")
+                                        else:
+                                            st.caption("No included node IDs were returned.")
+                                    else:
+                                        st.caption("Subgraph snapshot unavailable.")
+
                                 with st.expander("⚠️ Limits"):
                                     limits = result.get("limits", [])
 
