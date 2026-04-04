@@ -2661,7 +2661,13 @@ def main():
                                             st.markdown(f"- {str(e)}")
 
                                 with st.expander("⚠️ Limits"):
-                                    st.write(result.get("limits", "None stated"))
+                                    limits = result.get("limits", [])
+
+                                    if isinstance(limits, list):
+                                        for l in limits:
+                                            st.markdown(f"- {l}")
+                                    else:
+                                        st.markdown(f"- {str(limits)}")
 
                                 st.caption(f"Confidence: {result.get('confidence')}")
 
