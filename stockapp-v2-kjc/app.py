@@ -2619,9 +2619,19 @@ def main():
                 if run_structural and structural_question:
                     with st.spinner("Running KG-backed structural analysis..."):
                         try:
-                            evidence_packet = st.session_state.get("stock_subgraph")
+                            # Build subgraph directly (no dependency on chatbot tab)
+                            evidence_packet = None
+                            try:
+                                evidence_packet = kg.serialize_subgraph([
+                                    f"regime:{kg_regime}",
+                                    f"stock:{ticker}",
+                                    f"quadrant:{quadrant}",
+                                    f"cluster:{cluster}",
+                                ])
+                            except Exception:
+                                evidence_packet = None
 
-                            if not evidence_packet:
+                            if not evidence_packet or not evidence_packet.get("nodes"):
                                 st.error("No stock-centered KG subgraph is available for structural analysis.")
                                 result = None
                             else:
