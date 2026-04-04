@@ -1695,6 +1695,9 @@ def render_chatbot_section(
             # DEBUG
             st.write("KG Subgraph:", kg_subgraph)
 
+            # STORE FOR STRUCTURAL ANALYST
+            st.session_state["stock_subgraph"] = kg_subgraph
+
         except Exception:
             kg_subgraph = None
     chatbot.set_stock_context(
