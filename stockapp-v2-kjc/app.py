@@ -2641,8 +2641,8 @@ def main():
 
                             # Render result
                             if result:
-                                st.markdown("## 📊 Structural Risk Assessment")
-                                st.caption("Deterministic analysis derived from Knowledge Graph structural evidence.")
+                                st.markdown("## 🧠 Structural Analysis (KG-Grounded AI)")
+                                st.caption("LLM-based interpretation grounded strictly in Knowledge Graph evidence (Tier 2).")
                                 st.write(result.get("answer", "No answer returned."))
 
                                 if result.get("summary_bullets"):
