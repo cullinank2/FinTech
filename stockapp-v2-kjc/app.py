@@ -2619,28 +2619,30 @@ def main():
                 if run_structural and structural_question:
                     with st.spinner("Running KG-backed structural analysis..."):
                         try:
-                            # Build subgraph directly (no dependency on chatbot tab)
+                            # Build subgraph directly
                             subgraph = None
-                        try:
-                            subgraph = kg.serialize_subgraph([
-                                f"regime:{kg_regime}",
-                                f"stock:{ticker}",
-                                f"quadrant:{quadrant}",
-                                f"cluster:{cluster}",
-                            ])
-                        except Exception:
-                            subgraph = None
+                            try:
+                                subgraph = kg.serialize_subgraph([
+                                    f"regime:{kg_regime}",
+                                    f"stock:{ticker}",
+                                    f"quadrant:{quadrant}",
+                                    f"cluster:{cluster}",
+                                ])
+                            except Exception:
+                                subgraph = None
 
-                        # Wrap into Structural Analyst evidence packet
-                        evidence_packet = None
-                        if subgraph and subgraph.get("nodes"):
-                            evidence_packet = {
-                                "question_type": "structural_drift",
-                                "ticker": ticker,
-                                "regime": kg_regime,
-                                "subgraph_snapshot": subgraph,
-                            }
-                            if not evidence_packet or not evidence_packet.get("nodes"):
+                            # Wrap into Structural Analyst evidence packet
+                            evidence_packet = None
+                            if subgraph and subgraph.get("nodes"):
+                                evidence_packet = {
+                                    "question_type": "structural_drift",
+                                    "ticker": ticker,
+                                    "regime": kg_regime,
+                                    "subgraph_snapshot": subgraph,
+                                }
+
+                            # Validate evidence
+                            if not evidence_packet:
                                 st.error("No stock-centered KG subgraph is available for structural analysis.")
                                 result = None
                             else:
@@ -2653,6 +2655,7 @@ def main():
                                     st.error("Structural Analyst unavailable.")
                                     result = None
 
+                            # Render result
                             if result:
                                 st.markdown("### 📊 Structural Answer")
                                 st.caption("Grounded only in stock-centered KG structural evidence.")
@@ -2660,10 +2663,7 @@ def main():
 
                                 if result.get("summary_bullets"):
                                     st.markdown("### 🔑 Key Points")
-
-                                    # Deduplicate bullets (preserve order)
                                     unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
-
                                     for b in unique_bullets:
                                         st.markdown(f"- {b}")
 
@@ -2680,7 +2680,6 @@ def main():
 
                         except Exception as e:
                             st.error(f"Structural analysis failed: {str(e)}")
-
 
     # Footer
     st.markdown("---")
