@@ -2653,9 +2653,12 @@ def main():
 
                                 with st.expander("🔍 Evidence"):
                                     for e in result.get("evidence", []):
-                                        st.markdown(
-                                            f"- **{e.get('source_name')}**: {e.get('fact')}"
-                                        )
+                                        if isinstance(e, dict):
+                                            source = e.get("source_name", "Unknown Source")
+                                            fact = e.get("fact", "")
+                                            st.markdown(f"- **{source}**: {fact}")
+                                        else:
+                                            st.markdown(f"- {str(e)}")
 
                                 with st.expander("⚠️ Limits"):
                                     st.write(result.get("limits", "None stated"))
