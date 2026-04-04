@@ -1821,6 +1821,30 @@ def main():
     if "analysis_scope" not in st.session_state:
         st.session_state.analysis_scope = "Universe / Portfolio Level"
 
+    # ============================================================
+    # GLOBAL KG BUILD (SHARED ACROSS ALL MODES)
+    # ============================================================
+
+    if "kg_instance" not in st.session_state or st.session_state.kg_instance is None:
+        try:
+            from kg_builder import build_kg
+            from kg_interface import KnowledgeGraph
+
+            kg_result = build_kg(
+                period_data=st.session_state.get("period_scores"),
+                migration_df=st.session_state.get("migration_wide"),
+                include_equity_nodes=True,
+            )
+
+            st.session_state.kg_instance = KnowledgeGraph(kg_result.graph)
+
+            if "kg_current_regime" not in st.session_state:
+                st.session_state.kg_current_regime = "Disinflation"
+
+        except Exception as e:
+            st.warning(f"KG build failed: {e}")
+            st.session_state.kg_instance = None
+
     # Render sidebar AFTER data is loaded so counts and filters work on first click
     render_sidebar()
 
