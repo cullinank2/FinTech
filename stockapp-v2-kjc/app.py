@@ -1821,6 +1821,10 @@ def main():
     if "analysis_scope" not in st.session_state:
         st.session_state.analysis_scope = "Universe / Portfolio Level"
 
+    # DEBUG: Check if period_scores exists BEFORE KG build
+    st.write("DEBUG period_scores exists:", "period_scores" in st.session_state)
+    st.write("DEBUG period_scores value:", st.session_state.get("period_scores"))
+        
     # ============================================================
     # GLOBAL KG BUILD (SHARED ACROSS ALL MODES)
     # ============================================================
@@ -1929,7 +1933,7 @@ def main():
 
                             with st.expander("📖 How to read Procrustes"):
                                 st.markdown("""
-                                - **< 0.05** 🟢 Factor structure nearly identical across periods.
+                                - **< 0.05** 🟢 Fa\tor structure nearly identical across periods.
                                 - **0.05–0.15** 🟡 Moderate shift; broadly similar structure.
                                 - **0.15–0.30** 🟠 Meaningful regime change; factors rewiring.
                                 - **> 0.30** 🔴 Major structural break; treat as distinct regimes.
