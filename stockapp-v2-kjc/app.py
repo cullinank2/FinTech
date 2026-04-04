@@ -2613,27 +2613,17 @@ def main():
                 if run_structural and structural_question:
                     with st.spinner("Running KG-backed structural analysis..."):
                         try:
-                            # Build subgraph directly
-                            subgraph = None
-                            try:
-                                subgraph = kg.serialize_subgraph([
-                                    f"regime:{kg_regime}",
-                                    f"stock:{ticker}",
-                                    f"quadrant:{quadrant}",
-                                    f"cluster:{cluster}",
-                                ])
-                            except Exception:
-                                subgraph = None
-
-                            # Wrap into Structural Analyst evidence packet
+                            # Build canonical KG evidence packet
                             evidence_packet = None
-                            if subgraph and subgraph.get("nodes"):
-                                evidence_packet = {
-                                    "question_type": "structural_drift",
-                                    "ticker": ticker,
-                                    "regime": kg_regime,
-                                    "subgraph_snapshot": subgraph,
-                                }
+                            try:
+                                evidence_packet = build_structural_evidence_packet(
+                                    kg=kg,
+                                    ticker=ticker,
+                                    regime=kg_regime,
+                                    question_type="structural_drift",
+                                )
+                            except Exception:
+                                evidence_packet = None
 
                             # Validate evidence
                             if not evidence_packet:
