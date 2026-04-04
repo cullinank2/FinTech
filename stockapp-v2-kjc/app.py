@@ -1688,7 +1688,13 @@ def render_chatbot_section(
             kg_subgraph = kg.serialize_subgraph([
                 f"regime:{kg_regime}",
                 f"stock:{ticker}",
+                f"quadrant:{quadrant}",
+                f"cluster:{cluster}",
             ])
+
+            # DEBUG
+            st.write("KG Subgraph:", kg_subgraph)
+            
         except Exception:
             kg_subgraph = None
     chatbot.set_stock_context(
