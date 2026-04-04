@@ -1827,10 +1827,6 @@ def main():
     # Initialize analysis scope (Phase 1)
     if "analysis_scope" not in st.session_state:
         st.session_state.analysis_scope = "Universe / Portfolio Level"
-
-    # DEBUG: Check if period_scores exists BEFORE KG build
-    st.write("DEBUG period_scores exists:", "period_scores" in st.session_state)
-    st.write("DEBUG period_scores value:", st.session_state.get("period_scores"))
         
     # ============================================================
     # GLOBAL KG BUILD (SHARED ACROSS ALL MODES)
