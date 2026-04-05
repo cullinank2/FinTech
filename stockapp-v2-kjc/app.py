@@ -1629,8 +1629,22 @@ def render_narrative_section(
             try:
                 if ticker:
                     anchors.append(f"stock:{ticker}")
+
                 if kg_regime:
                     anchors.append(f"regime:{kg_regime}")
+
+                # --- NEW: include current quadrant ---
+                quadrant = st.session_state.get("current_quadrant")
+                if quadrant:
+                    anchors.append(f"quadrant:{quadrant}")
+
+                # --- NEW: include structural driver factors ---
+                drivers = st.session_state.get("current_structural_drivers", [])
+                for d in drivers[:3]:
+                    fname = d.get("factor_name")
+                    if fname:
+                        anchors.append(f"factor:{fname.lower().replace(' ', '_')}")
+
             except Exception:
                 pass
 
