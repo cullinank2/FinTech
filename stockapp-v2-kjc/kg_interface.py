@@ -965,7 +965,7 @@ class KnowledgeGraph:
                 "seed_node_ids": seed_nodes,
                 "included_node_ids": valid,
                 "expansion_hops": 1,
-                "max_neighbors_per_seed": 8,
+                "max_neighbors_per_seed": MAX_NEIGHBORS_PER_SEED,
                 "node_count": len(serialized_nodes),
                 "edge_count": len(serialized_edges),
                 "missing_nodes": missing,
