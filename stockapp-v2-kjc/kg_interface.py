@@ -875,9 +875,29 @@ class KnowledgeGraph:
 
         for nid in seed_nodes:
             try:
-                neighbors = sorted(
-    set(self._G.successors(nid)) | set(self._G.predecessors(nid))
-)
+                neighbors = list(
+                    set(self._G.successors(nid)) | set(self._G.predecessors(nid))
+                )
+
+                # --- NEW: prioritize structurally important node types ---
+                def _neighbor_priority(n):
+                    data = self._G.nodes[n]
+                    nt = data.get("node_type", "")
+
+                    priority_map = {
+                        "cluster": 0,
+                        "regime": 1,
+                        "quadrant": 2,
+                        "factor": 3,
+                        "category": 4,
+                        "axis": 5,
+                        "mechanism": 6,
+                        "stock": 7,
+                    }
+
+                    return priority_map.get(nt, 99)
+
+                neighbors = sorted(neighbors, key=_neighbor_priority)
  
                 filtered_neighbors = []
                 for neighbor in neighbors:
