@@ -2703,7 +2703,18 @@ def main():
                                     else:
                                         st.markdown(f"- {str(limits)}")
 
-                                st.caption(f"Confidence: {result.get('confidence')}")
+                                confidence = str(result.get("confidence", "unknown")).lower()
+
+                                if confidence == "high":
+                                    confidence_label = "🟢 High"
+                                elif confidence == "medium":
+                                    confidence_label = "🟡 Medium"
+                                elif confidence == "low":
+                                    confidence_label = "🔴 Low"
+                                else:
+                                    confidence_label = confidence.title()
+
+                                st.caption(f"Confidence: {confidence_label}")
 
                         except Exception as e:
                             st.error(f"Structural analysis failed: {str(e)}")
