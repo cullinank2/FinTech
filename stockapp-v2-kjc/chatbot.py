@@ -601,7 +601,14 @@ def create_chatbot(api_key: Optional[str] = None) -> StockAnalysisChatbot:
     Returns:
         Configured StockAnalysisChatbot instance
     """
-    resolved_api_key = api_key or st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+    secret_api_key = None
+
+    try:
+        secret_api_key = st.secrets.get("OPENAI_API_KEY")
+    except Exception:
+        secret_api_key = None
+
+    resolved_api_key = api_key or secret_api_key or os.getenv("OPENAI_API_KEY")
     return StockAnalysisChatbot(api_key=resolved_api_key)
 
 
