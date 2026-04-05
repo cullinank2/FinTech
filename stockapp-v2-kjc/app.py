@@ -1638,12 +1638,17 @@ def render_narrative_section(
                 if quadrant:
                     anchors.append(f"quadrant:{quadrant}")
 
+                # --- NEW: include current cluster ---
+                cluster = pca_row.get("cluster")
+                if cluster is not None and str(cluster) != "":
+                    anchors.append(f"cluster:{kg_regime}:{cluster}")
+
                 # --- NEW: include structural driver factors ---
                 drivers = st.session_state.get("current_structural_drivers", [])
                 for d in drivers[:3]:
-                    fname = d.get("factor_name")
-                    if fname:
-                        anchors.append(f"factor:{fname.lower().replace(' ', '_')}")
+                    factor_code = d.get("factor") or d.get("factor_name")
+                    if factor_code:
+                        anchors.append(f"factor:{str(factor_code).strip()}")
 
             except Exception:
                 pass
