@@ -1641,7 +1641,7 @@ def render_narrative_section(
                 # --- NEW: include current cluster ---
                 cluster = pca_row.get("cluster")
                 if cluster is not None and str(cluster) != "":
-                    anchors.append(f"cluster:{kg_regime}:{cluster}")
+                    anchors.append(f"cluster:{cluster}")
 
                 # --- NEW: include structural driver factors ---
                 drivers = st.session_state.get("current_structural_drivers", [])
