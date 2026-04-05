@@ -1658,19 +1658,15 @@ def render_narrative_section(
 
             st.session_state['last_narrative_kg_refs'] = all_refs
 
-            # --- NEW: Build KG evidence packet from narrative references ---
+            # --- NEW: Build KG subgraph from narrative references (WITH EXPANSION) ---
             try:
                 if kg is not None and all_refs:
-                    evidence_packet = kg.build_evidence_packet(all_refs)
-                    st.session_state['last_narrative_subgraph'] = evidence_packet
+                    subgraph = kg.serialize_subgraph(all_refs)
+                    st.session_state['last_narrative_subgraph'] = subgraph
                 else:
                     st.session_state['last_narrative_subgraph'] = None
             except Exception:
                 st.session_state['last_narrative_subgraph'] = None
-        else:
-            st.markdown(factors_section)
-            st.session_state['last_narrative_kg_refs'] = []
-            st.session_state['last_narrative_subgraph'] = None
 
     if sections.get('structural') and kg is not None:
         with st.expander("🧠 Structural Context (Knowledge Graph — Tier 1)", expanded=False):
