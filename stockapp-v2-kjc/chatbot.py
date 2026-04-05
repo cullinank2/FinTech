@@ -51,6 +51,7 @@ RULE:
 import os
 from typing import Dict, List, Optional
 import pandas as pd
+import streamlit as st
 
 try:
     from openai import OpenAI
@@ -600,7 +601,8 @@ def create_chatbot(api_key: Optional[str] = None) -> StockAnalysisChatbot:
     Returns:
         Configured StockAnalysisChatbot instance
     """
-    return StockAnalysisChatbot(api_key=api_key)
+    resolved_api_key = api_key or st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+    return StockAnalysisChatbot(api_key=resolved_api_key)
 
 
 # =============================================================================
