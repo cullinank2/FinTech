@@ -2649,7 +2649,15 @@ def main():
                             narrative_packet = st.session_state.get("last_narrative_subgraph")
 
                             if narrative_packet:
-                                evidence_packet = narrative_packet
+                                try:
+                                    evidence_packet = {
+                                        "question_type": "structural_drift",
+                                        "ticker": ticker,
+                                        "regime": kg_regime,
+                                        "subgraph": narrative_packet,
+                                    }
+                                except Exception:
+                                    evidence_packet = None
                             else:
                                 try:
                                     evidence_packet = build_structural_evidence_packet(
