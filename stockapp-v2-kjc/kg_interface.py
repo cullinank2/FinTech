@@ -859,7 +859,19 @@ class KnowledgeGraph:
         # packet bounded and deterministic for Tier 2 consumption.
         expanded_valid = set(seed_nodes)
 
-        ALLOWED_NODE_TYPES = {"stock", "factor", "regime", "quadrant", "mechanism"}
+        ALLOWED_NODE_TYPES = {
+            "stock",
+            "factor",
+            "regime",
+            "quadrant",
+            "mechanism",
+            "cluster",
+            "category",
+            "axis",
+            "platform",
+        }
+
+        MAX_NEIGHBORS_PER_SEED = 12
 
         for nid in seed_nodes:
             try:
@@ -873,7 +885,7 @@ class KnowledgeGraph:
                     if ntype in ALLOWED_NODE_TYPES:
                         filtered_neighbors.append(neighbor)
 
-                for neighbor in filtered_neighbors[:8]:
+                for neighbor in filtered_neighbors[:MAX_NEIGHBORS_PER_SEED]:
                     expanded_valid.add(neighbor)
 
             except Exception:
