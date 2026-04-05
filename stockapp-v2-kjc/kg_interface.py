@@ -914,7 +914,7 @@ class KnowledgeGraph:
                 **clean,
             })
 
-        # Edges — only between nodes in the requested set
+        # Edges — include all allowed relationships among included nodes
         valid_set = set(valid)
         serialized_edges = []
         ALLOWED_EDGE_TYPES = {
@@ -925,32 +925,39 @@ class KnowledgeGraph:
             "crowding_level",
             "triggers_break",
             "triggers_warning",
+            "belongs_to_category",
+            "belongs_to",
+            "migrates_to",
+            "governs",
+            "complements",
             "related_to",
         }
 
         for u, v, attrs in self._G.edges(data=True):
-            if u in valid_set and v in valid_set:
-                clean = {
-                    k: (val.value if hasattr(val, "value") else val)
-                    for k, val in attrs.items()
-                }
+            if u not in valid_set or v not in valid_set:
+                continue
 
-                edge_type = (
-                    clean.get("edge_type")
-                    or clean.get("relationship")
-                    or clean.get("type")
-                    or "related_to"
-                )
+            clean = {
+                k: (val.value if hasattr(val, "value") else val)
+                for k, val in attrs.items()
+            }
 
-                if edge_type not in ALLOWED_EDGE_TYPES:
-                    continue
+            edge_type = (
+                clean.get("edge_type")
+                or clean.get("relationship")
+                or clean.get("type")
+                or "related_to"
+            )
 
-                serialized_edges.append({
-                    "src": u,
-                    "tgt": v,
-                    "edge_type": edge_type,
-                    **clean,
-                })
+            if edge_type not in ALLOWED_EDGE_TYPES:
+                continue
+
+            serialized_edges.append({
+                "src": u,
+                "tgt": v,
+                "edge_type": edge_type,
+                **clean,
+            })
 
         serialized_edges = sorted(
             serialized_edges,
