@@ -100,7 +100,7 @@ class StockAnalysisChatbot:
 
         if self.api_key and self.api_key != OPENAI_API_KEY_PLACEHOLDER:
             try:
-                print("DEBUG RAW API KEY:", repr(self.api_key))
+                # Debug removed for security
                 self.client = OpenAI(api_key=self.api_key.strip())
             except Exception as e:
                 print(f"Failed to initialize OpenAI client: {e}")
