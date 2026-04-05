@@ -2654,9 +2654,18 @@ def main():
                                         st.markdown(f"- {b}")
 
                                 with st.expander("🔍 Evidence"):
+                                    evidence_label_map = {
+                                        "structural_drift_summary": "Structural Drift",
+                                        "quadrant_history_summary": "Quadrant History",
+                                        "peer_comparison_summary": "Peer Comparison",
+                                        "factor_rotation_summary": "Factor Rotation",
+                                        "regime_transition_summary": "Regime Transition",
+                                    }
+
                                     for e in result.get("evidence", []):
                                         if isinstance(e, dict):
-                                            source = e.get("source_name", "Unknown Source")
+                                            raw_source = e.get("source_name", "Unknown Source")
+                                            source = evidence_label_map.get(raw_source, raw_source)
                                             fact = e.get("fact", "")
                                             st.markdown(f"- **{source}**: {fact}")
                                         else:
