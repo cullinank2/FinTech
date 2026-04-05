@@ -1664,6 +1664,27 @@ def render_narrative_section(
             try:
                 if kg is not None and all_refs:
                     subgraph = kg.serialize_subgraph(all_refs)
+
+                    # --- NEW: Fallback if subgraph is empty ---
+                    try:
+                        meta = subgraph.get("meta", {}) if isinstance(subgraph, dict) else {}
+                        node_count = meta.get("node_count", 0)
+
+                        if node_count == 0:
+                            fallback_refs = []
+
+                            if ticker:
+                                fallback_refs.append(f"stock:{ticker}")
+                            if kg_regime:
+                                fallback_refs.append(f"regime:{kg_regime}")
+
+                            subgraph = kg.serialize_subgraph(fallback_refs)
+
+                            st.warning("Fallback KG subgraph used (anchors only).")
+
+                    except Exception:
+                        pass
+
                     st.session_state['last_narrative_subgraph'] = subgraph
 
                     try:
