@@ -96,7 +96,7 @@ class StockAnalysisChatbot:
         if not OPENAI_AVAILABLE:
             return
 
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY') or OPENAI_API_KEY_PLACEHOLDER
+        self.api_key = api_key
 
         if self.api_key and self.api_key != OPENAI_API_KEY_PLACEHOLDER:
             try:
