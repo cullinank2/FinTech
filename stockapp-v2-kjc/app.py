@@ -1646,9 +1646,11 @@ def render_narrative_section(
                 # --- NEW: include structural driver factors ---
                 drivers = st.session_state.get("current_structural_drivers", [])
                 for d in drivers[:3]:
-                    factor_code = d.get("factor") or d.get("factor_name")
+                    factor_code = d.get("factor")
+
+                    # Ensure canonical KG factor ID (lowercase, underscore-safe)
                     if factor_code:
-                        anchors.append(f"factor:{str(factor_code).strip()}")
+                        anchors.append(f"factor:{str(factor_code).strip().lower()}")
 
             except Exception:
                 pass
