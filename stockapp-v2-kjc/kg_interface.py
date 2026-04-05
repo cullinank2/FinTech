@@ -878,7 +878,7 @@ class KnowledgeGraph:
                 neighbors = sorted(
     set(self._G.successors(nid)) | set(self._G.predecessors(nid))
 )
-
+ 
                 filtered_neighbors = []
                 for neighbor in neighbors:
                     attrs = self._G.nodes.get(neighbor, {})
