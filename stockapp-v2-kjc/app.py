@@ -1623,12 +1623,26 @@ def render_narrative_section(
             except Exception:
                 normalized_refs = []
 
-            st.session_state['last_narrative_kg_refs'] = normalized_refs
+            # --- Inject structural anchor nodes ---
+            anchors = []
+
+            try:
+                if ticker:
+                    anchors.append(f"stock:{ticker}")
+                if kg_regime:
+                    anchors.append(f"regime:{kg_regime}")
+            except Exception:
+                pass
+
+            # Combine narrative refs + anchors
+            all_refs = list(dict.fromkeys(normalized_refs + anchors))
+
+            st.session_state['last_narrative_kg_refs'] = all_refs
 
             # --- NEW: Build KG evidence packet from narrative references ---
             try:
-                if kg is not None and normalized_refs:
-                    evidence_packet = kg.build_evidence_packet(normalized_refs)
+                if kg is not None and all_refs:
+                    evidence_packet = kg.build_evidence_packet(all_refs)
                     st.session_state['last_narrative_subgraph'] = evidence_packet
                 else:
                     st.session_state['last_narrative_subgraph'] = None
