@@ -1663,6 +1663,33 @@ def render_narrative_section(
                 if kg is not None and all_refs:
                     subgraph = kg.serialize_subgraph(all_refs)
                     st.session_state['last_narrative_subgraph'] = subgraph
+
+                    try:
+                        meta = subgraph.get("meta", {}) if isinstance(subgraph, dict) else {}
+                        node_count = meta.get("node_count", 0)
+
+                        st.session_state["last_narrative_subgraph_debug"] = {
+                            "requested_refs": list(all_refs),
+                            "normalized_refs": list(normalized_refs),
+                            "anchors": list(anchors),
+                            "meta": meta,
+                            "subgraph": subgraph,
+                        }
+
+                        if node_count == 0:
+                            st.warning("Narrative KG subgraph returned 0 nodes.")
+                            with st.expander("🔧 Debug: Narrative Subgraph Build", expanded=False):
+                                st.markdown("**Requested Refs**")
+                                for ref in all_refs:
+                                    st.markdown(f"- `{ref}`")
+
+                                missing_nodes = meta.get("missing_nodes", [])
+                                if missing_nodes:
+                                    st.markdown("**Missing Nodes**")
+                                    for ref in missing_nodes:
+                                        st.markdown(f"- `{ref}`")
+                    except Exception:
+                        pass
                 else:
                     st.session_state['last_narrative_subgraph'] = None
             except Exception:
