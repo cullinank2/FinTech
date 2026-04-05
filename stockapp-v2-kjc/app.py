@@ -1611,7 +1611,7 @@ def render_narrative_section(
             # --- NEW: Persist KG references for downstream use ---
             raw_refs = factors_section.get('kg_references', [])
 
-            # --- NEW: Normalize KG references into structured tuples ---
+            # --- NEW: Normalize KG references into canonical node IDs ---
             normalized_refs = []
             try:
                 import re
@@ -1619,7 +1619,7 @@ def render_narrative_section(
                     match = re.match(r"\[\[KG:(.*?):(.*?)\]\]", ref)
                     if match:
                         node_type, node_id = match.groups()
-                        normalized_refs.append((node_type, node_id))
+                        normalized_refs.append(f"{node_type}:{node_id}")
             except Exception:
                 normalized_refs = []
 
