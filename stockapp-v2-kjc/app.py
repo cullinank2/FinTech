@@ -2615,16 +2615,23 @@ def main():
                         try:
                             # Build canonical KG evidence packet
                             evidence_packet = None
-                            try:
-                                evidence_packet = build_structural_evidence_packet(
-                                    kg=kg,
-                                    ticker=ticker,
-                                    regime=kg_regime,
-                                    question_type="structural_drift",
-                                )
-                            except Exception:
-                                evidence_packet = None
 
+                            # Prefer narrative-derived KG subgraph (Tier 1 grounded)
+                            narrative_packet = st.session_state.get("last_narrative_subgraph")
+
+                            if narrative_packet:
+                                evidence_packet = narrative_packet
+                            else:
+                                try:
+                                    evidence_packet = build_structural_evidence_packet(
+                                        kg=kg,
+                                        ticker=ticker,
+                                        regime=kg_regime,
+                                        question_type="structural_drift",
+                                    )
+                                except Exception:
+                                    evidence_packet = None
+                                    
                             # Validate evidence
                             if not evidence_packet:
                                 st.error("No stock-centered KG subgraph is available for structural analysis.")
