@@ -684,12 +684,9 @@ def render_sidebar():
         help="If left blank, the app will use its default API key"
     )
     
-    # Priority: user input → fallback to Streamlit secret
-    api_key = user_api_key or st.secrets.get("OPENAI_API_KEY")
+    st.session_state.chatbot = create_chatbot(user_api_key or None)
     
-    if api_key:
-        st.session_state.chatbot = create_chatbot(api_key)
-    else:
+    if not st.session_state.chatbot.is_available():
         st.sidebar.warning("⚠️ No API key available.")
      
 
