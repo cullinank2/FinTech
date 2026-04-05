@@ -677,16 +677,20 @@ def render_sidebar():
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🤖 Chatbot Settings")
     
-    api_key = st.sidebar.text_input(
-        "OpenAI API Key (for chatbot):",
+    user_api_key = st.sidebar.text_input(
+        "OpenAI API Key (optional):",
         type="password",
-        placeholder="sk-...",
-        help="Enter your OpenAI API key to enable the AI chatbot feature"
+        placeholder="Enter your own key or leave blank",
+        help="If left blank, the app will use its default API key"
     )
     
+    # Priority: user input → fallback to Streamlit secret
+    api_key = user_api_key or st.secrets.get("OPENAI_API_KEY")
+    
     if api_key:
-        os.environ['OPENAI_API_KEY'] = api_key
         st.session_state.chatbot = create_chatbot(api_key)
+    else:
+        st.sidebar.warning("⚠️ No API key available.")
      
 
 
