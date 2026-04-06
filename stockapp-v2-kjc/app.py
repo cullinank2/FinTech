@@ -446,6 +446,8 @@ def render_sidebar():
         st.session_state.analysis_scope == "Stock / Individual Ticker Level"
     )
 
+    stock_selected = st.session_state.selected_stock is not None
+
     if stock_scope_active:
         st.sidebar.markdown("---")
         st.sidebar.markdown("## 📊 Stock Selection")
@@ -524,7 +526,6 @@ def render_sidebar():
             }
 
     # Check if stock is selected
-    stock_selected = st.session_state.selected_stock is not None
 
     # GICS Sector filter for landing page Cluster Plot
     st.sidebar.markdown("---")
