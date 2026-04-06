@@ -2184,6 +2184,12 @@ def render_universe_period_comparison():
                     """)
 
 
+def render_universe_kg_tab():
+    """Render the Universe / Portfolio Level knowledge graph tab."""
+
+    render_kg_tab()
+
+
 def render_universe_workspace():
     """Render the Universe / Portfolio Level workspace."""
 
@@ -2206,7 +2212,7 @@ def render_universe_workspace():
             render_universe_period_comparison()
 
         with landing_tab3:
-            render_kg_tab()
+            render_universe_kg_tab()
 
         with landing_tab4:
             render_structural_intelligence_tab()
@@ -2750,7 +2756,7 @@ def render_stock_workspace():
                     except Exception as e:
                         st.error(f"Structural analysis failed: {str(e)}")
 
-                        
+
 # =============================================================================
 # MAIN APPLICATION
 # =============================================================================
