@@ -43,7 +43,6 @@ try:
         NodeType, EdgeType,
         PROCRUSTES_MEANINGFUL, CROWDING_THRESHOLD_ELEVATED, CROWDING_THRESHOLD_HIGH,
         APPENDIX_B_PROCRUSTES, APPENDIX_B_CROWDING,
-        RiskLevel, StructuralBreakSeverity,
     )
     KG_SCHEMA_AVAILABLE = True
 except Exception as _e:
