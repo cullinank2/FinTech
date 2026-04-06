@@ -357,8 +357,10 @@ def load_and_process_data():
 # =============================================================================
 
 def render_sidebar():
-    """Render the sidebar with stock selection and controls."""
-    
+    """Render the sidebar with scope-specific controls."""
+
+    st.sidebar.markdown("## 🌐 Global Controls")
+
     st.session_state.analysis_scope = st.sidebar.radio(
         "Analysis Scope",
         [
@@ -368,20 +370,31 @@ def render_sidebar():
         index=0 if st.session_state.analysis_scope == "Universe / Portfolio Level" else 1,
     )
 
-    st.sidebar.markdown("## 📊 Stock Selection")
-    
-    # Stock input
-    #st.sidebar.markdown("""
-    #<div class="info-box">
-    #    Enter stock ticker (e.g., AAPL, MSFT) to analyze.
-    #</div>
-    #""", unsafe_allow_html=True)
-    
-    stock_input = st.sidebar.text_input(
-        "Enter Stock Ticker:",
-        placeholder="e.g., AAPL or 14593",
-        key="stock_input"
+    stock_scope_active = (
+        st.session_state.analysis_scope == "Stock / Individual Ticker Level"
     )
+
+    if stock_scope_active:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("## 📊 Stock Selection")
+
+        # Stock input
+        #st.sidebar.markdown("""
+        #<div class="info-box">
+        #    Enter stock ticker (e.g., AAPL, MSFT) to analyze.
+        #</div>
+        #""", unsafe_allow_html=True)
+
+        stock_input = st.sidebar.text_input(
+            "Enter Stock Ticker:",
+            placeholder="e.g., AAPL or 14593",
+            key="stock_input"
+        )
+    else:
+        stock_input = ""
+        st.session_state.selected_stock = None
+        if 'ticker_dropdown' in st.session_state:
+            st.session_state.ticker_dropdown = ''
     
     # Validation and selection
     if stock_input and st.session_state.processed_data is not None:
