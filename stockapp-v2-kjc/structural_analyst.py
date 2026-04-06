@@ -30,10 +30,8 @@ llm_callable(system_prompt: str, user_prompt: str) -> str
 It must return raw text containing JSON only.
 """
 
-from __future__ import annotations
-
 import json
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict
 
 from structural_prompts import (
     STRUCTURAL_ANALYST_SYSTEM_PROMPT,
