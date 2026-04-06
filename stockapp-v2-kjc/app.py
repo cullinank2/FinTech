@@ -2190,6 +2190,12 @@ def render_universe_kg_tab():
     render_kg_tab()
 
 
+def render_universe_structural_tab():
+    """Render the Universe / Portfolio Level structural intelligence tab."""
+
+    render_structural_intelligence_tab()
+
+
 def render_universe_workspace():
     """Render the Universe / Portfolio Level workspace."""
 
@@ -2215,7 +2221,7 @@ def render_universe_workspace():
             render_universe_kg_tab()
 
         with landing_tab4:
-            render_structural_intelligence_tab()
+            render_universe_structural_tab()
 
 
 def render_stock_workspace():
