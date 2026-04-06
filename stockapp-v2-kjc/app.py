@@ -556,62 +556,63 @@ def render_sidebar():
             if selected_view != st.session_state.current_view:
                 st.session_state.current_view = selected_view
 
-    # GICS Sector filter (always visible, disabled until stock selected)
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🔍 Stock Universe Filter")
+    # GICS Sector filter (stock scope only)
+    if stock_scope_active:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 🔍 Stock Universe Filter")
 
-    if stock_selected:
-        # Get total stock count from PCA dataframe
-        total_stocks = len(st.session_state.pca_df) if st.session_state.pca_df is not None else 0
-        
-        # Get GICS sector stock count from PCA dataframe
-        sector_stocks = 0
-        if st.session_state.pca_df is not None and st.session_state.raw_data is not None and st.session_state.selected_stock is not None:
-            ticker = st.session_state.selected_stock['value']
-            if 'ticker' in st.session_state.raw_data.columns and 'gicdesc' in st.session_state.raw_data.columns:
-                ticker_data = st.session_state.raw_data[
-                    st.session_state.raw_data['ticker'].str.upper() == ticker.upper()
-                ]
-                if not ticker_data.empty:
-                    selected_sector = ticker_data['gicdesc'].iloc[0]
-                    pca_tickers_upper = [t.upper() for t in st.session_state.pca_df['ticker'].tolist()]
-                    sector_stocks = st.session_state.raw_data[
-                        (st.session_state.raw_data['gicdesc'] == selected_sector) &
-                        (st.session_state.raw_data['ticker'].str.upper().isin(pca_tickers_upper))
-                    ]['ticker'].nunique()
-        
-        filter_options = [
-            f"All Stocks ({total_stocks})",
-            f"GICS Sector Only ({sector_stocks})"
-        ]
-    else:
-        # Placeholder options when no stock selected
-        filter_options = [
-            "All Stocks",
-            "GICS Sector Only"
-        ]
+        if stock_selected:
+            # Get total stock count from PCA dataframe
+            total_stocks = len(st.session_state.pca_df) if st.session_state.pca_df is not None else 0
+            
+            # Get GICS sector stock count from PCA dataframe
+            sector_stocks = 0
+            if st.session_state.pca_df is not None and st.session_state.raw_data is not None and st.session_state.selected_stock is not None:
+                ticker = st.session_state.selected_stock['value']
+                if 'ticker' in st.session_state.raw_data.columns and 'gicdesc' in st.session_state.raw_data.columns:
+                    ticker_data = st.session_state.raw_data[
+                        st.session_state.raw_data['ticker'].str.upper() == ticker.upper()
+                    ]
+                    if not ticker_data.empty:
+                        selected_sector = ticker_data['gicdesc'].iloc[0]
+                        pca_tickers_upper = [t.upper() for t in st.session_state.pca_df['ticker'].tolist()]
+                        sector_stocks = st.session_state.raw_data[
+                            (st.session_state.raw_data['gicdesc'] == selected_sector) &
+                            (st.session_state.raw_data['ticker'].str.upper().isin(pca_tickers_upper))
+                        ]['ticker'].nunique()
+            
+            filter_options = [
+                f"All Stocks ({total_stocks})",
+                f"GICS Sector Only ({sector_stocks})"
+            ]
+        else:
+            # Placeholder options when no stock selected
+            filter_options = [
+                "All Stocks",
+                "GICS Sector Only"
+            ]
 
-    selected_filter = st.sidebar.selectbox(
-        "Show stocks from:",
-        options=filter_options,
-        index=1 if stock_selected else 0,
-        key="gics_filter",
-        disabled=not stock_selected,
-        help="Filter visualizations to show all stocks or only stocks in the same GICS sector"
-    )
-    
-    # Extract the filter mode (without the count)
-    if "All Stocks" in selected_filter:
-        filter_mode = "All Stocks"
-    else:
-        filter_mode = "GICS Sector Only"
-    
-    # Store filter selection in session state
-    if 'gics_filter_mode' not in st.session_state:
-        st.session_state.gics_filter_mode = "GICS Sector Only"
-    
-    # THIS LINE IS CRITICAL - actually saves the selection!
-    st.session_state.gics_filter_mode = filter_mode
+        selected_filter = st.sidebar.selectbox(
+            "Show stocks from:",
+            options=filter_options,
+            index=1 if stock_selected else 0,
+            key="gics_filter",
+            disabled=not stock_selected,
+            help="Filter visualizations to show all stocks or only stocks in the same GICS sector"
+        )
+        
+        # Extract the filter mode (without the count)
+        if "All Stocks" in selected_filter:
+            filter_mode = "All Stocks"
+        else:
+            filter_mode = "GICS Sector Only"
+        
+        # Store filter selection in session state
+        if 'gics_filter_mode' not in st.session_state:
+            st.session_state.gics_filter_mode = "GICS Sector Only"
+        
+        # THIS LINE IS CRITICAL - actually saves the selection!
+        st.session_state.gics_filter_mode = filter_mode
 
     # Display axis interpretations
     st.sidebar.markdown("---")
