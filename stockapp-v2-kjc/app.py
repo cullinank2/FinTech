@@ -1860,7 +1860,6 @@ def render_chatbot_section(
                 """, unsafe_allow_html=True)
 
 
-<<<<<<< HEAD
 def render_universe_workspace():
     """Render the Universe / Portfolio Level workspace."""
 
@@ -2205,648 +2204,6 @@ def render_universe_workspace():
 # =============================================================================
 # MAIN APPLICATION
 # =============================================================================
-=======
-def render_stock_workspace():
-    """Render the Stock / Individual Ticker Level workspace."""
->>>>>>> ab707eb3f07d0ce4003533b85d4529f5bd915a63
-
-    # Get selected stock data
-    stock_info = st.session_state.selected_stock
-
-    if stock_info is None:
-        st.info("👆 Select a stock ticker or PERMNO in the sidebar to use Stock / Individual Ticker Level.")
-        return
-
-    pca_df = st.session_state.pca_df
-
-    # Find stock in PCA DataFrame
-    if stock_info['type'] == 'ticker':
-        mask = pca_df['ticker'].str.upper() == stock_info['value'].upper()
-    else:
-        mask = pca_df['permno'] == stock_info['value']
-
-    stock_pca_data = pca_df[mask]
-
-    if stock_pca_data.empty:
-        st.error(f"Could not find {stock_info['value']} in the PCA results.")
-        return
-
-    pca_row = stock_pca_data.iloc[0]
-    stock_tab1, stock_tab2, stock_tab3, stock_tab4, stock_tab5 = st.tabs([
-        "📌 Overview",
-        "📊 Visuals",
-        "👥 Peers & Positioning",
-        "🧾 Narrative",
-        "🧠 AI / Structural",
-    ])
-
-    with stock_tab1:
-        ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
-            st.session_state.raw_data,
-            pca_row
-        )
-
-    st.session_state.current_quadrant = quadrant
-
-    # Get quadrant peers (GICS-filtered universe for consistency)
-    gics_filtered_pca = filter_by_gics_sector(
-        pca_df,
-        st.session_state.raw_data,
-        ticker,
-        st.session_state.get('gics_filter_mode', 'All Stocks')
-    )
-
-<<<<<<< HEAD
-    # ============================================================
-    # MAIN WORKSPACE ROUTING (ARCHITECTURE CLEAN SPLIT)
-    # ============================================================
-
-    if st.session_state.analysis_scope == "Universe / Portfolio Level":
-            render_universe_workspace()
-=======
-    quadrant_peers = get_stocks_in_same_quadrant(
-        gics_filtered_pca, pc1, pc2, exclude_ticker=ticker
-    )
->>>>>>> ab707eb3f07d0ce4003533b85d4529f5bd915a63
-
-<<<<<<< HEAD
-    else:
-        # Get selected stock data
-        stock_info = st.session_state.selected_stock
-=======
-    # 📊 Visuals Tab
-    with stock_tab2:
-        st.markdown("### 📊 Visuals")
-
-        render_visualizations(
-            pca_df,
-            ticker,
-            pca_row,
-            quadrant_peers,
-            st.session_state.raw_data,
-            st.session_state.pca_model,
-            st.session_state.scaler
-        )
-
-    # Build GICS sector filtered peers — used consistently for all percentiles and narratives
-    gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
-    narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
-
-    # Get cluster summary and percentiles — using GICS sector peers only
-    cluster_summary = get_cluster_summary(pca_df)
-    available_features = [c for c in FEATURE_COLUMNS if c in pca_row.index]
-    percentiles = compute_percentile_ranks(narrative_peers, pca_row, available_features)
-
-    # Store for narrative engine
-    st.session_state.current_percentiles = percentiles
-    st.session_state.current_factor_data = get_factor_breakdown(pca_row)
-
-    # Get GICS sector name for narrative
-    gics_sector = 'N/A'
-    if 'gicdesc' in st.session_state.raw_data.columns:
-        ticker_rows = st.session_state.raw_data[st.session_state.raw_data['ticker'].str.upper() == ticker.upper()]
-        if not ticker_rows.empty:
-            gics_sector = ticker_rows['gicdesc'].iloc[0]
-
-    # 👥 Peers & Positioning Tab
-    with stock_tab3:
-        st.markdown("### 👥 Peers & Positioning")
-
-        st.markdown(
-            f"**{ticker}** is currently positioned in **{quadrant}** and **Cluster {cluster}**."
-        )
-        st.caption(
-            f"PC coordinates: PC1 = {pc1:.2f}, PC2 = {pc2:.2f}"
-        )
-
-        same_quadrant_count = len(quadrant_peers) if quadrant_peers is not None else 0
-
-        cluster_peers = pd.DataFrame()
-        if "cluster" in pca_df.columns:
-            cluster_peers = pca_df[
-                (pca_df["cluster"] == cluster) & (pca_df["ticker"] != ticker)
-            ].copy()
-
-        same_cluster_count = len(cluster_peers)
-        overlap_count = 0
-        if not cluster_peers.empty and quadrant_peers is not None and not quadrant_peers.empty:
-            overlap_count = len(
-                set(cluster_peers["ticker"]).intersection(set(quadrant_peers["ticker"]))
-            )
-
-        pos_col1, pos_col2, pos_col3 = st.columns(3)
-        with pos_col1:
-            st.metric("Same Quadrant", same_quadrant_count)
-        with pos_col2:
-            st.metric("Same Cluster", same_cluster_count)
-        with pos_col3:
-            st.metric("Quadrant + Cluster Overlap", overlap_count)
-
-        st.markdown("#### PCA Positioning")
-
-        try:
-            fig = create_pca_scatter_plot(
-                pca_df,
-                selected_ticker=ticker,
-                highlight_peers=nearest_peers["ticker"].tolist() if "nearest_peers" in locals() else None
-            )
-            st.plotly_chart(fig, width="stretch")
-        except Exception as e:
-            st.warning(f"PCA visualization unavailable: {e}")
-
-        st.markdown("#### Nearest Structural Peers (PCA Distance)")
-
-        try:
-            peer_universe = pca_df.copy()
-
-            target_row = peer_universe[peer_universe["ticker"] == ticker]
-
-            if not target_row.empty:
-                target_pc1 = target_row.iloc[0]["PC1"]
-                target_pc2 = target_row.iloc[0]["PC2"]
-
-                peer_universe["distance"] = (
-                    (peer_universe["PC1"] - target_pc1) ** 2 +
-                    (peer_universe["PC2"] - target_pc2) ** 2
-                ) ** 0.5
-
-                nearest_peers = (
-                    peer_universe[peer_universe["ticker"] != ticker]
-                    .sort_values("distance")
-                    .head(15)
-                )
-
-                # --- Distance Percentile (Crowding Signal) ---
-                all_distances = peer_universe["distance"]
-
-                target_distance = peer_universe[
-                    peer_universe["ticker"] == ticker
-                ]["distance"].values[0]
-
-                percentile = (all_distances < target_distance).mean() * 100
-
-                # Interpret crowding
-                if percentile <= 10:
-                    crowd_label = "🔴 Highly Crowded"
-                    crowd_text = "This stock sits in a densely packed region of PCA space — elevated crowding risk."
-                elif percentile <= 40:
-                    crowd_label = "🟠 Moderately Crowded"
-                    crowd_text = "This stock has meaningful structural proximity to peers."
-                elif percentile <= 70:
-                    crowd_label = "🟡 Neutral"
-                    crowd_text = "This stock is neither especially crowded nor especially isolated."
-                else:
-                    crowd_label = "🟢 Structurally Isolated"
-                    crowd_text = "This stock is more structurally differentiated from peers."
-
-                st.metric(
-                    "Structural Crowding Percentile",
-                    f"{percentile:.1f}%",
-                    help="Lower = more crowded (closer to other stocks)"
-                )
-                st.caption(crowd_label)
-                st.caption(crowd_text)
-
-                # --- Peer Dispersion Metric ---
-                avg_peer_distance = nearest_peers["distance"].mean()
-
-                st.metric(
-                    "Peer Dispersion (Avg Distance)",
-                    f"{avg_peer_distance:.4f}",
-                    help="Lower = tightly clustered peers (higher fragility)"
-                )
-
-                if avg_peer_distance < 0.05:
-                    dispersion_label = "🔴 Very Tight Cluster"
-                    dispersion_text = "Peers are extremely close — elevated fragility and crowding risk."
-                elif avg_peer_distance < 0.15:
-                    dispersion_label = "🟠 Moderate Dispersion"
-                    dispersion_text = "Peers are somewhat clustered with moderate structural similarity."
-                else:
-                    dispersion_label = "🟢 Broadly Distributed"
-                    dispersion_text = "Peers are more spread out — lower structural fragility."
-
-                st.caption(dispersion_label)
-                st.caption(dispersion_text)
-
-                # --- Structural Risk Score ---
-                # Invert percentile (lower percentile = higher risk)
-                crowding_risk = 100 - percentile
-
-                # Normalize dispersion (simple scaling assumption)
-                dispersion_risk = max(0, min(100, (0.15 - avg_peer_distance) / 0.15 * 100))
-
-                structural_risk_score = 0.6 * crowding_risk + 0.4 * dispersion_risk
-
-                # Define risk label BEFORE using it
-                if structural_risk_score >= 75:
-                    risk_label = "🔴 High Structural Risk"
-                    bar_color = "red"
-                elif structural_risk_score >= 40:
-                    risk_label = "🟠 Moderate Structural Risk"
-                    bar_color = "orange"
-                else:
-                    risk_label = "🟢 Low Structural Risk"
-                    bar_color = "green"
-
-                st.metric(
-                    "Structural Risk Score",
-                    f"{structural_risk_score:.1f}",
-                    help="Composite of crowding + peer dispersion (higher = more structurally risky)"
-                )
-
-                st.progress(int(structural_risk_score))
-
-                st.markdown(
-                    f"<div style='color:{bar_color}; font-weight:600;'>Risk Level: {risk_label}</div>",
-                    unsafe_allow_html=True
-                )
-
-                # --- Executive Summary ---
-                if structural_risk_score >= 75:
-                    summary_text = "This stock exhibits elevated structural risk due to high crowding and tightly aligned peer positioning."
-                elif structural_risk_score >= 40:
-                    summary_text = "This stock shows moderate structural risk, with some crowding and partial peer alignment."
-                else:
-                    summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
-
-                st.info(summary_text)
-
-                # --- PCA Loading-Based Structural Drivers (ROBUST VERSION) ---
-                loadings = st.session_state.get("pca_loadings_df")
-
-                if loadings is not None:
-                    try:
-                        loadings_df = pd.DataFrame(loadings)
->>>>>>> ab707eb3f07d0ce4003533b85d4529f5bd915a63
-
-                        # 🔧 Fix orientation (handles dict vs DataFrame cases)
-                        if "PC1" not in loadings_df.columns:
-                            loadings_df = loadings_df.T
-
-                        # 🔧 Force numeric (prevents abs() crash)
-                        loadings_df = loadings_df.apply(pd.to_numeric, errors="coerce")
-
-                        # 🔧 Drop empty rows
-                        loadings_df = loadings_df.dropna(how="all")
-
-                        # Combine PC1 + PC2 importance
-                        loadings_df["importance"] = (
-                            loadings_df["PC1"].abs() + loadings_df["PC2"].abs()
-                        )
-
-                        top_factors = (
-                            loadings_df["importance"]
-                            .sort_values(ascending=False)
-                            .head(3)
-                            .index.tolist()
-                        )
-
-                        directional_driver_labels = []
-
-                        for factor in top_factors:
-                            display_name = (
-                                FEATURE_DISPLAY_NAMES.get(
-                                    factor,
-                                    factor.replace("_", " ").title()
-                                ) if "FEATURE_DISPLAY_NAMES" in globals()
-                                else factor.replace("_", " ").title()
-                            )
-
-                            pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
-                            pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
-
-                            directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
-
-                            arrow = "↑" if directional_score >= 0 else "↓"
-
-                            abs_score = abs(directional_score)
-                            if abs_score >= 0.30:
-                                strength = "Strong"
-                            elif abs_score >= 0.15:
-                                strength = "Moderate"
-                            else:
-                                strength = "Light"
-
-                            directional_driver_labels.append(
-                                f"{display_name} {arrow} ({strength})"
-                            )
-
-                        st.markdown("#### 🔬 Structural Drivers")
-
-                        structural_drivers = []
-
-                        for factor in top_factors:
-                            display_name = (
-                                FEATURE_DISPLAY_NAMES.get(
-                                    factor,
-                                    factor.replace("_", " ").title()
-                                ) if "FEATURE_DISPLAY_NAMES" in globals()
-                                else factor.replace("_", " ").title()
-                            )
-
-                            pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
-                            pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
-
-                            directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
-
-                            direction_word = "Positive" if directional_score >= 0 else "Negative"
-
-                            abs_score = abs(directional_score)
-                            if abs_score >= 0.30:
-                                strength = "Strong"
-                            elif abs_score >= 0.15:
-                                strength = "Moderate"
-                            else:
-                                strength = "Light"
-
-                            structural_drivers.append({
-                                "factor": factor,
-                                "factor_name": factor,
-                                "display_name": display_name,
-                                "direction": direction_word,
-                                "strength": strength,
-                                "directional_score": directional_score,
-                                "pc1_loading": pc1_loading,
-                                "pc2_loading": pc2_loading,
-                            })
-
-                            st.markdown(
-                                f"- **{display_name}**: {direction_word}, {strength} influence"
-                            )
-
-                        st.session_state.current_structural_drivers = structural_drivers
-
-                    except Exception as e:
-                        st.caption(f"Driver calculation unavailable: {e}")
-
-                else:
-                    st.caption("PCA loadings not available for structural driver analysis.")
-
-                display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
-
-                st.dataframe(
-                    nearest_peers[display_cols],
-                    width="stretch",
-                    hide_index=True
-                )
-            else:
-                st.info("Selected stock not found in PCA dataset.")
-
-        except Exception as e:
-            st.warning(f"Nearest peer calculation unavailable: {e}")
-
-    # 🧾 Narrative Tab
-    with stock_tab4:
-        render_narrative_section(
-            ticker=ticker,
-            pca_row=pca_row,
-            peer_df=narrative_peers,
-            gics_sector=gics_sector,
-        )
-
-    # 🧠 AI / Structural Tab
-    with stock_tab5:
-        # Lazy import to avoid Streamlit module cache issues
-        try:
-            from structural_analyst import run_structural_analysis
-        except Exception as e:
-            st.error(f"Structural Analyst failed to load: {e}")
-            run_structural_analysis = None
-
-        kg = st.session_state.get("kg_instance")
-        kg_regime = st.session_state.get("kg_current_regime")
-
-        if kg is None or kg_regime is None:
-            st.info("Structural Analyst requires Knowledge Graph context.")
-        else:
-            col1, col2 = st.columns([4, 1])
-
-            with col1:
-                structural_question = st.text_input(
-                    "Ask a structural question:",
-                    placeholder="e.g., What changed structurally in this regime?",
-                    key="structural_input"
-                )
-
-            # Initialize chatbot for structural analysis
-            chatbot = create_chatbot()
-
-            with col2:
-                run_structural = st.button(
-                    "Analyze",
-                    key="structural_btn",
-                    disabled=False
-                )
-
-            if run_structural and structural_question:
-                with st.spinner("Running KG-backed structural analysis..."):
-                    try:
-                        # Build canonical KG evidence packet
-                        evidence_packet = None
-
-                        # Prefer narrative-derived KG subgraph (Tier 1 grounded)
-                        narrative_packet = st.session_state.get("last_narrative_subgraph")
-
-                        if narrative_packet:
-                            try:
-                                evidence_packet = {
-                                    "question_type": "structural_drift",
-                                    "ticker": ticker,
-                                    "regime": kg_regime,
-                                    "subgraph": narrative_packet,
-                                }
-                            except Exception:
-                                evidence_packet = None
-                        else:
-                            try:
-                                evidence_packet = build_structural_evidence_packet(
-                                    kg=kg,
-                                    ticker=ticker,
-                                    regime=kg_regime,
-                                    question_type="structural_drift",
-                                )
-                            except Exception:
-                                evidence_packet = None
-
-                        # Validate evidence
-                        if not evidence_packet:
-                            st.error("No stock-centered KG subgraph is available for structural analysis.")
-                            result = None
-                        else:
-                            if run_structural_analysis is not None:
-                                result = run_structural_analysis(
-                                    evidence_packet=evidence_packet,
-                                    llm_callable=chatbot.call_llm_structural,
-                                )
-                            else:
-                                st.error("Structural Analyst unavailable.")
-                                result = None
-
-                        # Render result
-                        if result:
-                            st.markdown("## 🧠 Structural Analysis (KG-Grounded AI)")
-                            st.caption("LLM-based interpretation grounded strictly in Knowledge Graph evidence (Tier 2).")
-
-                            structural_answer = result.get("answer", "No answer returned.")
-                            st.markdown(f"**Assessment:** {structural_answer}")
-
-                            if result.get("summary_bullets"):
-                                st.markdown("### 🔑 Key Points")
-                                unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
-                                for b in unique_bullets:
-                                    st.markdown(f"- {b}")
-
-                            with st.expander("🔍 Evidence"):
-                                evidence_label_map = {
-                                    "structural_drift_summary": "Structural Drift",
-                                    "quadrant_history_summary": "Quadrant History",
-                                    "peer_comparison_summary": "Peer Comparison",
-                                    "factor_rotation_summary": "Factor Rotation",
-                                    "regime_transition_summary": "Regime Transition",
-                                }
-
-                                for e in result.get("evidence", []):
-                                    if isinstance(e, dict):
-                                        raw_source = e.get("source_name", "Unknown Source")
-                                        source = evidence_label_map.get(raw_source, raw_source)
-                                        fact = e.get("fact", "")
-                                        st.markdown(f"- **{source}**: {fact}")
-                                    else:
-                                        st.markdown(f"- {str(e)}")
-
-                            with st.expander("🕸️ Subgraph Snapshot"):
-                                snapshot = result.get("subgraph_snapshot", {})
-
-                                if isinstance(snapshot, dict):
-                                    node_count = snapshot.get("node_count", 0)
-                                    edge_count = snapshot.get("edge_count", 0)
-                                    included_node_ids = snapshot.get("included_node_ids", [])
-
-                                    snap_col1, snap_col2 = st.columns(2)
-                                    with snap_col1:
-                                        st.metric("Nodes", node_count)
-                                    with snap_col2:
-                                        st.metric("Edges", edge_count)
-
-                                    if included_node_ids:
-                                        st.markdown("**Included Node IDs**")
-                                        for node_id in included_node_ids:
-                                            st.markdown(f"- `{node_id}`")
-                                    else:
-                                        st.caption("No included node IDs were returned.")
-                                else:
-                                    st.caption("Subgraph snapshot unavailable.")
-
-                            with st.expander("⚠️ Limits"):
-                                limits = result.get("limits", [])
-
-                                if isinstance(limits, list):
-                                    for l in limits:
-                                        st.markdown(f"- {l}")
-                                else:
-                                    st.markdown(f"- {str(limits)}")
-
-                            confidence = str(result.get("confidence", "unknown")).lower()
-
-                            if confidence == "high":
-                                confidence_label = "🟢 High"
-                            elif confidence == "medium":
-                                confidence_label = "🟡 Medium"
-                            elif confidence == "low":
-                                confidence_label = "🔴 Low"
-                            else:
-                                confidence_label = confidence.title()
-
-                            st.caption(f"Confidence: {confidence_label}")
-
-                    except Exception as e:
-                        st.error(f"Structural analysis failed: {str(e)}")
-
-
-def render_universe_workspace():
-    """Render the Universe / Portfolio Level workspace."""
-
-    st.info("👆 Enter a stock ticker or PERMNO in the sidebar to begin analysis.")
-    
-    # Show overall cluster summary
-    if st.session_state.pca_df is not None:
-
-        landing_tab1, landing_tab2, landing_tab3, landing_tab4 = st.tabs([
-            "📊 Cluster Overview",
-            "📐 Period Comparison",
-            "🧠 Knowledge Graph",
-            "🔬 Structural Intelligence",
-        ])
-
-        with landing_tab1:
-            # Apply GICS sector filter if selected on landing page
-            plot_df = st.session_state.pca_df.copy()
-            selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
-
-            if selected_sector and selected_sector != "All Sectors" and 'gicdesc' in st.session_state.raw_data.columns:
-                sector_tickers = st.session_state.raw_data[
-                    st.session_state.raw_data['gicdesc'] == selected_sector
-                ]['ticker'].unique()
-                plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
-
-            total_count = len(plot_df)
-            if selected_sector and selected_sector != "All Sectors":
-                sector_label = f" — {selected_sector} ({total_count})"
-            else:
-                sector_label = f" — All Sectors ({total_count})"
-            st.markdown(f"### 📊 Cluster Overview{sector_label}")
-
-            fig = create_pca_scatter_plot(plot_df)
-            st.plotly_chart(fig, use_container_width=True)
-
-            cluster_summary = get_cluster_summary(plot_df)
-            fig_summary = create_cluster_summary_plot(cluster_summary)
-            st.plotly_chart(fig_summary, use_container_width=True)
-
-        with landing_tab2:
-            st.subheader("📐 Sub-Period PCA Comparison")
-            st.caption(
-                "Validates whether factor structure and stock behavior genuinely differ "
-                "across Post-COVID, Rate Shock, and Disinflation regimes."
-            )
-
-            raw_df = st.session_state.raw_data
-            if raw_df is None:
-                st.info("Data not yet loaded.")
-            else:
-                date_col = next(
-                    (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth', 'public_date'] if c in raw_df.columns),
-                    None
-                )
-                if date_col is None:
-                    st.error(f"Date column not found. Available columns: {list(raw_df.columns)}")
-                else:
-                    raw_df[date_col] = pd.to_datetime(raw_df[date_col])
-                    features = get_features_from_df(raw_df)
-
-                    if len(features) < 3:
-                        st.error(f"Too few feature columns detected: {features}")
-                    else:
-                        # (KEEP EVERYTHING YOU CURRENTLY HAVE HERE EXACTLY THE SAME)
-                        # DO NOT MODIFY ANY OF THE INTERNAL ANALYTICS BLOCK
-                        # JUST KEEP YOUR EXISTING CODE FROM:
-                        # --- Procrustes ---
-                        # --- Crowding ---
-                        # --- Migration ---
-                        # --- Loadings ---
-                        pass
-
-        with landing_tab3:
-            render_kg_tab()
-
-        with landing_tab4:
-            render_structural_intelligence_tab()
-
-
-# =============================================================================
-# MAIN APPLICATION
-# =============================================================================
 
 def main():
     """Main application entry point."""
@@ -2918,10 +2275,548 @@ def main():
     # Render sidebar AFTER data is loaded so counts and filters work on first click
     render_sidebar()
 
+    # ============================================================
+    # MAIN WORKSPACE ROUTING (ARCHITECTURE CLEAN SPLIT)
+    # ============================================================
+
     if st.session_state.analysis_scope == "Universe / Portfolio Level":
         render_universe_workspace()
+
     else:
-        render_stock_workspace()
+        # Get selected stock data
+        stock_info = st.session_state.selected_stock
+
+        if stock_info is None:
+            st.info("👆 Select a stock ticker or PERMNO in the sidebar to use Stock / Individual Ticker Level.")
+            return
+        pca_df = st.session_state.pca_df
+        
+        # Find stock in PCA DataFrame
+        if stock_info['type'] == 'ticker':
+            mask = pca_df['ticker'].str.upper() == stock_info['value'].upper()
+        else:
+            mask = pca_df['permno'] == stock_info['value']
+        
+        stock_pca_data = pca_df[mask]
+        
+        if stock_pca_data.empty:
+            st.error(f"Could not find {stock_info['value']} in the PCA results.")
+            return
+        
+        pca_row = stock_pca_data.iloc[0]
+        stock_tab1, stock_tab2, stock_tab3, stock_tab4, stock_tab5 = st.tabs([
+            "📌 Overview",
+            "📊 Visuals",
+            "👥 Peers & Positioning",
+            "🧾 Narrative",
+            "🧠 AI / Structural",
+        ])
+        
+        # Render stock overview
+        ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
+            st.session_state.raw_data,
+            pca_row
+        )
+  
+        # Get quadrant peers (GICS-filtered universe for consistency)
+        gics_filtered_pca = filter_by_gics_sector(
+            pca_df,
+            st.session_state.raw_data,
+            ticker,
+            st.session_state.get('gics_filter_mode', 'All Stocks')
+        )
+
+        quadrant_peers = get_stocks_in_same_quadrant(
+            gics_filtered_pca, pc1, pc2, exclude_ticker=ticker
+        )
+        
+        # 📊 Visuals Tab
+        with stock_tab2:
+            st.markdown("### 📊 Visuals")
+
+            render_visualizations(
+                pca_df,
+                ticker,
+                pca_row,
+                quadrant_peers,
+                st.session_state.raw_data,
+                st.session_state.pca_model,
+                st.session_state.scaler
+            )
+        
+        # Build GICS sector filtered peers — used consistently for all percentiles and narratives
+        gics_filtered_pca = filter_by_gics_sector(pca_df, st.session_state.raw_data, ticker, "GICS Sector Only")
+        narrative_peers = get_stocks_in_same_quadrant(gics_filtered_pca, pc1, pc2, exclude_ticker=ticker)
+
+        # Get cluster summary and percentiles — using GICS sector peers only
+        cluster_summary = get_cluster_summary(pca_df)
+        available_features = [c for c in FEATURE_COLUMNS if c in pca_row.index]
+        percentiles = compute_percentile_ranks(narrative_peers, pca_row, available_features)
+
+        # Store for narrative engine
+        st.session_state.current_percentiles = percentiles
+        st.session_state.current_factor_data = get_factor_breakdown(pca_row)
+
+        # Get GICS sector name for narrative
+        gics_sector = 'N/A'
+        if 'gicdesc' in st.session_state.raw_data.columns:
+            ticker_rows = st.session_state.raw_data[st.session_state.raw_data['ticker'].str.upper() == ticker.upper()]
+            if not ticker_rows.empty:
+                gics_sector = ticker_rows['gicdesc'].iloc[0]
+
+        # 👥 Peers & Positioning Tab
+        with stock_tab3:
+            st.markdown("### 👥 Peers & Positioning")
+
+            st.markdown(
+                f"**{ticker}** is currently positioned in **{quadrant}** and **Cluster {cluster}**."
+            )
+            st.caption(
+                f"PC coordinates: PC1 = {pc1:.2f}, PC2 = {pc2:.2f}"
+            )
+
+            same_quadrant_count = len(quadrant_peers) if quadrant_peers is not None else 0
+
+            cluster_peers = pd.DataFrame()
+            if "cluster" in pca_df.columns:
+                cluster_peers = pca_df[
+                    (pca_df["cluster"] == cluster) & (pca_df["ticker"] != ticker)
+                ].copy()
+
+            same_cluster_count = len(cluster_peers)
+            overlap_count = 0
+            if not cluster_peers.empty and quadrant_peers is not None and not quadrant_peers.empty:
+                overlap_count = len(
+                    set(cluster_peers["ticker"]).intersection(set(quadrant_peers["ticker"]))
+                )
+
+            pos_col1, pos_col2, pos_col3 = st.columns(3)
+            with pos_col1:
+                st.metric("Same Quadrant", same_quadrant_count)
+            with pos_col2:
+                st.metric("Same Cluster", same_cluster_count)
+            with pos_col3:
+                st.metric("Quadrant + Cluster Overlap", overlap_count)
+
+            st.markdown("#### PCA Positioning")
+
+            try:
+                fig = create_pca_scatter_plot(
+                    pca_df,
+                    selected_ticker=ticker,
+                    highlight_peers=nearest_peers["ticker"].tolist() if "nearest_peers" in locals() else None
+                )
+                st.plotly_chart(fig, width="stretch")
+            except Exception as e:
+                st.warning(f"PCA visualization unavailable: {e}")
+
+            st.markdown("#### Nearest Structural Peers (PCA Distance)")
+
+            try:
+                peer_universe = pca_df.copy()
+
+                target_row = peer_universe[peer_universe["ticker"] == ticker]
+
+                if not target_row.empty:
+                    target_pc1 = target_row.iloc[0]["PC1"]
+                    target_pc2 = target_row.iloc[0]["PC2"]
+
+                    peer_universe["distance"] = (
+                        (peer_universe["PC1"] - target_pc1) ** 2 +
+                        (peer_universe["PC2"] - target_pc2) ** 2
+                    ) ** 0.5
+
+                    nearest_peers = (
+                        peer_universe[peer_universe["ticker"] != ticker]
+                        .sort_values("distance")
+                        .head(15)
+                    )
+
+                    # --- Distance Percentile (Crowding Signal) ---
+                    all_distances = peer_universe["distance"]
+
+                    target_distance = peer_universe[
+                        peer_universe["ticker"] == ticker
+                    ]["distance"].values[0]
+
+                    percentile = (all_distances < target_distance).mean() * 100
+
+                    # Interpret crowding
+                    if percentile <= 10:
+                        crowd_label = "🔴 Highly Crowded"
+                        crowd_text = "This stock sits in a densely packed region of PCA space — elevated crowding risk."
+                    elif percentile <= 40:
+                        crowd_label = "🟠 Moderately Crowded"
+                        crowd_text = "This stock has meaningful structural proximity to peers."
+                    elif percentile <= 70:
+                        crowd_label = "🟡 Neutral"
+                        crowd_text = "This stock is neither especially crowded nor especially isolated."
+                    else:
+                        crowd_label = "🟢 Structurally Isolated"
+                        crowd_text = "This stock is more structurally differentiated from peers."
+
+                    st.metric(
+                        "Structural Crowding Percentile",
+                        f"{percentile:.1f}%",
+                        help="Lower = more crowded (closer to other stocks)"
+                    )
+                    st.caption(crowd_label)
+                    st.caption(crowd_text)
+
+                    # --- Peer Dispersion Metric ---
+                    avg_peer_distance = nearest_peers["distance"].mean()
+
+                    st.metric(
+                        "Peer Dispersion (Avg Distance)",
+                        f"{avg_peer_distance:.4f}",
+                        help="Lower = tightly clustered peers (higher fragility)"
+                    )
+
+                    if avg_peer_distance < 0.05:
+                        dispersion_label = "🔴 Very Tight Cluster"
+                        dispersion_text = "Peers are extremely close — elevated fragility and crowding risk."
+                    elif avg_peer_distance < 0.15:
+                        dispersion_label = "🟠 Moderate Dispersion"
+                        dispersion_text = "Peers are somewhat clustered with moderate structural similarity."
+                    else:
+                        dispersion_label = "🟢 Broadly Distributed"
+                        dispersion_text = "Peers are more spread out — lower structural fragility."
+
+                    st.caption(dispersion_label)
+                    st.caption(dispersion_text)
+
+                    # --- Structural Risk Score ---
+                    # Invert percentile (lower percentile = higher risk)
+                    crowding_risk = 100 - percentile
+
+                    # Normalize dispersion (simple scaling assumption)
+                    dispersion_risk = max(0, min(100, (0.15 - avg_peer_distance) / 0.15 * 100))
+
+                    structural_risk_score = 0.6 * crowding_risk + 0.4 * dispersion_risk
+
+                    # Define risk label BEFORE using it
+                    if structural_risk_score >= 75:
+                        risk_label = "🔴 High Structural Risk"
+                        bar_color = "red"
+                    elif structural_risk_score >= 40:
+                        risk_label = "🟠 Moderate Structural Risk"
+                        bar_color = "orange"
+                    else:
+                        risk_label = "🟢 Low Structural Risk"
+                        bar_color = "green"
+
+                    st.metric(
+                        "Structural Risk Score",
+                        f"{structural_risk_score:.1f}",
+                        help="Composite of crowding + peer dispersion (higher = more structurally risky)"
+                    )
+
+                    st.progress(int(structural_risk_score))
+
+                    st.markdown(
+                        f"<div style='color:{bar_color}; font-weight:600;'>Risk Level: {risk_label}</div>",
+                        unsafe_allow_html=True
+                    )
+
+                    # --- Executive Summary ---
+                    if structural_risk_score >= 75:
+                        summary_text = "This stock exhibits elevated structural risk due to high crowding and tightly aligned peer positioning."
+                    elif structural_risk_score >= 40:
+                        summary_text = "This stock shows moderate structural risk, with some crowding and partial peer alignment."
+                    else:
+                        summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
+
+                    st.info(summary_text)
+
+                    # --- PCA Loading-Based Structural Drivers (ROBUST VERSION) ---
+                    loadings = st.session_state.get("pca_loadings_df")
+
+                    if loadings is not None:
+                        try:
+                            loadings_df = pd.DataFrame(loadings)
+
+                            # 🔧 Fix orientation (handles dict vs DataFrame cases)
+                            if "PC1" not in loadings_df.columns:
+                                loadings_df = loadings_df.T
+
+                            # 🔧 Force numeric (prevents abs() crash)
+                            loadings_df = loadings_df.apply(pd.to_numeric, errors="coerce")
+
+                            # 🔧 Drop empty rows
+                            loadings_df = loadings_df.dropna(how="all")
+
+                            # Combine PC1 + PC2 importance
+                            loadings_df["importance"] = (
+                                loadings_df["PC1"].abs() + loadings_df["PC2"].abs()
+                            )
+
+                            top_factors = (
+                                loadings_df["importance"]
+                                .sort_values(ascending=False)
+                                .head(3)
+                                .index.tolist()
+                            )
+
+                            directional_driver_labels = []
+
+                            for factor in top_factors:
+                                display_name = (
+                                    FEATURE_DISPLAY_NAMES.get(
+                                        factor,
+                                        factor.replace("_", " ").title()
+                                    ) if "FEATURE_DISPLAY_NAMES" in globals()
+                                    else factor.replace("_", " ").title()
+                                )
+
+                                pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
+                                pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
+
+                                directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
+
+                                arrow = "↑" if directional_score >= 0 else "↓"
+
+                                abs_score = abs(directional_score)
+                                if abs_score >= 0.30:
+                                    strength = "Strong"
+                                elif abs_score >= 0.15:
+                                    strength = "Moderate"
+                                else:
+                                    strength = "Light"
+
+                                directional_driver_labels.append(
+                                    f"{display_name} {arrow} ({strength})"
+                                )
+
+                            st.markdown("#### 🔬 Structural Drivers")
+
+                            structural_drivers = []
+
+                            for factor in top_factors:
+                                display_name = (
+                                    FEATURE_DISPLAY_NAMES.get(
+                                        factor,
+                                        factor.replace("_", " ").title()
+                                    ) if "FEATURE_DISPLAY_NAMES" in globals()
+                                    else factor.replace("_", " ").title()
+                                )
+
+                                pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
+                                pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
+
+                                directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
+
+                                direction_word = "Positive" if directional_score >= 0 else "Negative"
+
+                                abs_score = abs(directional_score)
+                                if abs_score >= 0.30:
+                                    strength = "Strong"
+                                elif abs_score >= 0.15:
+                                    strength = "Moderate"
+                                else:
+                                    strength = "Light"
+
+                                structural_drivers.append({
+                                    "factor": factor,
+                                    "factor_name": factor,
+                                    "display_name": display_name,
+                                    "direction": direction_word,
+                                    "strength": strength,
+                                    "directional_score": directional_score,
+                                    "pc1_loading": pc1_loading,
+                                    "pc2_loading": pc2_loading,
+                                }) 
+
+                                st.markdown(
+                                    f"- **{display_name}**: {direction_word}, {strength} influence"
+                                )
+
+                            st.session_state.current_structural_drivers = structural_drivers
+
+                        except Exception as e:
+                            st.caption(f"Driver calculation unavailable: {e}")
+
+                    else:
+                        st.caption("PCA loadings not available for structural driver analysis.")
+
+                    display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
+
+                    st.dataframe(
+                        nearest_peers[display_cols],
+                        width="stretch",
+                        hide_index=True
+                    )
+                else:
+                    st.info("Selected stock not found in PCA dataset.")
+
+            except Exception as e:
+                st.warning(f"Nearest peer calculation unavailable: {e}")
+
+        # 🧾 Narrative Tab
+        with stock_tab4:
+            render_narrative_section(
+                ticker=ticker,
+                pca_row=pca_row,
+                peer_df=narrative_peers,
+                gics_sector=gics_sector,
+            )
+
+        # 🧠 AI / Structural Tab
+        with stock_tab5:
+            # Lazy import to avoid Streamlit module cache issues
+            try:
+                from structural_analyst import run_structural_analysis
+            except Exception as e:
+                st.error(f"Structural Analyst failed to load: {e}")
+                run_structural_analysis = None
+
+            kg = st.session_state.get("kg_instance")
+            kg_regime = st.session_state.get("kg_current_regime")
+
+            if kg is None or kg_regime is None:
+                st.info("Structural Analyst requires Knowledge Graph context.")
+            else:
+                col1, col2 = st.columns([4, 1])
+
+                with col1:
+                    structural_question = st.text_input(
+                        "Ask a structural question:",
+                        placeholder="e.g., What changed structurally in this regime?",
+                        key="structural_input"
+                    )
+
+                # Initialize chatbot for structural analysis
+                chatbot = create_chatbot()
+
+                with col2:
+                    run_structural = st.button(
+                        "Analyze",
+                        key="structural_btn",
+                        disabled=False
+                    )
+
+                if run_structural and structural_question:
+                    with st.spinner("Running KG-backed structural analysis..."):
+                        try:
+                            # Build canonical KG evidence packet
+                            evidence_packet = None
+
+                            # Prefer narrative-derived KG subgraph (Tier 1 grounded)
+                            narrative_packet = st.session_state.get("last_narrative_subgraph")
+
+                            if narrative_packet:
+                                try:
+                                    evidence_packet = {
+                                        "question_type": "structural_drift",
+                                        "ticker": ticker,
+                                        "regime": kg_regime,
+                                        "subgraph": narrative_packet,
+                                    }
+                                except Exception:
+                                    evidence_packet = None
+                            else:
+                                try:
+                                    evidence_packet = build_structural_evidence_packet(
+                                        kg=kg,
+                                        ticker=ticker,
+                                        regime=kg_regime,
+                                        question_type="structural_drift",
+                                    )
+                                except Exception:
+                                    evidence_packet = None
+                                    
+                            # Validate evidence
+                            if not evidence_packet:
+                                st.error("No stock-centered KG subgraph is available for structural analysis.")
+                                result = None
+                            else:
+                                if run_structural_analysis is not None:
+                                    result = run_structural_analysis(
+                                        evidence_packet=evidence_packet,
+                                        llm_callable=chatbot.call_llm_structural,
+                                    )
+                                else:
+                                    st.error("Structural Analyst unavailable.")
+                                    result = None
+
+                            # Render result
+                            if result:
+                                st.markdown("## 🧠 Structural Analysis (KG-Grounded AI)")
+                                st.caption("LLM-based interpretation grounded strictly in Knowledge Graph evidence (Tier 2).")
+
+                                structural_answer = result.get("answer", "No answer returned.")
+                                st.markdown(f"**Assessment:** {structural_answer}")
+
+                                if result.get("summary_bullets"):
+                                    st.markdown("### 🔑 Key Points")
+                                    unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
+                                    for b in unique_bullets:
+                                        st.markdown(f"- {b}")
+
+                                with st.expander("🔍 Evidence"):
+                                    evidence_label_map = {
+                                        "structural_drift_summary": "Structural Drift",
+                                        "quadrant_history_summary": "Quadrant History",
+                                        "peer_comparison_summary": "Peer Comparison",
+                                        "factor_rotation_summary": "Factor Rotation",
+                                        "regime_transition_summary": "Regime Transition",
+                                    }
+
+                                    for e in result.get("evidence", []):
+                                        if isinstance(e, dict):
+                                            raw_source = e.get("source_name", "Unknown Source")
+                                            source = evidence_label_map.get(raw_source, raw_source)
+                                            fact = e.get("fact", "")
+                                            st.markdown(f"- **{source}**: {fact}")
+                                        else:
+                                            st.markdown(f"- {str(e)}")
+
+                                with st.expander("🕸️ Subgraph Snapshot"):
+                                    snapshot = result.get("subgraph_snapshot", {})
+
+                                    if isinstance(snapshot, dict):
+                                        node_count = snapshot.get("node_count", 0)
+                                        edge_count = snapshot.get("edge_count", 0)
+                                        included_node_ids = snapshot.get("included_node_ids", [])
+
+                                        snap_col1, snap_col2 = st.columns(2)
+                                        with snap_col1:
+                                            st.metric("Nodes", node_count)
+                                        with snap_col2:
+                                            st.metric("Edges", edge_count)
+
+                                        if included_node_ids:
+                                            st.markdown("**Included Node IDs**")
+                                            for node_id in included_node_ids:
+                                                st.markdown(f"- `{node_id}`")
+                                        else:
+                                            st.caption("No included node IDs were returned.")
+                                    else:
+                                        st.caption("Subgraph snapshot unavailable.")
+
+                                with st.expander("⚠️ Limits"):
+                                    limits = result.get("limits", [])
+
+                                    if isinstance(limits, list):
+                                        for l in limits:
+                                            st.markdown(f"- {l}")
+                                    else:
+                                        st.markdown(f"- {str(limits)}")
+
+                                confidence = str(result.get("confidence", "unknown")).lower()
+
+                                if confidence == "high":
+                                    confidence_label = "🟢 High"
+                                elif confidence == "medium":
+                                    confidence_label = "🟡 Medium"
+                                elif confidence == "low":
+                                    confidence_label = "🔴 Low"
+                                else:
+                                    confidence_label = confidence.title()
+
+                                st.caption(f"Confidence: {confidence_label}")
+
+                        except Exception as e:
+                            st.error(f"Structural analysis failed: {str(e)}")
 
     # Footer
     st.markdown("---")
