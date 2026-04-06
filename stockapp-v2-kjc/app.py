@@ -2185,6 +2185,34 @@ def render_universe_period_comparison():
 
 
 def render_universe_workspace():
+    """Render the Universe / Portfolio Level workspace."""
+
+    st.info("👆 Enter a stock ticker or PERMNO in the sidebar to begin analysis.")
+    
+    # Show overall cluster summary
+    if st.session_state.pca_df is not None:
+
+        landing_tab1, landing_tab2, landing_tab3, landing_tab4 = st.tabs([
+            "📊 Cluster Overview",
+            "📐 Period Comparison",
+            "🧠 Knowledge Graph",
+            "🔬 Structural Intelligence",
+        ])
+
+        with landing_tab1:
+            render_universe_cluster_overview()
+
+        with landing_tab2:
+            render_universe_period_comparison()
+
+        with landing_tab3:
+            render_kg_tab()
+
+        with landing_tab4:
+            render_structural_intelligence_tab()
+
+
+def render_stock_workspace():
     """Render the Stock / Individual Ticker Level workspace."""
 
     # Get selected stock data
@@ -2722,7 +2750,7 @@ def render_universe_workspace():
                     except Exception as e:
                         st.error(f"Structural analysis failed: {str(e)}")
 
-
+                        
 # =============================================================================
 # MAIN APPLICATION
 # =============================================================================
