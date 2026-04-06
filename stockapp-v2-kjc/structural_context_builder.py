@@ -25,8 +25,6 @@ Design notes
 - We record subgraph metadata for UI and audit display.
 """
 
-from __future__ import annotations
-
 from typing import Any, Dict, List, Optional
 
 from structural_types import (
