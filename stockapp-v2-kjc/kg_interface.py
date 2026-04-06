@@ -70,12 +70,12 @@ _APPENDIX_B_LOADINGS = {
     (EY, "Rate Shock"):   {"PC1":  0.130, "PC2":  0.095, "PC3": -0.040},
     (EY, "Disinflation"): {"PC1":  0.110, "PC2": -0.315, "PC3": -0.030},
 
-    # debt_assets: sign reversal on PC3 — most dramatic structural event
+    # Debt-to-assets: sign reversal on PC3 — most dramatic structural event
     (DEBT_ASSETS, "Post-COVID"):      {"PC1": -0.080, "PC2":  0.050, "PC3": -0.248},
     (DEBT_ASSETS, "Rate Shock"):      {"PC1": -0.060, "PC2":  0.070, "PC3":  0.210},
     (DEBT_ASSETS, "Disinflation"):    {"PC1": -0.040, "PC2":  0.090, "PC3":  0.770},
 
-    # bm: dominant positive PC2 driver — stable throughout
+    # Book-to-market: dominant positive PC2 driver — stable throughout
     (BM, "Post-COVID"):               {"PC1": -0.100, "PC2":  0.380, "PC3":  0.050},
     (BM, "Rate Shock"):               {"PC1": -0.090, "PC2":  0.360, "PC3":  0.060},
     (BM, "Disinflation"):             {"PC1": -0.080, "PC2":  0.350, "PC3":  0.070},
