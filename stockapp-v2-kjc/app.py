@@ -2053,6 +2053,9 @@ def render_universe_workspace():
             "🔬 Structural Intelligence",
         ])
 
+        with landing_tab1:
+            render_universe_cluster_overview()
+
         with landing_tab2:
             render_universe_period_comparison()
 
