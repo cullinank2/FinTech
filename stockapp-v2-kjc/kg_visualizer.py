@@ -51,7 +51,7 @@ except Exception as _schema_err:
 # ── Builder import ────────────────────────────────────────────────────────────
 try:
     from kg_builder import (
-        build_kg, build_static_ontology_graph, KGResult,
+        build_kg, build_static_ontology_graph,
         _safe_float,                # single definition lives in kg_builder
         _get_procrustes_row, _get_crowding_row, _get_migration_row,
         _get_pc_variance, _get_universe_count, _get_live_factor_axis_map,
