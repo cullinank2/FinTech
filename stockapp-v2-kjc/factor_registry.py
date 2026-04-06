@@ -170,3 +170,13 @@ FEATURE_DATA_SOURCES = {
 }
 
 REGIME_ORDER = ["Post-COVID", "Rate Shock", "Disinflation"]
+
+# =============================================================================
+# APPENDIX B LOADINGS (Compatibility Stub for KG Interface)
+# =============================================================================
+
+# NOTE:
+# This is a fallback mapping used by kg_interface.
+# It is intentionally left empty unless Appendix B data is explicitly defined.
+
+APPENDIX_B_FACTOR_LOADINGS = {}
