@@ -1887,327 +1887,304 @@ def render_universe_cluster_overview():
     fig_summary = create_cluster_summary_plot(cluster_summary)
     st.plotly_chart(fig_summary, use_container_width=True)
 
+def render_universe_period_comparison():
+    """Render the Universe / Portfolio Level period comparison tab."""
+
+    st.subheader("📐 Sub-Period PCA Comparison")
+    st.caption(
+        "Validates whether factor structure and stock behavior genuinely differ "
+        "across Post-COVID, Rate Shock, and Disinflation regimes."
+    )
+
+    raw_df = st.session_state.raw_data
+    if raw_df is None:
+        st.info("Data not yet loaded.")
+    else:
+        date_col = next(
+            (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth', 'public_date'] if c in raw_df.columns),
+            None
+        )
+        if date_col is None:
+            st.error(f"Date column not found. Available columns: {list(raw_df.columns)}")
+        else:
+            raw_df[date_col] = pd.to_datetime(raw_df[date_col])
+            features = get_features_from_df(raw_df)
+
+            if len(features) < 3:
+                st.error(f"Too few feature columns detected: {features}")
+            else:
+                # Section 1: Procrustes
+                st.markdown("---")
+                st.markdown("### 1 · Procrustes Disparity Scores")
+                st.caption("0 = identical structure; >0.15 = meaningful regime change.")
+
+                with st.spinner("Computing Procrustes analysis…"):
+                    proc_df  = compute_procrustes_table(raw_df, features, date_col)
+                    fig_proc = create_procrustes_heatmap(proc_df)
+
+                col_heat, col_table = st.columns([1.2, 1])
+                with col_heat:
+                    st.plotly_chart(fig_proc, use_container_width=True)
+                with col_table:
+                    st.markdown("**Pairwise results**")
+                    st.dataframe(proc_df, use_container_width=True, hide_index=True)
+
+                with st.expander("📖 How to read Procrustes"):
+                    st.markdown("""
+                    - **< 0.05** 🟢 Fa\tor structure nearly identical across periods.
+                    - **0.05–0.15** 🟡 Moderate shift; broadly similar structure.
+                    - **0.15–0.30** 🟠 Meaningful regime change; factors rewiring.
+                    - **> 0.30** 🔴 Major structural break; treat as distinct regimes.
+                    - Procrustes is **rotation-invariant** — accounts for PCA sign flips and axis swaps.
+                    """)
+
+                # ============================================================
+                # CROWDING SCORE MODULE
+                # ============================================================
+                st.markdown("---")
+                st.markdown("### 2 · Factor Crowding Score")
+                st.caption(
+                    "Measures how structurally concentrated the equity universe has become "
+                    "in PCA space each regime. A rising score signals factor crowding building "
+                    "before it becomes a realized risk event."
+                )
+
+                # Build a combined pca_df across all three periods
+                from period_analysis import _run_pca_for_period
+                all_period_rows = []
+                period_label_map = {
+                    'Post-COVID':   ('2021-03-01', '2022-06-30'),
+                    'Rate Shock':   ('2022-07-01', '2023-09-30'),
+                    'Disinflation': ('2023-10-01', '2024-10-31'),
+                }
+                for period_name, (start, end) in period_label_map.items():
+                    period_mask = (raw_df[date_col] >= start) & (raw_df[date_col] <= end)
+                    period_slice = raw_df[period_mask]
+                    if len(period_slice) < 10:
+                        continue
+                    try:
+                        _, scores_df, _, _ = _run_pca_for_period(
+                            period_slice, features, date_col, start, end
+                        )
+                        if scores_df is None:
+                            continue
+                        # Store clean per-period scores for Knowledge Graph
+                        # (before period/cluster columns are added for crowding)
+                        if "period_scores" not in st.session_state:
+                            st.session_state["period_scores"] = {}
+                        st.session_state["period_scores"][period_name] = scores_df.copy()
+
+                        scores_df['period'] = period_name
+                        # compute_crowding_scores needs 'cluster' column
+                        # derive it from Quadrant label
+                        quad_map = {
+                            f"Q1: {QUADRANTS['Q1']['name']}": 0,
+                            f"Q2: {QUADRANTS['Q2']['name']}": 1,
+                            f"Q3: {QUADRANTS['Q3']['name']}": 2,
+                            f"Q4: {QUADRANTS['Q4']['name']}": 3,
+                        }
+                        scores_df['cluster'] = scores_df['Quadrant'].map(quad_map)
+                        all_period_rows.append(scores_df)
+                    except Exception:
+                        continue
+
+                if all_period_rows:
+                    combined_period_df = pd.concat(all_period_rows, ignore_index=True)
+                    crowding_df = compute_crowding_scores(combined_period_df)
+                    st.session_state["crowding_df"] = crowding_df
+                    st.session_state["crowding_results"] = crowding_df
+
+                    # FORCE rebuild KG after period_scores is created (critical for Tier 2)
+                    from kg_builder import build_kg
+                    from kg_interface import KnowledgeGraph
+
+                    kg_result = build_kg(
+                        period_data=st.session_state.get("period_scores"),
+                        migration_df=st.session_state.get("migration_wide"),
+                        include_equity_nodes=True,
+                    )
+
+                    st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
+                    st.session_state["kg_current_regime"] = "Disinflation"
+
+                    if not crowding_df.empty:
+                        # Metric cards — one per regime
+                        metric_cols = st.columns(len(crowding_df))
+                        for i, row in crowding_df.iterrows():
+                            with metric_cols[i]:
+                                delta_str = ""
+                                if i > 0:
+                                    prev_score = crowding_df.iloc[i - 1]['crowding_score']
+                                    delta = row['crowding_score'] - prev_score
+                                    delta_str = f"{delta:+.1f} vs prior regime"
+                                st.metric(
+                                    label=f"{row['period']}",
+                                    value=f"{row['crowding_score']:.0f} / 100",
+                                    delta=delta_str,
+                                    delta_color="inverse"
+                                )
+                                st.caption(row['risk_level'])
+
+                        # Chart
+                        crowding_fig = plot_crowding_score(crowding_df)
+                        if crowding_fig:
+                            st.plotly_chart(crowding_fig, use_container_width=True)
+
+                        # Detail table
+                        with st.expander("📋 Crowding Score Detail Table"):
+                            display_df = crowding_df.rename(columns={
+                                'period':               'Regime',
+                                'n_stocks':             'Stocks',
+                                'largest_cluster_pct':  '% in Largest Cluster',
+                                'centroid_dispersion':  'Centroid Dispersion',
+                                'crowding_score':       'Crowding Score',
+                                'risk_level':           'Risk Level'
+                            })
+                            st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+                        # Plain-English narrative
+                        latest   = crowding_df.iloc[-1]
+                        earliest = crowding_df.iloc[0]
+                        trend    = "increased" if latest['crowding_score'] > earliest['crowding_score'] else "decreased"
+                        st.info(
+                            f"**Crowding Trend:** Factor crowding has **{trend}** from "
+                            f"{earliest['crowding_score']:.0f} in the {earliest['period']} regime "
+                            f"to {latest['crowding_score']:.0f} in the {latest['period']} regime. "
+                            f"The current {latest['risk_level']} reading reflects that "
+                            f"{latest['largest_cluster_pct']:.0f}% of the universe is concentrated "
+                            f"in the single largest cluster — a portfolio overweight this cluster "
+                            f"is running a structural factor bet that may not be visible in "
+                            f"traditional correlation-based risk systems."
+                        )
+                    else:
+                        st.warning("Crowding score could not be computed — check cluster labels.")
+                else:
+                    st.warning("Not enough period data to compute crowding scores.")
+
+                # Section 3: Quadrant Migration
+                st.markdown("---")
+                st.markdown("### 3 · Quadrant Migration")
+                st.caption("Tracks where each stock sat in PCA space across the three regimes.")
+
+                with st.spinner("Computing quadrant assignments…"):
+                    period_names = [k.split('\n')[0] for k in PERIOD_KEYS]
+                    migration_df, summary_df, migration_pct = compute_quadrant_migration(
+                        raw_df, features, date_col
+                    )
+                    if summary_df is not None and not summary_df.empty:
+                        st.session_state["migration_summary_df"] = summary_df
+
+                if migration_df is not None and not migration_df.empty:
+                    col_a, col_b, col_c = st.columns(3)
+                    col_a.metric("Stocks Tracked", f"{len(migration_df):,}")
+                    col_b.metric("Changed Quadrant", f"{migration_pct:.1f}%")
+                    col_c.metric("Stayed Same", f"{100 - migration_pct:.1f}%")
+
+                    st.markdown("**Migration rates between adjacent periods:**")
+                    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+
+                    st.markdown("**Flow diagram:**")
+                    fig_sankey = create_migration_sankey(migration_df, period_names)
+                    st.plotly_chart(fig_sankey, use_container_width=True)
+
+                    with st.expander("🔍 View stock-level quadrant table"):
+                        st.dataframe(
+                            migration_df.sort_values('Any Change', ascending=False),
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                else:
+                    st.warning("Not enough common tickers across all three sub-periods to compute migration.")
+
+                # Section 4: Full-Universe PC Loadings (Main PCA)
+                st.markdown("---")
+                render_full_universe_loadings_table()
+                
+                # Section 5: Factor Loadings by Sub-Period
+                st.markdown("---")
+                st.markdown("### 5 · Factor Loadings by Sub-Period")
+                st.caption("If bars change size or flip sign across periods, the factor structure shifted.")
+
+                pc_choice = st.radio(
+                    "Select principal component:",
+                    options=["PC1", "PC2", "PC3"],
+                    horizontal=True,
+                    key="landing_period_pc_choice"
+                )
+
+                with st.spinner("Running PCA for each sub-period…"):
+                    fig_loadings = create_loading_comparison_chart(raw_df, features, date_col, pc=pc_choice)
+                st.plotly_chart(fig_loadings, use_container_width=True)
+
+                from period_analysis import get_loading_comparison_data
+                loadings_table = get_loading_comparison_data(raw_df, features, date_col, pc=pc_choice)
+                if not loadings_table.empty:
+                    with st.expander(f"🔍 View {pc_choice} factor loadings table"):
+                        period_cols = ['Post-COVID', 'Rate Shock', 'Disinflation']
+                        delta_cols  = [c for c in loadings_table.columns if c.startswith('Δ')]
+
+                        def _style_loading(val):
+                            if not isinstance(val, (int, float)):
+                                return ''
+                            if val >= 0.30:
+                                return 'background-color: rgba(84,162,75,0.75); color: white; font-weight:bold;'
+                            elif val >= 0.10:
+                                return 'background-color: rgba(84,162,75,0.35); color: white;'
+                            elif val <= -0.30:
+                                return 'background-color: rgba(228,87,86,0.75); color: white; font-weight:bold;'
+                            elif val <= -0.10:
+                                return 'background-color: rgba(228,87,86,0.35); color: white;'
+                            return ''
+
+                        def _style_delta(val):
+                            if not isinstance(val, (int, float)):
+                                return ''
+                            if val > 0.05:
+                                return 'color: #54A24B; font-weight: bold;'
+                            elif val < -0.05:
+                                return 'color: #E45756; font-weight: bold;'
+                            return 'color: #888888;'
+
+                        styled = (
+                            loadings_table.style
+                            .map(_style_loading, subset=period_cols)
+                            .map(_style_delta,   subset=delta_cols)
+                            .format('{:+.3f}', subset=delta_cols)
+                            .format('{:.3f}',  subset=period_cols)
+                            .set_properties(**{'text-align': 'center'})
+                            .set_table_styles([
+                                {'selector': 'th',
+                                 'props': [('background-color', '#1e1e2e'),
+                                           ('color', '#ffffff'),
+                                           ('font-size', '12px'),
+                                           ('text-align', 'center'),
+                                           ('padding', '6px 10px')]},
+                                {'selector': 'td',
+                                 'props': [('font-size', '12px'),
+                                           ('padding', '4px 10px')]},
+                                {'selector': 'tr:hover td',
+                                 'props': [('background-color', 'rgba(255,255,255,0.05)')]},
+                            ])
+                        )
+                        st.dataframe(styled, use_container_width=True)
+                        st.caption(
+                            f"Loading weights for **{pc_choice}** across the three sub-periods. "
+                            "Bold shading = dominant driver (|loading| ≥ 0.30). "
+                            "Δ columns show shift between adjacent regimes; "
+                            "green = strengthening, red = weakening."
+                        )
+
+                with st.expander("📖 How to read this chart"):
+                    st.markdown("""
+                    - **Bar height** = how strongly that feature drives this component in that period.
+                    - **Positive loading** = the feature pushes stocks *higher* on this axis.
+                    - **Negative loading** = the feature pushes stocks *lower* on this axis.
+                    - If a bar **flips sign** between periods, the factor literally reversed its role.
+                    - If a bar **shrinks toward zero**, that feature lost explanatory power in that regime.
+                    """)
+
 
 def render_universe_workspace():
-    """Render the Universe / Portfolio Level workspace."""
-
-    st.info("👆 Enter a stock ticker or PERMNO in the sidebar to begin analysis.")
-    
-    # Show overall cluster summary
-    if st.session_state.pca_df is not None:
-
-        landing_tab1, landing_tab2, landing_tab3, landing_tab4 = st.tabs([
-            "📊 Cluster Overview",
-            "📐 Period Comparison",
-            "🧠 Knowledge Graph",
-            "🔬 Structural Intelligence",
-        ])
-
-        with landing_tab1:
-            render_universe_cluster_overview()
-
-        with landing_tab2:
-            st.subheader("📐 Sub-Period PCA Comparison")
-            st.caption(
-                "Validates whether factor structure and stock behavior genuinely differ "
-                "across Post-COVID, Rate Shock, and Disinflation regimes."
-            )
-
-            raw_df = st.session_state.raw_data
-            if raw_df is None:
-                st.info("Data not yet loaded.")
-            else:
-                date_col = next(
-                    (c for c in ['date', 'DATE', 'Date', 'period', 'PERIOD', 'datadate', 'yyyymm', 'yearmonth', 'public_date'] if c in raw_df.columns),
-                    None
-                )
-                if date_col is None:
-                    st.error(f"Date column not found. Available columns: {list(raw_df.columns)}")
-                else:
-                    raw_df[date_col] = pd.to_datetime(raw_df[date_col])
-                    features = get_features_from_df(raw_df)
-
-                    if len(features) < 3:
-                        st.error(f"Too few feature columns detected: {features}")
-                    else:
-                        # Section 1: Procrustes
-                        st.markdown("---")
-                        st.markdown("### 1 · Procrustes Disparity Scores")
-                        st.caption("0 = identical structure; >0.15 = meaningful regime change.")
-
-                        with st.spinner("Computing Procrustes analysis…"):
-                            proc_df  = compute_procrustes_table(raw_df, features, date_col)
-                            fig_proc = create_procrustes_heatmap(proc_df)
-
-                        col_heat, col_table = st.columns([1.2, 1])
-                        with col_heat:
-                            st.plotly_chart(fig_proc, use_container_width=True)
-                        with col_table:
-                            st.markdown("**Pairwise results**")
-                            st.dataframe(proc_df, use_container_width=True, hide_index=True)
-
-                        with st.expander("📖 How to read Procrustes"):
-                            st.markdown("""
-                            - **< 0.05** 🟢 Fa\tor structure nearly identical across periods.
-                            - **0.05–0.15** 🟡 Moderate shift; broadly similar structure.
-                            - **0.15–0.30** 🟠 Meaningful regime change; factors rewiring.
-                            - **> 0.30** 🔴 Major structural break; treat as distinct regimes.
-                            - Procrustes is **rotation-invariant** — accounts for PCA sign flips and axis swaps.
-                            """)
-
-                        # ============================================================
-                        # CROWDING SCORE MODULE
-                        # ============================================================
-                        st.markdown("---")
-                        st.markdown("### 2 · Factor Crowding Score")
-                        st.caption(
-                            "Measures how structurally concentrated the equity universe has become "
-                            "in PCA space each regime. A rising score signals factor crowding building "
-                            "before it becomes a realized risk event."
-                        )
-
-                        # Build a combined pca_df across all three periods
-                        from period_analysis import _run_pca_for_period
-                        all_period_rows = []
-                        period_label_map = {
-                            'Post-COVID':   ('2021-03-01', '2022-06-30'),
-                            'Rate Shock':   ('2022-07-01', '2023-09-30'),
-                            'Disinflation': ('2023-10-01', '2024-10-31'),
-                        }
-                        for period_name, (start, end) in period_label_map.items():
-                            period_mask = (raw_df[date_col] >= start) & (raw_df[date_col] <= end)
-                            period_slice = raw_df[period_mask]
-                            if len(period_slice) < 10:
-                                continue
-                            try:
-                                _, scores_df, _, _ = _run_pca_for_period(
-                                    period_slice, features, date_col, start, end
-                                )
-                                if scores_df is None:
-                                    continue
-                                # Store clean per-period scores for Knowledge Graph
-                                # (before period/cluster columns are added for crowding)
-                                if "period_scores" not in st.session_state:
-                                    st.session_state["period_scores"] = {}
-                                st.session_state["period_scores"][period_name] = scores_df.copy()
-
-                                scores_df['period'] = period_name
-                                # compute_crowding_scores needs 'cluster' column
-                                # derive it from Quadrant label
-                                quad_map = {
-                                    f"Q1: {QUADRANTS['Q1']['name']}": 0,
-                                    f"Q2: {QUADRANTS['Q2']['name']}": 1,
-                                    f"Q3: {QUADRANTS['Q3']['name']}": 2,
-                                    f"Q4: {QUADRANTS['Q4']['name']}": 3,
-                                }
-                                scores_df['cluster'] = scores_df['Quadrant'].map(quad_map)
-                                all_period_rows.append(scores_df)
-                            except Exception:
-                                continue
-
-                        if all_period_rows:
-                            combined_period_df = pd.concat(all_period_rows, ignore_index=True)
-                            crowding_df = compute_crowding_scores(combined_period_df)
-                            st.session_state["crowding_df"] = crowding_df
-                            st.session_state["crowding_results"] = crowding_df
-
-                            # FORCE rebuild KG after period_scores is created (critical for Tier 2)
-                            from kg_builder import build_kg
-                            from kg_interface import KnowledgeGraph
-
-                            kg_result = build_kg(
-                                period_data=st.session_state.get("period_scores"),
-                                migration_df=st.session_state.get("migration_wide"),
-                                include_equity_nodes=True,
-                            )
-
-                            st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
-                            st.session_state["kg_current_regime"] = "Disinflation"
-
-                            if not crowding_df.empty:
-                                # Metric cards — one per regime
-                                metric_cols = st.columns(len(crowding_df))
-                                for i, row in crowding_df.iterrows():
-                                    with metric_cols[i]:
-                                        delta_str = ""
-                                        if i > 0:
-                                            prev_score = crowding_df.iloc[i - 1]['crowding_score']
-                                            delta = row['crowding_score'] - prev_score
-                                            delta_str = f"{delta:+.1f} vs prior regime"
-                                        st.metric(
-                                            label=f"{row['period']}",
-                                            value=f"{row['crowding_score']:.0f} / 100",
-                                            delta=delta_str,
-                                            delta_color="inverse"
-                                        )
-                                        st.caption(row['risk_level'])
-
-                                # Chart
-                                crowding_fig = plot_crowding_score(crowding_df)
-                                if crowding_fig:
-                                    st.plotly_chart(crowding_fig, use_container_width=True)
-
-                                # Detail table
-                                with st.expander("📋 Crowding Score Detail Table"):
-                                    display_df = crowding_df.rename(columns={
-                                        'period':               'Regime',
-                                        'n_stocks':             'Stocks',
-                                        'largest_cluster_pct':  '% in Largest Cluster',
-                                        'centroid_dispersion':  'Centroid Dispersion',
-                                        'crowding_score':       'Crowding Score',
-                                        'risk_level':           'Risk Level'
-                                    })
-                                    st.dataframe(display_df, use_container_width=True, hide_index=True)
-
-                                # Plain-English narrative
-                                latest   = crowding_df.iloc[-1]
-                                earliest = crowding_df.iloc[0]
-                                trend    = "increased" if latest['crowding_score'] > earliest['crowding_score'] else "decreased"
-                                st.info(
-                                    f"**Crowding Trend:** Factor crowding has **{trend}** from "
-                                    f"{earliest['crowding_score']:.0f} in the {earliest['period']} regime "
-                                    f"to {latest['crowding_score']:.0f} in the {latest['period']} regime. "
-                                    f"The current {latest['risk_level']} reading reflects that "
-                                    f"{latest['largest_cluster_pct']:.0f}% of the universe is concentrated "
-                                    f"in the single largest cluster — a portfolio overweight this cluster "
-                                    f"is running a structural factor bet that may not be visible in "
-                                    f"traditional correlation-based risk systems."
-                                )
-                            else:
-                                st.warning("Crowding score could not be computed — check cluster labels.")
-                        else:
-                            st.warning("Not enough period data to compute crowding scores.")
-
-                        # Section 3: Quadrant Migration
-                        st.markdown("---")
-                        st.markdown("### 3 · Quadrant Migration")
-                        st.caption("Tracks where each stock sat in PCA space across the three regimes.")
-
-                        with st.spinner("Computing quadrant assignments…"):
-                            period_names = [k.split('\n')[0] for k in PERIOD_KEYS]
-                            migration_df, summary_df, migration_pct = compute_quadrant_migration(
-                                raw_df, features, date_col
-                            )
-                            if summary_df is not None and not summary_df.empty:
-                                st.session_state["migration_summary_df"] = summary_df
-
-                        if migration_df is not None and not migration_df.empty:
-                            col_a, col_b, col_c = st.columns(3)
-                            col_a.metric("Stocks Tracked", f"{len(migration_df):,}")
-                            col_b.metric("Changed Quadrant", f"{migration_pct:.1f}%")
-                            col_c.metric("Stayed Same", f"{100 - migration_pct:.1f}%")
-
-                            st.markdown("**Migration rates between adjacent periods:**")
-                            st.dataframe(summary_df, use_container_width=True, hide_index=True)
-
-                            st.markdown("**Flow diagram:**")
-                            fig_sankey = create_migration_sankey(migration_df, period_names)
-                            st.plotly_chart(fig_sankey, use_container_width=True)
-
-                            with st.expander("🔍 View stock-level quadrant table"):
-                                st.dataframe(
-                                    migration_df.sort_values('Any Change', ascending=False),
-                                    use_container_width=True,
-                                    hide_index=True
-                                )
-                        else:
-                            st.warning("Not enough common tickers across all three sub-periods to compute migration.")
-
-                        # Section 4: Full-Universe PC Loadings (Main PCA)
-                        st.markdown("---")
-                        render_full_universe_loadings_table()
-                        
-                        # Section 5: Factor Loadings by Sub-Period
-                        st.markdown("---")
-                        st.markdown("### 5 · Factor Loadings by Sub-Period")
-                        st.caption("If bars change size or flip sign across periods, the factor structure shifted.")
-
-                        pc_choice = st.radio(
-                            "Select principal component:",
-                            options=["PC1", "PC2", "PC3"],
-                            horizontal=True,
-                            key="landing_period_pc_choice"
-                        )
-
-                        with st.spinner("Running PCA for each sub-period…"):
-                            fig_loadings = create_loading_comparison_chart(raw_df, features, date_col, pc=pc_choice)
-                        st.plotly_chart(fig_loadings, use_container_width=True)
-
-                        from period_analysis import get_loading_comparison_data
-                        loadings_table = get_loading_comparison_data(raw_df, features, date_col, pc=pc_choice)
-                        if not loadings_table.empty:
-                            with st.expander(f"🔍 View {pc_choice} factor loadings table"):
-                                period_cols = ['Post-COVID', 'Rate Shock', 'Disinflation']
-                                delta_cols  = [c for c in loadings_table.columns if c.startswith('Δ')]
-
-                                def _style_loading(val):
-                                    if not isinstance(val, (int, float)):
-                                        return ''
-                                    if val >= 0.30:
-                                        return 'background-color: rgba(84,162,75,0.75); color: white; font-weight:bold;'
-                                    elif val >= 0.10:
-                                        return 'background-color: rgba(84,162,75,0.35); color: white;'
-                                    elif val <= -0.30:
-                                        return 'background-color: rgba(228,87,86,0.75); color: white; font-weight:bold;'
-                                    elif val <= -0.10:
-                                        return 'background-color: rgba(228,87,86,0.35); color: white;'
-                                    return ''
-
-                                def _style_delta(val):
-                                    if not isinstance(val, (int, float)):
-                                        return ''
-                                    if val > 0.05:
-                                        return 'color: #54A24B; font-weight: bold;'
-                                    elif val < -0.05:
-                                        return 'color: #E45756; font-weight: bold;'
-                                    return 'color: #888888;'
-
-                                styled = (
-                                    loadings_table.style
-                                    .map(_style_loading, subset=period_cols)
-                                    .map(_style_delta,   subset=delta_cols)
-                                    .format('{:+.3f}', subset=delta_cols)
-                                    .format('{:.3f}',  subset=period_cols)
-                                    .set_properties(**{'text-align': 'center'})
-                                    .set_table_styles([
-                                        {'selector': 'th',
-                                         'props': [('background-color', '#1e1e2e'),
-                                                   ('color', '#ffffff'),
-                                                   ('font-size', '12px'),
-                                                   ('text-align', 'center'),
-                                                   ('padding', '6px 10px')]},
-                                        {'selector': 'td',
-                                         'props': [('font-size', '12px'),
-                                                   ('padding', '4px 10px')]},
-                                        {'selector': 'tr:hover td',
-                                         'props': [('background-color', 'rgba(255,255,255,0.05)')]},
-                                    ])
-                                )
-                                st.dataframe(styled, use_container_width=True)
-                                st.caption(
-                                    f"Loading weights for **{pc_choice}** across the three sub-periods. "
-                                    "Bold shading = dominant driver (|loading| ≥ 0.30). "
-                                    "Δ columns show shift between adjacent regimes; "
-                                    "green = strengthening, red = weakening."
-                                )
-
-                        with st.expander("📖 How to read this chart"):
-                            st.markdown("""
-                            - **Bar height** = how strongly that feature drives this component in that period.
-                            - **Positive loading** = the feature pushes stocks *higher* on this axis.
-                            - **Negative loading** = the feature pushes stocks *lower* on this axis.
-                            - If a bar **flips sign** between periods, the factor literally reversed its role.
-                            - If a bar **shrinks toward zero**, that feature lost explanatory power in that regime.
-                            """)
-
-        with landing_tab3:
-            render_kg_tab()
-
-        with landing_tab4:
-            render_structural_intelligence_tab()
-
-
-def render_stock_workspace():
     """Render the Stock / Individual Ticker Level workspace."""
 
     # Get selected stock data
