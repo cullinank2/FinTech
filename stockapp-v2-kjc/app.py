@@ -2034,8 +2034,36 @@ def render_universe_period_comparison():
                 else:
                     st.warning("Not enough period data to compute crowding scores.")
 
-                # (Remaining sections unchanged — KEEP AS-IS)
-                # Quadrant Migration + Loadings stay exactly as you pasted
+                                # ============================================================
+                # QUADRANT MIGRATION
+                # ============================================================
+                st.markdown("---")
+                st.markdown("### 3 · Quadrant Migration")
+
+                try:
+                    migration_df = compute_quadrant_migration(raw_df, features, date_col)
+
+                    if migration_df is not None and not migration_df.empty:
+                        st.session_state["migration_wide"] = migration_df
+
+                        fig_migration = create_migration_sankey(migration_df)
+                        if fig_migration:
+                            st.plotly_chart(fig_migration, use_container_width=True)
+
+                        with st.expander("📋 Migration Table"):
+                            st.dataframe(migration_df, use_container_width=True)
+
+                    else:
+                        st.warning("Quadrant migration could not be computed.")
+
+                except Exception as e:
+                    st.warning(f"Migration analysis failed: {e}")
+
+                # ============================================================
+                # FULL-UNIVERSE LOADINGS (APPENDIX B.1)
+                # ============================================================
+                st.markdown("---")
+                render_full_universe_loadings_table()
 
 
 def render_universe_workspace():
