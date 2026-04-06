@@ -77,27 +77,7 @@ except Exception as _e:
 # Appendix B per-period loading fallbacks for get_factor_rotation()
 # Used ONLY when session_state["period_loadings"] is not yet populated.
 # Values: loading on the PC axis that shows the most dramatic shift.
-_APPENDIX_B_LOADINGS = {
-    # earnings_yield: sign reversal on PC2 — the headline example
-    (EY, "Post-COVID"):   {"PC1":  0.150, "PC2":  0.211, "PC3": -0.050},
-    (EY, "Rate Shock"):   {"PC1":  0.130, "PC2":  0.095, "PC3": -0.040},
-    (EY, "Disinflation"): {"PC1":  0.110, "PC2": -0.315, "PC3": -0.030},
-
-    # Debt-to-assets: sign reversal on PC3 — most dramatic structural event
-    (DEBT_ASSETS, "Post-COVID"):      {"PC1": -0.080, "PC2":  0.050, "PC3": -0.248},
-    (DEBT_ASSETS, "Rate Shock"):      {"PC1": -0.060, "PC2":  0.070, "PC3":  0.210},
-    (DEBT_ASSETS, "Disinflation"):    {"PC1": -0.040, "PC2":  0.090, "PC3":  0.770},
-
-    # Book-to-market: dominant positive PC2 driver — stable throughout
-    (BM, "Post-COVID"):               {"PC1": -0.100, "PC2":  0.380, "PC3":  0.050},
-    (BM, "Rate Shock"):               {"PC1": -0.090, "PC2":  0.360, "PC3":  0.060},
-    (BM, "Disinflation"):             {"PC1": -0.080, "PC2":  0.350, "PC3":  0.070},
-
-    # sales_to_price: stable positive PC2
-    (SP, "Post-COVID"):   {"PC1": -0.090, "PC2":  0.310, "PC3":  0.040},
-    (SP, "Rate Shock"):   {"PC1": -0.080, "PC2":  0.295, "PC3":  0.050},
-    (SP, "Disinflation"): {"PC1": -0.070, "PC2":  0.300, "PC3":  0.045},
-}
+from factor_registry import APPENDIX_B_FACTOR_LOADINGS as _APPENDIX_B_LOADINGS
 
 # ── VALIDATION: ensure Appendix B factors align with registry ───────────────
 for (factor, _regime) in _APPENDIX_B_LOADINGS.keys():
