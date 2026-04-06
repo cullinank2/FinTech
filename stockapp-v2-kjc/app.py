@@ -2052,7 +2052,10 @@ def render_universe_period_comparison():
                     if migration_df is not None and not migration_df.empty:
                         st.session_state["migration_wide"] = migration_df
 
-                        fig_migration = create_migration_sankey(migration_df)
+                        fig_migration = create_migration_sankey(
+                            migration_df,
+                            PERIOD_KEYS
+                        )
                         if fig_migration:
                             st.plotly_chart(fig_migration, use_container_width=True)
 
