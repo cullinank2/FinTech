@@ -1860,6 +1860,34 @@ def render_chatbot_section(
                 """, unsafe_allow_html=True)
 
 
+def render_universe_cluster_overview():
+    """Render the Universe / Portfolio Level cluster overview tab."""
+
+    # Apply GICS sector filter if selected on landing page
+    plot_df = st.session_state.pca_df.copy()
+    selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
+
+    if selected_sector and selected_sector != "All Sectors" and 'gicdesc' in st.session_state.raw_data.columns:
+        sector_tickers = st.session_state.raw_data[
+            st.session_state.raw_data['gicdesc'] == selected_sector
+        ]['ticker'].unique()
+        plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
+
+    total_count = len(plot_df)
+    if selected_sector and selected_sector != "All Sectors":
+        sector_label = f" — {selected_sector} ({total_count})"
+    else:
+        sector_label = f" — All Sectors ({total_count})"
+    st.markdown(f"### 📊 Cluster Overview{sector_label}")
+
+    fig = create_pca_scatter_plot(plot_df)
+    st.plotly_chart(fig, use_container_width=True)
+
+    cluster_summary = get_cluster_summary(plot_df)
+    fig_summary = create_cluster_summary_plot(cluster_summary)
+    st.plotly_chart(fig_summary, use_container_width=True)
+
+
 def render_universe_workspace():
     """Render the Universe / Portfolio Level workspace."""
 
@@ -1876,29 +1904,7 @@ def render_universe_workspace():
         ])
 
         with landing_tab1:
-            # Apply GICS sector filter if selected on landing page
-            plot_df = st.session_state.pca_df.copy()
-            selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
-
-            if selected_sector and selected_sector != "All Sectors" and 'gicdesc' in st.session_state.raw_data.columns:
-                sector_tickers = st.session_state.raw_data[
-                    st.session_state.raw_data['gicdesc'] == selected_sector
-                ]['ticker'].unique()
-                plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
-
-            total_count = len(plot_df)
-            if selected_sector and selected_sector != "All Sectors":
-                sector_label = f" — {selected_sector} ({total_count})"
-            else:
-                sector_label = f" — All Sectors ({total_count})"
-            st.markdown(f"### 📊 Cluster Overview{sector_label}")
-
-            fig = create_pca_scatter_plot(plot_df)
-            st.plotly_chart(fig, use_container_width=True)
-
-            cluster_summary = get_cluster_summary(plot_df)
-            fig_summary = create_cluster_summary_plot(cluster_summary)
-            st.plotly_chart(fig_summary, use_container_width=True)
+            render_universe_cluster_overview()
 
         with landing_tab2:
             st.subheader("📐 Sub-Period PCA Comparison")
