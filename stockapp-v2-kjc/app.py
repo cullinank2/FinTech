@@ -415,7 +415,7 @@ def render_sidebar():
         current_view == "🕐 2D or 3D Time-Lapse" and
         st.session_state.get('timelapse_view_mode', '2D View') == '3D View'
     )
-    if stock_selected and (current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"] or timelapse_is_3d):
+    if st.session_state.get('selected_stock') is not None and (current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"] or timelapse_is_3d):
         with st.sidebar.expander(f"PC3 (Z-axis): {PC3_INTERPRETATION['name']}"):
             st.markdown(f"""
             **Explains ~{pc3_var}% of variance**
