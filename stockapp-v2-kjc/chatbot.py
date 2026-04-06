@@ -195,7 +195,7 @@ PCA Scores:
 - PC1 (Profitability & Quality): {ctx['pc1']:.3f}
   {'Positive = High quality, profitable, financially strong' if ctx['pc1'] >= 0 else 'Negative = Riskier, lower quality, more volatile'}
 - PC2 (Valuation Style): {ctx['pc2']:.3f}
-  {'Positive = Value-oriented (high BM, SP, EY)' if ctx['pc2'] >= 0 else 'Negative = Growth-oriented (low BM, SP, EY)'}
+  {'Positive = Value-oriented' if ctx['pc2'] >= 0 else 'Negative = Growth-oriented'}
 
 Quadrant Characteristics:
 {', '.join(quadrant_info.get('characteristics', []))}
@@ -513,7 +513,7 @@ peer clusters), prefer citing these KG facts over general commentary.
 
 **PCA Interpretation:**
 - **PC1 Score ({ctx['pc1']:.3f}):** {'Above average quality/stability' if ctx['pc1'] >= 0 else 'Below average quality/stability'}
-- **PC2 Score ({ctx['pc2']:.3f}):** {'Value-oriented (high BM, SP, EY)' if ctx['pc2'] >= 0 else 'Growth-oriented (low BM, SP, EY)'}
+- **PC2 Score ({ctx['pc2']:.3f}):** {'Value-oriented' if ctx['pc2'] >= 0 else 'Growth-oriented'}
 
 **Quadrant Characteristics:**
 {chr(10).join(['• ' + c for c in quadrant_info.get('characteristics', [])])}
