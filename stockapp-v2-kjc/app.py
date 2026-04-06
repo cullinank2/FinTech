@@ -1582,6 +1582,10 @@ def render_universe_kg_tab():
     """Render the Universe / Portfolio Level Knowledge Graph tab."""
     render_kg_tab()
 
+def render_universe_structural_tab():
+    """Render the Universe / Portfolio Level Structural Intelligence tab."""
+    render_structural_intelligence_tab()
+
 def render_narrative_section(
     ticker: str,
     pca_row: pd.Series,
@@ -1960,7 +1964,7 @@ def render_universe_workspace():
             render_universe_kg_tab()
 
         with landing_tab4:
-            render_structural_intelligence_tab()
+            render_universe_structural_tab()
 
 
 def render_stock_workspace():
