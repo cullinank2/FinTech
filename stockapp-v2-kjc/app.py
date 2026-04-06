@@ -372,6 +372,75 @@ def render_sidebar():
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📐 Axis Interpretations")
+    
+    # Get live variance values from PCA model if available
+    pc1_var = PC1_INTERPRETATION['variance_explained']  # fallback to hardcoded
+    pc2_var = PC2_INTERPRETATION['variance_explained']  # fallback to hardcoded
+    pc3_var = PC3_INTERPRETATION['variance_explained']  # fallback to hardcoded
+    
+    if st.session_state.pca_model is not None:
+        ratios = st.session_state.pca_model.explained_variance_ratio_
+        if len(ratios) >= 1:
+            pc1_var = round(ratios[0] * 100, 1)
+        if len(ratios) >= 2:
+            pc2_var = round(ratios[1] * 100, 1)
+        if len(ratios) >= 3:
+            pc3_var = round(ratios[2] * 100, 1)
+    
+    with st.sidebar.expander(f"PC1 (X-axis): {PC1_INTERPRETATION['name']}"):
+        st.markdown(f"""
+        **Explains ~{pc1_var}% of variance**
+        
+        **High values (→ Right):**
+        - {', '.join(PC1_INTERPRETATION['high_meaning'])}
+        
+        **Low values (← Left):**
+        - {', '.join(PC1_INTERPRETATION['low_meaning'])}
+        """)
+    
+    with st.sidebar.expander(f"PC2 (Y-axis): {PC2_INTERPRETATION['name']}"):
+        st.markdown(f"""
+        **Explains ~{pc2_var}% of variance**
+        
+        **High values (↑ Up):**
+        - {', '.join(PC2_INTERPRETATION['high_meaning'])}
+        
+        **Low values (↓ Down):**
+        - {', '.join(PC2_INTERPRETATION['low_meaning'])}
+        """)
+    
+    # Only show PC3 expander when 3D View is selected
+    current_view = st.session_state.get('current_view', '')
+    timelapse_is_3d = (
+        current_view == "🕐 2D or 3D Time-Lapse" and
+        st.session_state.get('timelapse_view_mode', '2D View') == '3D View'
+    )
+    if stock_selected and (current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"] or timelapse_is_3d):
+        with st.sidebar.expander(f"PC3 (Z-axis): {PC3_INTERPRETATION['name']}"):
+            st.markdown(f"""
+            **Explains ~{pc3_var}% of variance**
+
+            **High values (↑ Up):**
+            - {', '.join(PC3_INTERPRETATION['high_meaning'])}
+        
+            **Low values (↓ Down):**
+            - {', '.join(PC3_INTERPRETATION['low_meaning'])}
+            """)            
+                        
+            #**The cleanest factor in the model**
+            
+            #**High values (↑ Up):**
+            #- Deep value stocks
+            #- Asset-heavy companies
+            #- Leveraged balance sheets
+            
+            #**Low values (↓ Down):**
+            #- Growth / asset-light companies
+            #- Capital efficient businesses
+            #- Higher profitability vs book value
+            
+            #*≈ Momentum vs Profitability · Pure Value vs Growth*
+            #""")
 
     stock_scope_active = (
         st.session_state.analysis_scope == "Stock / Individual Ticker Level"
@@ -618,75 +687,6 @@ def render_sidebar():
         st.session_state.gics_filter_mode = filter_mode
 
     # Display axis interpretations
-    
-    # Get live variance values from PCA model if available
-    pc1_var = PC1_INTERPRETATION['variance_explained']  # fallback to hardcoded
-    pc2_var = PC2_INTERPRETATION['variance_explained']  # fallback to hardcoded
-    pc3_var = PC3_INTERPRETATION['variance_explained']  # fallback to hardcoded
-    
-    if st.session_state.pca_model is not None:
-        ratios = st.session_state.pca_model.explained_variance_ratio_
-        if len(ratios) >= 1:
-            pc1_var = round(ratios[0] * 100, 1)
-        if len(ratios) >= 2:
-            pc2_var = round(ratios[1] * 100, 1)
-        if len(ratios) >= 3:
-            pc3_var = round(ratios[2] * 100, 1)
-    
-    with st.sidebar.expander(f"PC1 (X-axis): {PC1_INTERPRETATION['name']}"):
-        st.markdown(f"""
-        **Explains ~{pc1_var}% of variance**
-        
-        **High values (→ Right):**
-        - {', '.join(PC1_INTERPRETATION['high_meaning'])}
-        
-        **Low values (← Left):**
-        - {', '.join(PC1_INTERPRETATION['low_meaning'])}
-        """)
-    
-    with st.sidebar.expander(f"PC2 (Y-axis): {PC2_INTERPRETATION['name']}"):
-        st.markdown(f"""
-        **Explains ~{pc2_var}% of variance**
-        
-        **High values (↑ Up):**
-        - {', '.join(PC2_INTERPRETATION['high_meaning'])}
-        
-        **Low values (↓ Down):**
-        - {', '.join(PC2_INTERPRETATION['low_meaning'])}
-        """)
-    
-    # Only show PC3 expander when 3D View is selected
-    current_view = st.session_state.get('current_view', '')
-    timelapse_is_3d = (
-        current_view == "🕐 2D or 3D Time-Lapse" and
-        st.session_state.get('timelapse_view_mode', '2D View') == '3D View'
-    )
-    if stock_selected and (current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"] or timelapse_is_3d):
-        with st.sidebar.expander(f"PC3 (Z-axis): {PC3_INTERPRETATION['name']}"):
-            st.markdown(f"""
-            **Explains ~{pc3_var}% of variance**
-
-            **High values (↑ Up):**
-            - {', '.join(PC3_INTERPRETATION['high_meaning'])}
-        
-            **Low values (↓ Down):**
-            - {', '.join(PC3_INTERPRETATION['low_meaning'])}
-            """)            
-                        
-            #**The cleanest factor in the model**
-            
-            #**High values (↑ Up):**
-            #- Deep value stocks
-            #- Asset-heavy companies
-            #- Leveraged balance sheets
-            
-            #**Low values (↓ Down):**
-            #- Growth / asset-light companies
-            #- Capital efficient businesses
-            #- Higher profitability vs book value
-            
-            #*≈ Momentum vs Profitability · Pure Value vs Growth*
-            #""")
     
     # OpenAI API Key input
     st.sidebar.markdown("---")
