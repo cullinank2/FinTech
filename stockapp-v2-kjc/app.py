@@ -1552,12 +1552,20 @@ def render_universe_period_comparison():
 
     if period_scores is not None:
         st.markdown("#### Period Scores")
-        st.dataframe(period_scores.head(), use_container_width=True)
+
+        if isinstance(period_scores, pd.DataFrame):
+            st.dataframe(period_scores.head(), use_container_width=True)
+        else:
+            st.write(period_scores)
 
     if migration_wide is not None:
         st.markdown("#### Migration Summary")
-        st.dataframe(migration_wide.head(), use_container_width=True)
 
+        if isinstance(migration_wide, pd.DataFrame):
+            st.dataframe(migration_wide.head(), use_container_width=True)
+        else:
+            st.write(migration_wide)
+            
     try:
         comparison_fig = create_loading_comparison_chart(period_scores)
         st.plotly_chart(comparison_fig, use_container_width=True)
