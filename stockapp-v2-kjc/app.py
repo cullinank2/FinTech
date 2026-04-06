@@ -1565,7 +1565,7 @@ def render_universe_period_comparison():
             st.dataframe(migration_wide.head(), use_container_width=True)
         else:
             st.write(migration_wide)
-            
+
     try:
         comparison_fig = create_loading_comparison_chart(period_scores)
         st.plotly_chart(comparison_fig, use_container_width=True)
@@ -1578,6 +1578,9 @@ def render_universe_period_comparison():
     except Exception:
         pass
 
+def render_universe_kg_tab():
+    """Render the Universe / Portfolio Level Knowledge Graph tab."""
+    render_kg_tab()
 
 def render_narrative_section(
     ticker: str,
@@ -1954,7 +1957,7 @@ def render_universe_workspace():
             render_universe_period_comparison()
 
         with landing_tab3:
-            render_kg_tab()
+            render_universe_kg_tab()
 
         with landing_tab4:
             render_structural_intelligence_tab()
