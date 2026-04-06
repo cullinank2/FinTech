@@ -39,6 +39,7 @@ import pandas as pd
 from typing import Dict, Optional, Any
 
 from factor_registry import (
+    CASH_DEBT,
     FEATURE_DISPLAY_NAMES,
     FEATURE_ECONOMIC_MEANINGS,
     PCA_DRIVER_GROUPS,
@@ -521,7 +522,7 @@ def generate_trajectory_narrative(
             if len(series) < 3:
                 continue
             label = FEATURE_DISPLAY_NAMES.get(feat, feat)
-            if feat == 'cash_debt':
+            if feat == CASH_DEBT:
                 diffs = series.diff().dropna()
                 rolling_std = diffs.rolling(window=4, min_periods=2).std()
 
