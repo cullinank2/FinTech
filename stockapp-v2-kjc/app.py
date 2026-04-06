@@ -525,35 +525,36 @@ def render_sidebar():
             help="Select a GICS sector to show only that sector's stocks in the Cluster Plot"
         )
 
-    # Visualizations dropdown (always visible, disabled until stock selected)
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 Visualizations")
-    
-    view_options = [
-        "🎯 Cluster Plot",
-        "👥 Quadrant Peers",
-        "📊 Factor Analysis",
-        "🕐 2D or 3D Time-Lapse",
-        "🌐 3D Cluster View",
-        "🌐 3D Quadrant Peers",
-    ]
-    
-    # Always show dropdown, but disable if no stock selected
-    selected_view = st.sidebar.selectbox(
-        "Jump to view:",
-        options=view_options,
-        key="view_selector",
-        disabled=not stock_selected
-    )
-    
-    # Only update session state if stock is selected
-    if stock_selected:
-        # Store selection in session state
-        if 'current_view' not in st.session_state:
-            st.session_state.current_view = view_options[0]
+    # Visualizations dropdown (stock scope only)
+    if stock_scope_active:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("### 📊 Visualizations")
         
-        if selected_view != st.session_state.current_view:
-            st.session_state.current_view = selected_view
+        view_options = [
+            "🎯 Cluster Plot",
+            "👥 Quadrant Peers",
+            "📊 Factor Analysis",
+            "🕐 2D or 3D Time-Lapse",
+            "🌐 3D Cluster View",
+            "🌐 3D Quadrant Peers",
+        ]
+        
+        # Always show dropdown, but disable if no stock selected
+        selected_view = st.sidebar.selectbox(
+            "Jump to view:",
+            options=view_options,
+            key="view_selector",
+            disabled=not stock_selected
+        )
+        
+        # Only update session state if stock is selected
+        if stock_selected:
+            # Store selection in session state
+            if 'current_view' not in st.session_state:
+                st.session_state.current_view = view_options[0]
+            
+            if selected_view != st.session_state.current_view:
+                st.session_state.current_view = selected_view
 
     # GICS Sector filter (always visible, disabled until stock selected)
     st.sidebar.markdown("---")
