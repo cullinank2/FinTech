@@ -2041,7 +2041,13 @@ def render_universe_period_comparison():
                 st.markdown("### 3 · Quadrant Migration")
 
                 try:
-                    migration_df = compute_quadrant_migration(raw_df, features, date_col)
+                    migration_result = compute_quadrant_migration(raw_df, features, date_col)
+
+                    # Handle tuple return (df, metadata) OR direct df
+                    if isinstance(migration_result, tuple):
+                        migration_df = migration_result[0]
+                    else:
+                        migration_df = migration_result
 
                     if migration_df is not None and not migration_df.empty:
                         st.session_state["migration_wide"] = migration_df
