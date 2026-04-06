@@ -370,6 +370,9 @@ def render_sidebar():
         index=0 if st.session_state.analysis_scope == "Universe / Portfolio Level" else 1,
     )
 
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 📐 Axis Interpretations")
+
     stock_scope_active = (
         st.session_state.analysis_scope == "Stock / Individual Ticker Level"
     )
@@ -615,8 +618,6 @@ def render_sidebar():
         st.session_state.gics_filter_mode = filter_mode
 
     # Display axis interpretations
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📐 Axis Interpretations")
     
     # Get live variance values from PCA model if available
     pc1_var = PC1_INTERPRETATION['variance_explained']  # fallback to hardcoded
