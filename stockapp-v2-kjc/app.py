@@ -2320,25 +2320,11 @@ def render_universe_structural_tab():
 
     st.markdown("---")
 
-    panel = st.radio(
-        "Select monitor",
-        options=[
-            "📈 Regime Crowding Chain",
-            "🚨 Early Warning Panel",
-            "🔍 Reasoning Chain Viewer",
-        ],
-        horizontal=True,
-        key="universe_structural_monitor_selector",
+    st.info(
+        "Structural Risk Monitor active — filtered to Universe-level diagnostics."
     )
 
-    st.markdown("---")
-
-    if panel == "📈 Regime Crowding Chain":
-        _render_crowding_chain_panel(kg)
-    elif panel == "🚨 Early Warning Panel":
-        _render_early_warning_panel(kg)
-    elif panel == "🔍 Reasoning Chain Viewer":
-        _render_reasoning_chain_panel(kg)
+    render_structural_intelligence_tab()
 
 
 def render_universe_workspace():
