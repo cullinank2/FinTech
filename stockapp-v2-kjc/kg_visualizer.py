@@ -1415,3 +1415,56 @@ def render_structural_intelligence_tab() -> None:
         _render_early_warning_panel(kg)
     elif panel == "🔍 Reasoning Chain Viewer":
         _render_reasoning_chain_panel(kg)
+
+
+# =============================================================================
+# UNIVERSE-ONLY STRUCTURAL INTELLIGENCE TAB (NO PEER PATH)
+# =============================================================================
+
+def render_structural_intelligence_tab_universe() -> None:
+    """
+    Universe / Portfolio-level Structural Intelligence tab.
+
+    Excludes Peer Path Explorer (stock-specific tool).
+    Focuses on regime-level diagnostics only.
+    """
+    st.header("🧠 Structural Intelligence — Universe Level")
+    st.markdown(
+        "Regime-level structural diagnostics. "
+        "Peer-level tools are available in the Stock workspace."
+    )
+
+    kg = st.session_state.get("kg_instance", None)
+
+    has_live_data = (
+        st.session_state.get("crowding_df") is not None or
+        st.session_state.get("procrustes_results") is not None
+    )
+
+    if kg is None and not has_live_data:
+        st.warning(
+            "⚠️ No live data available yet. "
+            "Run **Period Comparison** to populate structural diagnostics."
+        )
+
+    st.markdown("---")
+
+    panel = st.radio(
+        "Select analysis",
+        options=[
+            "📈 Regime Crowding Chain",
+            "🚨 Early Warning Panel",
+            "🔍 Reasoning Chain Viewer",
+        ],
+        horizontal=True,
+        key="si_panel_selector_universe",
+    )
+
+    st.markdown("---")
+
+    if panel == "📈 Regime Crowding Chain":
+        _render_crowding_chain_panel(kg)
+    elif panel == "🚨 Early Warning Panel":
+        _render_early_warning_panel(kg)
+    elif panel == "🔍 Reasoning Chain Viewer":
+        _render_reasoning_chain_panel(kg)
