@@ -2077,6 +2077,35 @@ def render_universe_period_comparison():
                     st.session_state["kg_current_regime"] = "Disinflation"
 
                     if not crowding_df.empty:
+
+                        # ============================================================
+                        # EXECUTIVE REGIME SUMMARY
+                        # ============================================================
+                        latest = crowding_df.iloc[-1]
+                        earliest = crowding_df.iloc[0]
+
+                        trend = "↑ Increasing" if latest['crowding_score'] > earliest['crowding_score'] else "↓ Decreasing"
+
+                        kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
+
+                        kpi_col1.metric(
+                            "Current Regime",
+                            latest['period']
+                        )
+
+                        kpi_col2.metric(
+                            "Crowding Score",
+                            f"{latest['crowding_score']:.0f} / 100",
+                            delta=trend
+                        )
+
+                        kpi_col3.metric(
+                            "Risk Level",
+                            latest['risk_level']
+                        )
+
+                        st.markdown("---")
+
                         # Metric cards — one per regime
                         metric_cols = st.columns(len(crowding_df))
                         for i, row in crowding_df.iterrows():
