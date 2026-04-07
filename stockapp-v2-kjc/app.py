@@ -628,7 +628,10 @@ def render_sidebar():
 
     # Axis interpretations (moved below controls for clarity)
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📐 Axis Interpretations")
+    st.sidebar.markdown("### Factor Axis Interpretation")
+    st.sidebar.caption(
+        "Interpret the structural meaning of PCA axes used throughout the diagnostics."
+    )
 
     # Get live variance values from PCA model if available
     pc1_var = PC1_INTERPRETATION['variance_explained']
