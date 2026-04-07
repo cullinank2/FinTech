@@ -1932,16 +1932,9 @@ def render_universe_cluster_overview():
         "Distribution of names across structural clusters in the current universe view."
     )
 
-    st.markdown("### System Structure Dashboard")
-    st.caption(
-        "Monitor cross-sectional market structure, cluster concentration, and sector-level positioning "
-        "through the primary PCA diagnostic view."
-    )
-
-    st.info(
-        "Use this dashboard to assess how broadly dispersed the current universe is, "
-        "where structural crowding may be emerging, and how sector filtering changes the observed market shape."
-    )
+    cluster_summary = get_cluster_summary(plot_df)
+    fig_summary = create_cluster_summary_plot(cluster_summary)
+    st.plotly_chart(fig_summary, use_container_width=True)
 
 def render_universe_period_comparison():
     """Render the Universe / Portfolio Level period comparison tab."""
