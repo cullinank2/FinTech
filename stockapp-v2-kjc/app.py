@@ -1963,7 +1963,7 @@ def render_universe_period_comparison():
             features = get_features_from_df(raw_df)
 
             if len(features) < 3:
-                    st.error(f"Too few feature columns detected: {features}")
+                st.error(f"Too few feature columns detected: {features}")
             else:
                     # Section 1: Procrustes
                     st.markdown("---")
