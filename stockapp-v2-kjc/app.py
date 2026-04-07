@@ -2224,6 +2224,15 @@ def render_universe_workspace():
             render_universe_structural_tab()
 
 
+def render_stock_overview_tab(pca_row: pd.Series):
+    """Render the Stock / Individual Ticker Level overview tab."""
+
+    return render_stock_overview(
+        st.session_state.raw_data,
+        pca_row
+    )
+
+
 def render_stock_workspace():
     """Render the Stock / Individual Ticker Level workspace."""
 
@@ -2257,10 +2266,10 @@ def render_stock_workspace():
     ])
     
     # Render stock overview
-    ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview(
-        st.session_state.raw_data,
-        pca_row
-    )
+    with stock_tab1:
+        ticker, permno, cluster, pc1, pc2, quadrant = render_stock_overview_tab(
+            pca_row
+        )
 
     # Get quadrant peers (GICS-filtered universe for consistency)
     gics_filtered_pca = filter_by_gics_sector(
