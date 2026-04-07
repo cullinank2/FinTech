@@ -521,9 +521,10 @@ def render_sidebar():
             help="Select a GICS sector to show only that sector's stocks in the Cluster Plot"
         )
 
-    # Visualizations dropdown (stock scope only)
+    # Visuals tab controls (stock scope only)
     if stock_scope_active:
-        st.sidebar.markdown("### 📊 Visualizations")
+        st.sidebar.markdown("### 📊 Visuals Tab")
+        st.sidebar.caption("Use the top tabs for page navigation. These controls affect the Visuals tab only.")
         
         view_options = [
             "🎯 Cluster Plot",
@@ -534,22 +535,26 @@ def render_sidebar():
             "🌐 3D Quadrant Peers",
         ]
         
-        # Always show dropdown, but disable if no stock selected
+        # Preserve existing visualization logic, but reposition mentally as tab-specific
+        if 'current_view' not in st.session_state:
+            st.session_state.current_view = view_options[0]
+        
+        current_index = (
+            view_options.index(st.session_state.current_view)
+            if st.session_state.current_view in view_options
+            else 0
+        )
+        
         selected_view = st.sidebar.selectbox(
-            "Jump to view:",
+            "Visual shown in 📊 Visuals tab:",
             options=view_options,
+            index=current_index,
             key="view_selector",
             disabled=not stock_selected
         )
         
-        # Only update session state if stock is selected
         if stock_selected:
-            # Store selection in session state
-            if 'current_view' not in st.session_state:
-                st.session_state.current_view = view_options[0]
-            
-            if selected_view != st.session_state.current_view:
-                st.session_state.current_view = selected_view
+            st.session_state.current_view = selected_view
 
     # GICS Sector filter (stock scope only)
     if stock_scope_active:
