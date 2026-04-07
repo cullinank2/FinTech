@@ -2191,6 +2191,12 @@ def render_universe_structural_tab():
 def render_universe_workspace():
     """Render the Universe / Portfolio Level workspace."""
     
+    st.markdown("## Universe / Portfolio Diagnostics")
+    st.caption(
+        "System-level structural dashboard for monitoring factor crowding, regime shifts, "
+        "cross-sectional instability, and market-wide positioning dynamics."
+    )
+    
     # Show overall cluster summary
     if st.session_state.pca_df is not None:
 
@@ -2733,6 +2739,12 @@ def render_stock_structural_tab(
 
 def render_stock_workspace():
     """Render the Stock / Individual Ticker Level workspace."""
+
+    st.markdown("## Stock / Individual Diagnostics")
+    st.caption(
+        "Issuer-level diagnostic workspace for evaluating structural position, peer-relative exposure, "
+        "narrative interpretation, and KG-grounded structural intelligence."
+    )
 
     # Get selected stock data
     stock_info = st.session_state.selected_stock
