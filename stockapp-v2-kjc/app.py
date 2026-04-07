@@ -1888,6 +1888,21 @@ def render_universe_cluster_overview():
         plot_df = plot_df[plot_df['ticker'].isin(sector_tickers)]
 
     total_count = len(plot_df)
+    cluster_count = plot_df['cluster'].nunique() if 'cluster' in plot_df.columns and not plot_df.empty else 0
+    sector_scope = selected_sector if selected_sector else "All Sectors"
+
+    dominant_cluster_share = 0.0
+    if 'cluster' in plot_df.columns and not plot_df.empty:
+        dominant_cluster_share = (
+            plot_df['cluster'].value_counts(normalize=True).iloc[0] * 100
+        )
+
+    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+    metric_col1.metric("Stocks in View", f"{total_count}")
+    metric_col2.metric("Clusters Represented", f"{cluster_count}")
+    metric_col3.metric("Sector Scope", sector_scope)
+    metric_col4.metric("Largest Cluster Share", f"{dominant_cluster_share:.1f}%")
+
     if selected_sector and selected_sector != "All Sectors":
         sector_label = f" — {selected_sector} ({total_count})"
     else:
