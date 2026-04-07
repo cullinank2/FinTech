@@ -2561,13 +2561,15 @@ def render_stock_narrative_tab(
 ):
     """Render the Stock / Individual Ticker Level narrative tab."""
 
+    # Use structurally-derived peers if available
+    peer_df = st.session_state.get("nearest_peers", narrative_peers)
+
     render_narrative_section(
         ticker=ticker,
         pca_row=pca_row,
-        peer_df=narrative_peers,
+        peer_df=peer_df,
         gics_sector=gics_sector,
     )
-
 
 def render_stock_structural_tab(
     ticker: str,
