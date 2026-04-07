@@ -1931,6 +1931,7 @@ def render_universe_cluster_overview():
     cluster_summary = get_cluster_summary(plot_df)
     fig_summary = create_cluster_summary_plot(cluster_summary)
     st.plotly_chart(fig_summary, use_container_width=True)
+    
 
 def render_universe_period_comparison():
     """Render the Universe / Portfolio Level period comparison tab."""
