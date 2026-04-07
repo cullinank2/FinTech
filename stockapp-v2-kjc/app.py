@@ -2330,6 +2330,9 @@ def render_stock_peers_tab(
                 .head(15)
             )
 
+            # Persist for reuse (narrative, KG, structural analyst)
+            st.session_state["nearest_peers"] = nearest_peers.copy()
+
             # --- Distance Percentile (Crowding Signal) ---
             all_distances = peer_universe["distance"]
 
