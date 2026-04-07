@@ -2355,6 +2355,75 @@ def render_stock_structural_tab(
                     structural_answer = result.get("answer", "No answer returned.")
                     st.markdown(f"**Assessment:** {structural_answer}")
 
+                    if result.get("summary_bullets"):
+                        st.markdown("### 🔑 Key Points")
+                        unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
+                        for b in unique_bullets:
+                            st.markdown(f"- {b}")
+
+                    with st.expander("🔍 Evidence"):
+                        evidence_label_map = {
+                            "structural_drift_summary": "Structural Drift",
+                            "quadrant_history_summary": "Quadrant History",
+                            "peer_comparison_summary": "Peer Comparison",
+                            "factor_rotation_summary": "Factor Rotation",
+                            "regime_transition_summary": "Regime Transition",
+                        }
+
+                        for e in result.get("evidence", []):
+                            if isinstance(e, dict):
+                                raw_source = e.get("source_name", "Unknown Source")
+                                source = evidence_label_map.get(raw_source, raw_source)
+                                fact = e.get("fact", "")
+                                st.markdown(f"- **{source}**: {fact}")
+                            else:
+                                st.markdown(f"- {str(e)}")
+
+                    with st.expander("🕸️ Subgraph Snapshot"):
+                        snapshot = result.get("subgraph_snapshot", {})
+
+                        if isinstance(snapshot, dict):
+                            node_count = snapshot.get("node_count", 0)
+                            edge_count = snapshot.get("edge_count", 0)
+                            included_node_ids = snapshot.get("included_node_ids", [])
+
+                            snap_col1, snap_col2 = st.columns(2)
+                            with snap_col1:
+                                st.metric("Nodes", node_count)
+                            with snap_col2:
+                                st.metric("Edges", edge_count)
+
+                            if included_node_ids:
+                                st.markdown("**Included Node IDs**")
+                                for node_id in included_node_ids:
+                                    st.markdown(f"- `{node_id}`")
+                            else:
+                                st.caption("No included node IDs were returned.")
+                        else:
+                            st.caption("Subgraph snapshot unavailable.")
+
+                    with st.expander("⚠️ Limits"):
+                        limits = result.get("limits", [])
+
+                        if isinstance(limits, list):
+                            for l in limits:
+                                st.markdown(f"- {l}")
+                        else:
+                            st.markdown(f"- {str(limits)}")
+
+                    confidence = str(result.get("confidence", "unknown")).lower()
+
+                    if confidence == "high":
+                        confidence_label = "🟢 High"
+                    elif confidence == "medium":
+                        confidence_label = "🟡 Medium"
+                    elif confidence == "low":
+                        confidence_label = "🔴 Low"
+                    else:
+                        confidence_label = confidence.title()
+
+                    st.caption(f"Confidence: {confidence_label}")
+
             except Exception as e:
                 st.error(f"Structural analysis failed: {str(e)}")
 
