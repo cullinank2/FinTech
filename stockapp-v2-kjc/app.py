@@ -2233,6 +2233,27 @@ def render_stock_overview_tab(pca_row: pd.Series):
     )
 
 
+def render_stock_visuals_tab(
+    pca_df,
+    ticker,
+    pca_row,
+    quadrant_peers
+):
+    """Render the Stock / Individual Ticker Level visuals tab."""
+
+    st.markdown("### 📊 Visuals")
+
+    render_visualizations(
+        pca_df,
+        ticker,
+        pca_row,
+        quadrant_peers,
+        st.session_state.raw_data,
+        st.session_state.pca_model,
+        st.session_state.scaler
+    )
+
+
 def render_stock_workspace():
     """Render the Stock / Individual Ticker Level workspace."""
 
@@ -2285,16 +2306,11 @@ def render_stock_workspace():
     
     # 📊 Visuals Tab
     with stock_tab2:
-        st.markdown("### 📊 Visuals")
-
-        render_visualizations(
+        render_stock_visuals_tab(
             pca_df,
             ticker,
             pca_row,
-            quadrant_peers,
-            st.session_state.raw_data,
-            st.session_state.pca_model,
-            st.session_state.scaler
+            quadrant_peers
         )
     
     # Build GICS sector filtered peers — used consistently for all percentiles and narratives
