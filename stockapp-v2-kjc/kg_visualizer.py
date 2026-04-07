@@ -1450,7 +1450,7 @@ def render_structural_intelligence_tab_universe() -> None:
     st.markdown("---")
 
     panel = st.radio(
-        "Select analysis",
+        "Select risk view",
         options=[
             "📈 Regime Crowding Chain",
             "🚨 Early Warning Panel",
