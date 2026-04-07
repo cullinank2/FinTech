@@ -595,6 +595,7 @@ def render_sidebar():
 
     # Visualizations dropdown (stock scope only)
     if stock_scope_active:
+        st.sidebar.markdown("---")
         st.sidebar.markdown("### 📊 Visualizations")
         
         view_options = [
