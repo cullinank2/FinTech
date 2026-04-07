@@ -653,14 +653,14 @@ def render_sidebar():
         - {', '.join(PC2_INTERPRETATION['low_meaning'])}
         """)
 
-    current_view = st.session_state.get('current_view', '')
+    active_visual = st.session_state.get('current_view', '')
     timelapse_is_3d = (
-        current_view == "🕐 2D or 3D Time-Lapse" and
+        active_visual == "🕐 2D or 3D Time-Lapse" and
         st.session_state.get('timelapse_view_mode', '2D View') == '3D View'
     )
 
     if st.session_state.get('selected_stock') is not None and (
-        current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"] or timelapse_is_3d
+        active_visual in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"] or timelapse_is_3d
     ):
         with st.sidebar.expander(f"PC3 (Z-axis): {PC3_INTERPRETATION['name']}"):
             st.markdown(f"""
