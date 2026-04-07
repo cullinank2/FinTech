@@ -2254,6 +2254,22 @@ def render_stock_visuals_tab(
     )
 
 
+def render_stock_narrative_tab(
+    ticker: str,
+    pca_row: pd.Series,
+    narrative_peers: pd.DataFrame,
+    gics_sector: str,
+):
+    """Render the Stock / Individual Ticker Level narrative tab."""
+
+    render_narrative_section(
+        ticker=ticker,
+        pca_row=pca_row,
+        peer_df=narrative_peers,
+        gics_sector=gics_sector,
+    )
+
+
 def render_stock_workspace():
     """Render the Stock / Individual Ticker Level workspace."""
 
@@ -2622,10 +2638,10 @@ def render_stock_workspace():
 
     # 🧾 Narrative Tab
     with stock_tab4:
-        render_narrative_section(
+        render_stock_narrative_tab(
             ticker=ticker,
             pca_row=pca_row,
-            peer_df=narrative_peers,
+            narrative_peers=narrative_peers,
             gics_sector=gics_sector,
         )
 
