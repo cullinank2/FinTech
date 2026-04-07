@@ -1701,7 +1701,7 @@ def render_structural_intelligence_tab_universe() -> None:
     st.markdown("### Portfolio Implications")
 
     action_col1, action_col2 = st.columns([1, 3])
-    action_col1.metric("Recommended Action", portfolio_action)
+    action_col1.markdown(f"**Recommended Action**  \n{portfolio_action}")
     action_col2.markdown(f"**{portfolio_note}**")
 
     st.markdown("---")
