@@ -446,7 +446,8 @@ def render_sidebar():
         st.session_state.analysis_scope == "Stock / Individual Ticker Level"
     )
 
-    stock_selected = st.session_state.selected_stock is not None
+    # stock_selected will be computed AFTER selection logic
+    stock_selected = False
 
     if stock_scope_active:
         st.sidebar.markdown("---")
@@ -525,7 +526,8 @@ def render_sidebar():
                 'type': 'ticker'
             }
 
-    # Check if stock is selected
+    # Check if stock is selected (UPDATED AFTER INPUT + DROPDOWN)
+    stock_selected = st.session_state.selected_stock is not None
 
     # Universe-only landing page controls
     if not stock_scope_active:
