@@ -359,15 +359,20 @@ def load_and_process_data():
 def render_sidebar():
     """Render the sidebar with scope-specific controls."""
 
-    st.sidebar.markdown("## 🌐 Global Controls")
+    st.sidebar.markdown("## Navigation & Scope")
+    st.sidebar.caption(
+        "Select the diagnostic workspace. Universe mode monitors system-level structure; "
+        "Stock mode evaluates issuer-level position within that structure."
+    )
 
     st.session_state.analysis_scope = st.sidebar.radio(
-        "Analysis Scope",
+        "Diagnostic Workspace",
         [
             "Universe / Portfolio Level",
             "Stock / Individual Ticker Level",
         ],
         index=0 if st.session_state.analysis_scope == "Universe / Portfolio Level" else 1,
+        help="Switch between market-wide structural diagnostics and single-stock analysis."
     )
 
     stock_scope_active = (
