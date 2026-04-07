@@ -2270,6 +2270,95 @@ def render_stock_narrative_tab(
     )
 
 
+def render_stock_structural_tab(
+    ticker: str,
+):
+    """Render the Stock / Individual Ticker Level structural intelligence tab."""
+
+    # Lazy import to avoid Streamlit module cache issues
+    try:
+        from structural_analyst import run_structural_analysis
+    except Exception as e:
+        st.error(f"Structural Analyst failed to load: {e}")
+        run_structural_analysis = None
+
+    kg = st.session_state.get("kg_instance")
+    kg_regime = st.session_state.get("kg_current_regime")
+
+    if kg is None or kg_regime is None:
+        st.info("Structural Analyst requires Knowledge Graph context.")
+        return
+
+    col1, col2 = st.columns([4, 1])
+
+    with col1:
+        structural_question = st.text_input(
+            "Ask a structural question:",
+            placeholder="e.g., What changed structurally in this regime?",
+            key="structural_input"
+        )
+
+    chatbot = create_chatbot()
+
+    with col2:
+        run_structural = st.button(
+            "Analyze",
+            key="structural_btn",
+            disabled=False
+        )
+
+    if run_structural and structural_question:
+        with st.spinner("Running KG-backed structural analysis..."):
+            try:
+                evidence_packet = None
+
+                narrative_packet = st.session_state.get("last_narrative_subgraph")
+
+                if narrative_packet:
+                    try:
+                        evidence_packet = {
+                            "question_type": "structural_drift",
+                            "ticker": ticker,
+                            "regime": kg_regime,
+                            "subgraph": narrative_packet,
+                        }
+                    except Exception:
+                        evidence_packet = None
+                else:
+                    try:
+                        evidence_packet = build_structural_evidence_packet(
+                            kg=kg,
+                            ticker=ticker,
+                            regime=kg_regime,
+                            question_type="structural_drift",
+                        )
+                    except Exception:
+                        evidence_packet = None
+
+                if not evidence_packet:
+                    st.error("No stock-centered KG subgraph is available for structural analysis.")
+                    result = None
+                else:
+                    if run_structural_analysis is not None:
+                        result = run_structural_analysis(
+                            evidence_packet=evidence_packet,
+                            llm_callable=chatbot.call_llm_structural,
+                        )
+                    else:
+                        st.error("Structural Analyst unavailable.")
+                        result = None
+
+                if result:
+                    st.markdown("## 🧠 Structural Analysis (KG-Grounded AI)")
+                    st.caption("LLM-based interpretation grounded strictly in Knowledge Graph evidence (Tier 2).")
+
+                    structural_answer = result.get("answer", "No answer returned.")
+                    st.markdown(f"**Assessment:** {structural_answer}")
+
+            except Exception as e:
+                st.error(f"Structural analysis failed: {str(e)}")
+
+
 def render_stock_workspace():
     """Render the Stock / Individual Ticker Level workspace."""
 
@@ -2647,161 +2736,7 @@ def render_stock_workspace():
 
     # 🧠 AI / Structural Tab
     with stock_tab5:
-        # Lazy import to avoid Streamlit module cache issues
-        try:
-            from structural_analyst import run_structural_analysis
-        except Exception as e:
-            st.error(f"Structural Analyst failed to load: {e}")
-            run_structural_analysis = None
-
-        kg = st.session_state.get("kg_instance")
-        kg_regime = st.session_state.get("kg_current_regime")
-
-        if kg is None or kg_regime is None:
-            st.info("Structural Analyst requires Knowledge Graph context.")
-        else:
-            col1, col2 = st.columns([4, 1])
-
-            with col1:
-                structural_question = st.text_input(
-                    "Ask a structural question:",
-                    placeholder="e.g., What changed structurally in this regime?",
-                    key="structural_input"
-                )
-
-            # Initialize chatbot for structural analysis
-            chatbot = create_chatbot()
-
-            with col2:
-                run_structural = st.button(
-                    "Analyze",
-                    key="structural_btn",
-                    disabled=False
-                )
-
-            if run_structural and structural_question:
-                with st.spinner("Running KG-backed structural analysis..."):
-                    try:
-                        # Build canonical KG evidence packet
-                        evidence_packet = None
-
-                        # Prefer narrative-derived KG subgraph (Tier 1 grounded)
-                        narrative_packet = st.session_state.get("last_narrative_subgraph")
-
-                        if narrative_packet:
-                            try:
-                                evidence_packet = {
-                                    "question_type": "structural_drift",
-                                    "ticker": ticker,
-                                    "regime": kg_regime,
-                                    "subgraph": narrative_packet,
-                                }
-                            except Exception:
-                                evidence_packet = None
-                        else:
-                            try:
-                                evidence_packet = build_structural_evidence_packet(
-                                    kg=kg,
-                                    ticker=ticker,
-                                    regime=kg_regime,
-                                    question_type="structural_drift",
-                                )
-                            except Exception:
-                                evidence_packet = None
-                                
-                        # Validate evidence
-                        if not evidence_packet:
-                            st.error("No stock-centered KG subgraph is available for structural analysis.")
-                            result = None
-                        else:
-                            if run_structural_analysis is not None:
-                                result = run_structural_analysis(
-                                    evidence_packet=evidence_packet,
-                                    llm_callable=chatbot.call_llm_structural,
-                                )
-                            else:
-                                st.error("Structural Analyst unavailable.")
-                                result = None
-
-                        # Render result
-                        if result:
-                            st.markdown("## 🧠 Structural Analysis (KG-Grounded AI)")
-                            st.caption("LLM-based interpretation grounded strictly in Knowledge Graph evidence (Tier 2).")
-
-                            structural_answer = result.get("answer", "No answer returned.")
-                            st.markdown(f"**Assessment:** {structural_answer}")
-
-                            if result.get("summary_bullets"):
-                                st.markdown("### 🔑 Key Points")
-                                unique_bullets = list(dict.fromkeys(result["summary_bullets"]))
-                                for b in unique_bullets:
-                                    st.markdown(f"- {b}")
-
-                            with st.expander("🔍 Evidence"):
-                                evidence_label_map = {
-                                    "structural_drift_summary": "Structural Drift",
-                                    "quadrant_history_summary": "Quadrant History",
-                                    "peer_comparison_summary": "Peer Comparison",
-                                    "factor_rotation_summary": "Factor Rotation",
-                                    "regime_transition_summary": "Regime Transition",
-                                }
-
-                                for e in result.get("evidence", []):
-                                    if isinstance(e, dict):
-                                        raw_source = e.get("source_name", "Unknown Source")
-                                        source = evidence_label_map.get(raw_source, raw_source)
-                                        fact = e.get("fact", "")
-                                        st.markdown(f"- **{source}**: {fact}")
-                                    else:
-                                        st.markdown(f"- {str(e)}")
-
-                            with st.expander("🕸️ Subgraph Snapshot"):
-                                snapshot = result.get("subgraph_snapshot", {})
-
-                                if isinstance(snapshot, dict):
-                                    node_count = snapshot.get("node_count", 0)
-                                    edge_count = snapshot.get("edge_count", 0)
-                                    included_node_ids = snapshot.get("included_node_ids", [])
-
-                                    snap_col1, snap_col2 = st.columns(2)
-                                    with snap_col1:
-                                        st.metric("Nodes", node_count)
-                                    with snap_col2:
-                                        st.metric("Edges", edge_count)
-
-                                    if included_node_ids:
-                                        st.markdown("**Included Node IDs**")
-                                        for node_id in included_node_ids:
-                                            st.markdown(f"- `{node_id}`")
-                                    else:
-                                        st.caption("No included node IDs were returned.")
-                                else:
-                                    st.caption("Subgraph snapshot unavailable.")
-
-                            with st.expander("⚠️ Limits"):
-                                limits = result.get("limits", [])
-
-                                if isinstance(limits, list):
-                                    for l in limits:
-                                        st.markdown(f"- {l}")
-                                else:
-                                    st.markdown(f"- {str(limits)}")
-
-                            confidence = str(result.get("confidence", "unknown")).lower()
-
-                            if confidence == "high":
-                                confidence_label = "🟢 High"
-                            elif confidence == "medium":
-                                confidence_label = "🟡 Medium"
-                            elif confidence == "low":
-                                confidence_label = "🔴 Low"
-                            else:
-                                confidence_label = confidence.title()
-
-                            st.caption(f"Confidence: {confidence_label}")
-
-                    except Exception as e:
-                        st.error(f"Structural analysis failed: {str(e)}")
+        render_stock_structural_tab(ticker=ticker)
 
 
 # =============================================================================
