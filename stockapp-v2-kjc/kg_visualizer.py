@@ -1548,6 +1548,71 @@ def render_structural_intelligence_tab_universe() -> None:
 
     st.info(executive_note)
 
+        # ============================================================
+    # REGIME TRAJECTORY SIGNAL
+    # ============================================================
+
+    trajectory_signal = "Unavailable"
+    trajectory_label = "Insufficient data"
+    trajectory_note = "Trajectory analysis requires full regime sequence."
+
+    try:
+        if crowding_df is not None and len(crowding_df) >= 2:
+
+            scores = crowding_df["crowding_score"].values
+
+            # simple directional slope logic
+            delta_1 = scores[-1] - scores[-2]
+
+            if len(scores) >= 3:
+                delta_2 = scores[-2] - scores[-3]
+            else:
+                delta_2 = 0
+
+            # classify trajectory
+            if delta_1 > 0 and delta_2 > 0:
+                trajectory_signal = "🔴 Accelerating"
+                trajectory_label = "Crowding building across regimes"
+                trajectory_note = (
+                    "Crowding is increasing sequentially across regimes — "
+                    "pressure is compounding into the current regime."
+                )
+
+            elif delta_1 > 0:
+                trajectory_signal = "🟠 Increasing"
+                trajectory_label = "Recent crowding increase"
+                trajectory_note = (
+                    "Crowding has increased in the latest regime transition."
+                )
+
+            elif delta_1 < 0:
+                trajectory_signal = "🟢 Easing"
+                trajectory_label = "Crowding declining"
+                trajectory_note = (
+                    "Crowding pressure is easing in the latest regime."
+                )
+
+            else:
+                trajectory_signal = "🟡 Flat"
+                trajectory_label = "No material change"
+                trajectory_note = (
+                    "Crowding levels are stable across recent regimes."
+                )
+
+    except Exception:
+        pass
+
+    st.markdown("### Regime Trajectory Signal")
+
+    traj_col1, traj_col2 = st.columns([1, 3])
+    traj_col1.metric("Trajectory", trajectory_signal)
+    traj_col2.markdown(f"**{trajectory_label}**")
+
+    st.caption(trajectory_note)
+
+    st.markdown("---")
+
+
     st.markdown("---")
 
     panel = st.radio(
@@ -1569,3 +1634,4 @@ def render_structural_intelligence_tab_universe() -> None:
         _render_early_warning_panel(kg)
     elif panel == "🔍 Reasoning Chain Viewer":
         _render_reasoning_chain_panel(kg)
+
