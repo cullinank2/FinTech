@@ -959,10 +959,10 @@ def render_visualizations(
     pca_model,
     scaler
 ):
-    """Render the visualization sections based on dropdown selection.""" 
+    """Render the active visual inside the Stock Visuals tab.""" 
     
-    # Get current view from session state
-    current_view = st.session_state.get('current_view', '🎯 Cluster Plot')
+    # Active visual selection for the Visuals tab
+    active_visual = st.session_state.get('current_view', '🎯 Cluster Plot')
     
     # Apply GICS sector filter if selected
     filter_mode = st.session_state.get('gics_filter_mode', 'All Stocks')
@@ -974,7 +974,7 @@ def render_visualizations(
         st.info(f"📊 Showing {sector_count} stocks in the same GICS sector as {selected_ticker}")
     
     # Display the selected visualization
-    if current_view == "🎯 Cluster Plot":
+    if active_visual == "🎯 Cluster Plot":
         st.markdown("### 🎯 PCA Cluster Visualization")
         
         # Get live variance values
@@ -1040,7 +1040,7 @@ def render_visualizations(
         else:
             st.warning("pca_loadings not found in session state")
     
-    elif current_view == "👥 Quadrant Peers":
+    elif active_visual == "👥 Quadrant Peers":
 
         # ---------------------------------------------------------
         # Header Section
@@ -1112,7 +1112,7 @@ def render_visualizations(
         else:
             st.info("No other stocks found in this quadrant.")
     
-    elif current_view == "🌐 3D Quadrant Peers":
+    elif active_visual == "🌐 3D Quadrant Peers":
         st.markdown("### 🌐 3D Quadrant Peer Comparison")
         st.markdown(f"""
         Explore quadrant peers in 3D space. The Z-axis (PC3) reveals the 
@@ -1171,7 +1171,7 @@ def render_visualizations(
         else:
             st.info("No peers found or PC3 data unavailable.")
 
-    elif current_view == "📊 Factor Analysis":
+    elif active_visual == "📊 Factor Analysis":
         st.markdown("### 📊 Factor Breakdown Analysis")
           
         # Recalculate percentiles from filtered quadrant peers
@@ -1258,7 +1258,7 @@ def render_visualizations(
         else:
             st.warning("PCA loadings not available.")
     
-    elif current_view == "🕐 2D or 3D Time-Lapse":
+    elif active_visual == "🕐 2D or 3D Time-Lapse":
         st.markdown("### 🕐 Historical Movement Animation")
         st.markdown("""
         Watch how the stock's position has changed over time in the PCA space.
@@ -1315,7 +1315,7 @@ def render_visualizations(
                 else:
                     st.warning("Insufficient time-series data for animation.")
     
-    elif current_view == "🌐 3D Cluster View":
+    elif active_visual == "🌐 3D Cluster View":
         st.markdown("### 🌐 3D PCA Visualization")
         st.markdown("""
         Explore the clusters in 3D space using the first three principal components.
