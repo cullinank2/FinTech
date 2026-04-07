@@ -2254,6 +2254,302 @@ def render_stock_visuals_tab(
     )
 
 
+def render_stock_peers_tab(
+    ticker: str,
+    quadrant: str,
+    cluster: int,
+    pc1: float,
+    pc2: float,
+    quadrant_peers,
+    pca_df,
+):
+    """Render the stock-level Peers & Positioning tab."""
+    st.markdown("### 👥 Peers & Positioning")
+
+    st.markdown(
+        f"**{ticker}** is currently positioned in **{quadrant}** and **Cluster {cluster}**."
+    )
+    st.caption(
+        f"PC coordinates: PC1 = {pc1:.2f}, PC2 = {pc2:.2f}"
+    )
+
+    same_quadrant_count = len(quadrant_peers) if quadrant_peers is not None else 0
+
+    cluster_peers = pd.DataFrame()
+    if "cluster" in pca_df.columns:
+        cluster_peers = pca_df[
+            (pca_df["cluster"] == cluster) & (pca_df["ticker"] != ticker)
+        ].copy()
+
+    same_cluster_count = len(cluster_peers)
+    overlap_count = 0
+    if not cluster_peers.empty and quadrant_peers is not None and not quadrant_peers.empty:
+        overlap_count = len(
+            set(cluster_peers["ticker"]).intersection(set(quadrant_peers["ticker"]))
+        )
+
+    pos_col1, pos_col2, pos_col3 = st.columns(3)
+    with pos_col1:
+        st.metric("Same Quadrant", same_quadrant_count)
+    with pos_col2:
+        st.metric("Same Cluster", same_cluster_count)
+    with pos_col3:
+        st.metric("Quadrant + Cluster Overlap", overlap_count)
+
+    st.markdown("#### PCA Positioning")
+
+    try:
+        fig = create_pca_scatter_plot(
+            pca_df,
+            selected_ticker=ticker,
+            highlight_peers=nearest_peers["ticker"].tolist() if "nearest_peers" in locals() else None
+        )
+        st.plotly_chart(fig, width="stretch")
+    except Exception as e:
+        st.warning(f"PCA visualization unavailable: {e}")
+
+    st.markdown("#### Nearest Structural Peers (PCA Distance)")
+
+    try:
+        peer_universe = pca_df.copy()
+
+        target_row = peer_universe[peer_universe["ticker"] == ticker]
+
+        if not target_row.empty:
+            target_pc1 = target_row.iloc[0]["PC1"]
+            target_pc2 = target_row.iloc[0]["PC2"]
+
+            peer_universe["distance"] = (
+                (peer_universe["PC1"] - target_pc1) ** 2 +
+                (peer_universe["PC2"] - target_pc2) ** 2
+            ) ** 0.5
+
+            nearest_peers = (
+                peer_universe[peer_universe["ticker"] != ticker]
+                .sort_values("distance")
+                .head(15)
+            )
+
+            # --- Distance Percentile (Crowding Signal) ---
+            all_distances = peer_universe["distance"]
+
+            target_distance = peer_universe[
+                peer_universe["ticker"] == ticker
+            ]["distance"].values[0]
+
+            percentile = (all_distances < target_distance).mean() * 100
+
+            # Interpret crowding
+            if percentile <= 10:
+                crowd_label = "🔴 Highly Crowded"
+                crowd_text = "This stock sits in a densely packed region of PCA space — elevated crowding risk."
+            elif percentile <= 40:
+                crowd_label = "🟠 Moderately Crowded"
+                crowd_text = "This stock has meaningful structural proximity to peers."
+            elif percentile <= 70:
+                crowd_label = "🟡 Neutral"
+                crowd_text = "This stock is neither especially crowded nor especially isolated."
+            else:
+                crowd_label = "🟢 Structurally Isolated"
+                crowd_text = "This stock is more structurally differentiated from peers."
+
+            st.metric(
+                "Structural Crowding Percentile",
+                f"{percentile:.1f}%",
+                help="Lower = more crowded (closer to other stocks)"
+            )
+            st.caption(crowd_label)
+            st.caption(crowd_text)
+
+            # --- Peer Dispersion Metric ---
+            avg_peer_distance = nearest_peers["distance"].mean()
+
+            st.metric(
+                "Peer Dispersion (Avg Distance)",
+                f"{avg_peer_distance:.4f}",
+                help="Lower = tightly clustered peers (higher fragility)"
+            )
+
+            if avg_peer_distance < 0.05:
+                dispersion_label = "🔴 Very Tight Cluster"
+                dispersion_text = "Peers are extremely close — elevated fragility and crowding risk."
+            elif avg_peer_distance < 0.15:
+                dispersion_label = "🟠 Moderate Dispersion"
+                dispersion_text = "Peers are somewhat clustered with moderate structural similarity."
+            else:
+                dispersion_label = "🟢 Broadly Distributed"
+                dispersion_text = "Peers are more spread out — lower structural fragility."
+
+            st.caption(dispersion_label)
+            st.caption(dispersion_text)
+
+            # --- Structural Risk Score ---
+            # Invert percentile (lower percentile = higher risk)
+            crowding_risk = 100 - percentile
+
+            # Normalize dispersion (simple scaling assumption)
+            dispersion_risk = max(0, min(100, (0.15 - avg_peer_distance) / 0.15 * 100))
+
+            structural_risk_score = 0.6 * crowding_risk + 0.4 * dispersion_risk
+
+            # Define risk label BEFORE using it
+            if structural_risk_score >= 75:
+                risk_label = "🔴 High Structural Risk"
+                bar_color = "red"
+            elif structural_risk_score >= 40:
+                risk_label = "🟠 Moderate Structural Risk"
+                bar_color = "orange"
+            else:
+                risk_label = "🟢 Low Structural Risk"
+                bar_color = "green"
+
+            st.metric(
+                "Structural Risk Score",
+                f"{structural_risk_score:.1f}",
+                help="Composite of crowding + peer dispersion (higher = more structurally risky)"
+            )
+
+            st.progress(int(structural_risk_score))
+
+            st.markdown(
+                f"<div style='color:{bar_color}; font-weight:600;'>Risk Level: {risk_label}</div>",
+                unsafe_allow_html=True
+            )
+
+            # --- Executive Summary ---
+            if structural_risk_score >= 75:
+                summary_text = "This stock exhibits elevated structural risk due to high crowding and tightly aligned peer positioning."
+            elif structural_risk_score >= 40:
+                summary_text = "This stock shows moderate structural risk, with some crowding and partial peer alignment."
+            else:
+                summary_text = "This stock is structurally differentiated, with lower crowding and more dispersed peer positioning."
+
+            st.info(summary_text)
+
+            # --- PCA Loading-Based Structural Drivers (ROBUST VERSION) ---
+            loadings = st.session_state.get("pca_loadings_df")
+
+            if loadings is not None:
+                try:
+                    loadings_df = pd.DataFrame(loadings)
+
+                    # 🔧 Fix orientation (handles dict vs DataFrame cases)
+                    if "PC1" not in loadings_df.columns:
+                        loadings_df = loadings_df.T
+
+                    # 🔧 Force numeric (prevents abs() crash)
+                    loadings_df = loadings_df.apply(pd.to_numeric, errors="coerce")
+
+                    # 🔧 Drop empty rows
+                    loadings_df = loadings_df.dropna(how="all")
+
+                    # Combine PC1 + PC2 importance
+                    loadings_df["importance"] = (
+                        loadings_df["PC1"].abs() + loadings_df["PC2"].abs()
+                    )
+
+                    top_factors = (
+                        loadings_df["importance"]
+                        .sort_values(ascending=False)
+                        .head(3)
+                        .index.tolist()
+                    )
+
+                    directional_driver_labels = []
+
+                    for factor in top_factors:
+                        display_name = (
+                            FEATURE_DISPLAY_NAMES.get(
+                                factor,
+                                factor.replace("_", " ").title()
+                            ) if "FEATURE_DISPLAY_NAMES" in globals()
+                            else factor.replace("_", " ").title()
+                        )
+
+                        pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
+                        pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
+
+                        directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
+
+                        arrow = "↑" if directional_score >= 0 else "↓"
+
+                        abs_score = abs(directional_score)
+                        if abs_score >= 0.30:
+                            strength = "Strong"
+                        elif abs_score >= 0.15:
+                            strength = "Moderate"
+                        else:
+                            strength = "Light"
+
+                        directional_driver_labels.append(
+                            f"{display_name} {arrow} ({strength})"
+                        )
+
+                    st.markdown("#### 🔬 Structural Drivers")
+
+                    structural_drivers = []
+
+                    for factor in top_factors:
+                        display_name = (
+                            FEATURE_DISPLAY_NAMES.get(
+                                factor,
+                                factor.replace("_", " ").title()
+                            ) if "FEATURE_DISPLAY_NAMES" in globals()
+                            else factor.replace("_", " ").title()
+                        )
+
+                        pc1_loading = loadings_df.at[factor, "PC1"] if factor in loadings_df.index else 0
+                        pc2_loading = loadings_df.at[factor, "PC2"] if factor in loadings_df.index else 0
+
+                        directional_score = (pc1_loading * pc1) + (pc2_loading * pc2)
+
+                        direction_word = "Positive" if directional_score >= 0 else "Negative"
+
+                        abs_score = abs(directional_score)
+                        if abs_score >= 0.30:
+                            strength = "Strong"
+                        elif abs_score >= 0.15:
+                            strength = "Moderate"
+                        else:
+                            strength = "Light"
+
+                        structural_drivers.append({
+                            "factor": factor,
+                            "factor_name": factor,
+                            "display_name": display_name,
+                            "direction": direction_word,
+                            "strength": strength,
+                            "directional_score": directional_score,
+                            "pc1_loading": pc1_loading,
+                            "pc2_loading": pc2_loading,
+                        }) 
+
+                        st.markdown(
+                            f"- **{display_name}**: {direction_word}, {strength} influence"
+                        )
+
+                    st.session_state.current_structural_drivers = structural_drivers
+
+                except Exception as e:
+                    st.caption(f"Driver calculation unavailable: {e}")
+
+            else:
+                st.caption("PCA loadings not available for structural driver analysis.")
+
+            display_cols = [c for c in ["ticker", "cluster", "PC1", "PC2", "distance"] if c in nearest_peers.columns]
+
+            st.dataframe(
+                nearest_peers[display_cols],
+                width="stretch",
+                hide_index=True
+            )
+        else:
+            st.info("Selected stock not found in PCA dataset.")
+
+    except Exception as e:
+        st.warning(f"Nearest peer calculation unavailable: {e}")
+
+
 def render_stock_narrative_tab(
     ticker: str,
     pca_row: pd.Series,
