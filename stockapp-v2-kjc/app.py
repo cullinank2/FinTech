@@ -1922,6 +1922,7 @@ def render_universe_cluster_overview():
     fig = create_pca_scatter_plot(plot_df)
     st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("---")
     st.markdown("#### Cluster Concentration Summary")
     st.caption(
         "Distribution of names across structural clusters in the current universe view."
