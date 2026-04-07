@@ -1610,6 +1610,55 @@ def render_structural_intelligence_tab_universe() -> None:
 
     st.caption(trajectory_note)
 
+        # ============================================================
+    # RISK TYPE CLASSIFICATION
+    # ============================================================
+
+    risk_type = "Unclassified"
+    risk_type_note = "Insufficient data to classify structural risk."
+
+    try:
+        if disinflation_score is not None and rs_disinflation_disp is not None:
+
+            if disinflation_score >= 50 and rs_disinflation_disp < 0.30:
+                risk_type = "🟠 Compression Risk"
+                risk_type_note = (
+                    "High crowding within a stable regime — "
+                    "risk of synchronized unwind across crowded factors."
+                )
+
+            elif disinflation_score >= 50 and rs_disinflation_disp >= 0.30:
+                risk_type = "🔴 Dislocation Risk"
+                risk_type_note = (
+                    "Crowding combined with structural regime shift — "
+                    "elevated probability of disorderly repricing."
+                )
+
+            elif disinflation_score < 50 and rs_disinflation_disp >= 0.30:
+                risk_type = "🟡 Regime Transition Risk"
+                risk_type_note = (
+                    "Structural change underway without extreme crowding — "
+                    "monitor for evolving factor leadership shifts."
+                )
+
+            else:
+                risk_type = "🟢 Normal Conditions"
+                risk_type_note = (
+                    "No dominant structural risk detected in current regime."
+                )
+
+    except Exception:
+        pass
+
+    st.markdown("### Structural Risk Classification")
+
+    class_col1, class_col2 = st.columns([1, 3])
+    class_col1.metric("Risk Type", risk_type)
+    class_col2.markdown(f"**{risk_type_note}**")
+
+    st.markdown("---")
+
+
     st.markdown("---")
 
 
