@@ -1504,7 +1504,7 @@ def render_structural_intelligence_tab_universe() -> None:
         if disinflation_score >= 70:
             risk_status = "🔴 High"
         elif disinflation_score >= 50:
-            risk_status = "🟠 Elevated"
+            risk_status = "🟠 Elevated Risk"
         else:
             risk_status = "🟢 Normal"
 
