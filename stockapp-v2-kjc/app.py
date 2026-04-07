@@ -497,6 +497,7 @@ def render_sidebar():
     # Quick selection dropdown (stock scope only)
     if stock_scope_active:
         st.sidebar.markdown("---")
+        st.sidebar.markdown("## 🎯 Stock Controls")
         st.sidebar.markdown("### Quick Select")
         
         # Check if data is ready
@@ -594,7 +595,6 @@ def render_sidebar():
 
     # Visualizations dropdown (stock scope only)
     if stock_scope_active:
-        st.sidebar.markdown("---")
         st.sidebar.markdown("### 📊 Visualizations")
         
         view_options = [
@@ -625,7 +625,6 @@ def render_sidebar():
 
     # GICS Sector filter (stock scope only)
     if stock_scope_active:
-        st.sidebar.markdown("---")
         st.sidebar.markdown("### 🔍 Stock Universe Filter")
 
         if stock_selected:
