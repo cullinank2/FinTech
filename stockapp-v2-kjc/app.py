@@ -2289,9 +2289,56 @@ def render_universe_kg_tab():
 
 
 def render_universe_structural_tab():
-    """Render the Universe / Portfolio Level structural intelligence tab."""
+    """Render the Universe / Portfolio Level structural risk monitor tab."""
 
-    render_structural_intelligence_tab()
+    st.header("🔬 Structural Risk Monitor")
+    st.markdown(
+        "Universe-level structural risk surveillance for CRO-oriented regime monitoring. "
+        "This view highlights system pressure, migration instability, and emerging "
+        "cross-sectional structural warnings."
+    )
+
+    kg = st.session_state.get("kg_instance", None)
+
+    has_live_data = (
+        st.session_state.get("crowding_df") is not None or
+        st.session_state.get("procrustes_results") is not None
+    )
+
+    if kg is None and not has_live_data:
+        st.warning(
+            "⚠️ No live data available yet. "
+            "Run **Period Comparison** to populate structural risk monitoring."
+        )
+        return
+
+    if kg is None and has_live_data:
+        st.info(
+            "ℹ️ Live pipeline data available — Structural Risk Monitor is operating "
+            "from current regime diagnostics even without a live Knowledge Graph view."
+        )
+
+    st.markdown("---")
+
+    panel = st.radio(
+        "Select monitor",
+        options=[
+            "📈 Regime Crowding Chain",
+            "🚨 Early Warning Panel",
+            "🔍 Reasoning Chain Viewer",
+        ],
+        horizontal=True,
+        key="universe_structural_monitor_selector",
+    )
+
+    st.markdown("---")
+
+    if panel == "📈 Regime Crowding Chain":
+        _render_crowding_chain_panel(kg)
+    elif panel == "🚨 Early Warning Panel":
+        _render_early_warning_panel(kg)
+    elif panel == "🔍 Reasoning Chain Viewer":
+        _render_reasoning_chain_panel(kg)
 
 
 def render_universe_workspace():
