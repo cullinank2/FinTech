@@ -2634,6 +2634,7 @@ def render_stock_structural_tab(
                             "ticker": ticker,
                             "regime": kg_regime,
                             "subgraph": narrative_packet,
+                            "peer_tickers": nearest_peer_tickers,
                         }
                     except Exception:
                         evidence_packet = None
@@ -2645,6 +2646,11 @@ def render_stock_structural_tab(
                             regime=kg_regime,
                             question_type="structural_drift",
                         )
+
+                        # Attach peer context if available
+                        if evidence_packet is not None:
+                            evidence_packet["peer_tickers"] = nearest_peer_tickers
+
                     except Exception:
                         evidence_packet = None
 
