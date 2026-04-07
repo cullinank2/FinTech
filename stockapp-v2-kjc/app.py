@@ -2302,7 +2302,7 @@ def render_stock_peers_tab(
         fig = create_pca_scatter_plot(
             pca_df,
             selected_ticker=ticker,
-            highlight_peers=nearest_peers["ticker"].tolist() if "nearest_peers" in locals() else None
+            highlight_peers=None
         )
         st.plotly_chart(fig, width="stretch")
     except Exception as e:
