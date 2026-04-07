@@ -1507,14 +1507,14 @@ def render_narrative_section(
     factor_data  = st.session_state.get('current_factor_data', {})
     raw_data     = st.session_state.get('raw_data', None)
     loadings     = st.session_state.get('pca_loadings', None)
-    current_view = st.session_state.get('current_view', '🎯 Cluster Plot')
 
-    timelapse_is_3d = (
-        current_view == "🕐 2D or 3D Time-Lapse" and
-        st.session_state.get('timelapse_view_mode', '2D View') == '3D View'
-    )
-    cluster_3d = current_view in ["🌐 3D Cluster View", "🌐 3D Quadrant Peers"]
-    show_pc3 = timelapse_is_3d or cluster_3d
+    # --- STEP 3B: Remove UI dependency from PC3 logic ---
+    show_pc3 = False
+    try:
+        if pca_row is not None and "PC3" in pca_row:
+            show_pc3 = True
+    except Exception:
+        show_pc3 = False
 
     with st.spinner("Generating narrative analysis..."):
         kg                  = st.session_state.get("kg_instance")
@@ -1583,22 +1583,24 @@ def render_narrative_section(
             current_regime      = kg_regime,
         )
 
-    current_view = st.session_state.get('current_view', '🎯 Cluster Plot')
+    # --- STEP 3A: Narrative decoupled from visualization state ---
 
-    if current_view == '🎯 Cluster Plot':
+    # Always render full deterministic narrative stack
+    if sections.get('summary'):
         st.markdown(sections['summary'])
-    elif current_view == '📊 Factor Analysis':
+
+    if sections.get('factors'):
         factors_section = sections['factors']
         if isinstance(factors_section, dict):
             st.markdown(factors_section.get('text', ''))
         else:
             st.markdown(factors_section)
-    elif current_view == '🕐 2D or 3D Time-Lapse':
+
+    if sections.get('trajectory'):
         st.markdown(sections['trajectory'])
-    elif current_view in ['👥 Quadrant Peers', '🌐 3D Quadrant Peers']:
+
+    if sections.get('peers'):
         st.markdown(sections['peers'])
-    else:
-        st.markdown(sections['summary'])
 
     if sections.get('factors'):
         st.markdown("---")
