@@ -1659,6 +1659,54 @@ def render_structural_intelligence_tab_universe() -> None:
     st.markdown("---")
 
 
+        # ============================================================
+    # PORTFOLIO IMPLICATIONS
+    # ============================================================
+
+    portfolio_action = "No action"
+    portfolio_note = "No dominant structural signal."
+
+    try:
+        if risk_type == "🟠 Compression Risk":
+            portfolio_action = "⚠️ Reduce Crowding Exposure"
+            portfolio_note = (
+                "Elevated crowding in a stable regime suggests high correlation risk. "
+                "Consider reducing exposure to crowded factors and increasing diversification."
+            )
+
+        elif risk_type == "🔴 Dislocation Risk":
+            portfolio_action = "🚨 Defensive Positioning"
+            portfolio_note = (
+                "Structural instability combined with crowding indicates elevated tail risk. "
+                "Shift toward defensive positioning and reduce directional exposure."
+            )
+
+        elif risk_type == "🟡 Regime Transition Risk":
+            portfolio_action = "🔄 Rebalance / Reposition"
+            portfolio_note = (
+                "Emerging structural change suggests shifting factor leadership. "
+                "Gradually rebalance toward emerging regime winners."
+            )
+
+        elif risk_type == "🟢 Normal Conditions":
+            portfolio_action = "✅ Maintain Positioning"
+            portfolio_note = (
+                "No dominant structural risk signals. Maintain current positioning "
+                "while continuing to monitor regime diagnostics."
+            )
+
+    except Exception:
+        pass
+
+    st.markdown("### Portfolio Implications")
+
+    action_col1, action_col2 = st.columns([1, 3])
+    action_col1.metric("Recommended Action", portfolio_action)
+    action_col2.markdown(f"**{portfolio_note}**")
+
+    st.markdown("---")
+
+
     st.markdown("---")
 
 
