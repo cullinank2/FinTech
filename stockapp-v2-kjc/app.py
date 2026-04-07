@@ -1907,7 +1907,12 @@ def render_universe_cluster_overview():
         sector_label = f" — {selected_sector} ({total_count})"
     else:
         sector_label = f" — All Sectors ({total_count})"
+
+    st.markdown("---")
     st.markdown(f"#### PCA Cluster Map{sector_label}")
+    st.caption(
+        "Primary cross-sectional view of market structure, showing relative position and clustering across the current universe."
+    )
 
     fig = create_pca_scatter_plot(plot_df)
     st.plotly_chart(fig, use_container_width=True)
