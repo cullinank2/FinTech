@@ -1871,6 +1871,12 @@ def render_chatbot_section(
 def render_universe_cluster_overview():
     """Render the Universe / Portfolio Level cluster overview tab."""
 
+    st.markdown("### System Structure Dashboard")
+    st.caption(
+        "Monitor cross-sectional market structure, cluster concentration, and sector-level positioning "
+        "through the primary PCA diagnostic view."
+    )
+
     # Apply GICS sector filter if selected on landing page
     plot_df = st.session_state.pca_df.copy()
     selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
@@ -1886,7 +1892,7 @@ def render_universe_cluster_overview():
         sector_label = f" — {selected_sector} ({total_count})"
     else:
         sector_label = f" — All Sectors ({total_count})"
-    st.markdown(f"### 📊 Cluster Overview{sector_label}")
+    st.markdown(f"#### PCA Cluster Map{sector_label}")
 
     fig = create_pca_scatter_plot(plot_df)
     st.plotly_chart(fig, use_container_width=True)
