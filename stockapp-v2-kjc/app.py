@@ -1755,6 +1755,12 @@ def render_chatbot_section(
     factor_data = get_factor_breakdown(pca_row)
     kg = st.session_state.get("kg_instance")
     kg_regime = st.session_state.get("kg_current_regime")
+    nearest_peers = st.session_state.get("nearest_peers")
+    nearest_peer_tickers = (
+        nearest_peers["ticker"].dropna().astype(str).tolist()
+        if nearest_peers is not None and "ticker" in nearest_peers.columns
+        else []
+    )
     kg_subgraph = None
     if kg is not None and kg_regime is not None:
         try:
@@ -2585,6 +2591,12 @@ def render_stock_structural_tab(
 
     kg = st.session_state.get("kg_instance")
     kg_regime = st.session_state.get("kg_current_regime")
+    nearest_peers = st.session_state.get("nearest_peers")
+    nearest_peer_tickers = (
+        nearest_peers["ticker"].dropna().astype(str).tolist()
+        if nearest_peers is not None and "ticker" in nearest_peers.columns
+        else []
+    )
 
     if kg is None or kg_regime is None:
         st.info("Structural Analyst requires Knowledge Graph context.")
