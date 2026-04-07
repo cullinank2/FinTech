@@ -469,8 +469,11 @@ def render_sidebar():
     # Universe-only landing page controls
     if not stock_scope_active:
         st.sidebar.markdown("---")
-        st.sidebar.markdown("## 🌍 Universe Controls")
-        st.sidebar.markdown("### 🏭 GICS Sector Filter")
+        st.sidebar.markdown("## Universe Controls")
+        st.sidebar.caption(
+            "Configure the market-wide dashboard view and sector-level universe focus."
+        )
+        st.sidebar.markdown("### GICS Sector Filter")
 
         gics_sectors = [
             "All Sectors",
