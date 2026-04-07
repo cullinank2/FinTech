@@ -2731,7 +2731,7 @@ def render_stock_workspace():
     stock_info = st.session_state.selected_stock
 
     if stock_info is None:
-        st.info("👆 Select a stock ticker or PERMNO in the sidebar to use Stock / Individual Ticker Level.")
+        st.info("👆 Select a stock ticker or PERMNO in the sidebar to begin analysis.")
         return
     pca_df = st.session_state.pca_df
     
