@@ -2007,7 +2007,7 @@ def render_universe_period_comparison():
                 # CROWDING SCORE MODULE
                 # ============================================================
                 st.markdown("---")
-                st.markdown("### 2 · Regime Pressure Signal")
+                st.markdown("### 2 · Regime Crowding Signal")
                 st.caption(
                     "Measures how concentrated the market has become within structural clusters "
                     "in each regime. Rising readings indicate crowding pressure building beneath "
