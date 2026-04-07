@@ -106,6 +106,10 @@ def build_structural_user_prompt(evidence_packet: Dict[str, Any]) -> str:
         k: v for k, v in evidence_packet.items()
         if k not in ["serialized_subgraph"]
     }
+
+    if "peer_tickers" in trimmed_packet and isinstance(trimmed_packet["peer_tickers"], list):
+        trimmed_packet["peer_tickers"] = trimmed_packet["peer_tickers"][:10]
+
     packet_json = json.dumps(trimmed_packet, separators=(",", ":"), sort_keys=True)
 
     return f"""
