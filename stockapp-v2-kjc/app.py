@@ -101,7 +101,11 @@ from visualizations import (
 )
 from chatbot import create_chatbot, SAMPLE_QUESTIONS
 from structural_context_builder import build_structural_evidence_packet
-from kg_visualizer import render_kg_tab, render_structural_intelligence_tab
+from kg_visualizer import (
+    render_kg_tab,
+    render_structural_intelligence_tab,
+    render_structural_intelligence_tab_universe,
+)
 from period_analysis import (
     create_loading_comparison_chart,
     compute_procrustes_table,
@@ -2356,7 +2360,7 @@ def render_universe_workspace():
             render_universe_kg_tab()
 
         with landing_tab4:
-            render_universe_structural_tab()
+            render_structural_intelligence_tab_universe()
 
 
 def render_stock_overview_tab(pca_row: pd.Series):
