@@ -1877,6 +1877,11 @@ def render_universe_cluster_overview():
         "through the primary PCA diagnostic view."
     )
 
+    st.info(
+        "Use this dashboard to assess how broadly dispersed the current universe is, "
+        "where structural crowding may be emerging, and how sector filtering changes the observed market shape."
+    )
+
     # Apply GICS sector filter if selected on landing page
     plot_df = st.session_state.pca_df.copy()
     selected_sector = st.session_state.get('selected_gics_sector', 'All Sectors')
