@@ -534,8 +534,10 @@ def render_sidebar():
 
     # Visuals tab controls (stock scope only)
     if stock_scope_active:
-        st.sidebar.markdown("### 📊 Visuals Tab")
-        st.sidebar.caption("Use the top tabs for page navigation. These controls affect the Visuals tab only.")
+        st.sidebar.markdown("### Visual Diagnostics")
+        st.sidebar.caption(
+            "Use the top tabs for page navigation. These controls apply only to the Visuals workspace."
+        )
         
         view_options = [
             "🎯 Cluster Plot",
@@ -569,7 +571,7 @@ def render_sidebar():
 
     # GICS Sector filter (stock scope only)
     if stock_scope_active:
-        st.sidebar.markdown("### 🔍 Stock Universe Filter")
+        st.sidebar.markdown("### Peer Universe Filter")
 
         if stock_selected:
             # Get total stock count from PCA dataframe
