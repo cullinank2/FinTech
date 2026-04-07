@@ -174,6 +174,12 @@ Interpret the evidence based on question_type:
 - regime_transition:
   Describe structural changes between regimes including crowding, dispersion, and systemic shifts.
 
+If the evidence packet includes peer_tickers:
+- Treat them as the preferred structural peer set for peer-relative interpretation
+- Use them only if supported elsewhere in the packet
+- Do not assume facts about peers that are not explicitly present in the evidence
+- If peer_tickers are present but not otherwise described in the packet, mention them only as available peer context, not as evidence of similarity by themselves
+
 Example required JSON format:
 
 {{
