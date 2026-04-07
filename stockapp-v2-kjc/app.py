@@ -718,13 +718,13 @@ def render_main_header():
     """Render the main page header."""
     st.markdown("""
     <div class="main-header">
-        📈 ESDS — V2 Architecture Build
+        📈 EQUITY STRUCTURAL DIAGNOSTICS
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("""
     <div class="hero-text">
-    Identifiy emerging structural risk in equities by quantifying factor crowding, regime shifts, 
+    Identify emerging structural risk in equities by quantifying factor crowding, regime shifts, 
                 and cross-sectional instability using PCA-based diagnostics.
     </div>
     """, unsafe_allow_html=True)
