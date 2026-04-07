@@ -384,7 +384,10 @@ def render_sidebar():
 
     if stock_scope_active:
         st.sidebar.markdown("---")
-        st.sidebar.markdown("## 📊 Stock Selection")
+        st.sidebar.markdown("## Issuer Selection")
+        st.sidebar.caption(
+            "Choose the equity to analyze in the Stock / Individual Diagnostics workspace."
+        )
 
         # Stock input
         #st.sidebar.markdown("""
@@ -430,8 +433,8 @@ def render_sidebar():
     # Quick selection dropdown (stock scope only)
     if stock_scope_active:
         st.sidebar.markdown("---")
-        st.sidebar.markdown("## 🎯 Stock Controls")
         st.sidebar.markdown("### Quick Select")
+        st.sidebar.caption("Use the searchable list below as an alternative to manual ticker entry.")
         
         # Check if data is ready
         data_ready = (
