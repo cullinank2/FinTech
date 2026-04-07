@@ -527,35 +527,27 @@ def render_sidebar():
 
     # Check if stock is selected
 
-    # GICS Sector filter for landing page Cluster Plot
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🏭 GICS Sector Filter")
+    # Universe-only landing page controls
+    if not stock_scope_active:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("## 🌍 Universe Controls")
+        st.sidebar.markdown("### 🏭 GICS Sector Filter")
 
-    gics_sectors = [
-        "All Sectors",
-        "Energy",
-        "Materials",
-        "Industrials",
-        "Consumer Discretionary",
-        "Consumer Staples",
-        "Health Care",
-        "Financials",
-        "Information Technology",
-        "Communication Services",
-        "Utilities",
-        "Real Estate"
-    ]
+        gics_sectors = [
+            "All Sectors",
+            "Energy",
+            "Materials",
+            "Industrials",
+            "Consumer Discretionary",
+            "Consumer Staples",
+            "Health Care",
+            "Financials",
+            "Information Technology",
+            "Communication Services",
+            "Utilities",
+            "Real Estate"
+        ]
 
-    if stock_selected:
-        st.sidebar.selectbox(
-            "Filter landing page by sector:",
-            options=gics_sectors,
-            index=0,
-            key="gics_sector_filter_disabled",
-            disabled=True,
-            help="Sector filter is for the landing page only. Clear the ticker to use it."
-        )
-    else:
         # Build sector options with stock counts
         if st.session_state.pca_df is not None and st.session_state.raw_data is not None:
             pca_tickers = set(st.session_state.pca_df['ticker'].str.upper().tolist())
