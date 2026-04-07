@@ -1447,6 +1447,107 @@ def render_structural_intelligence_tab_universe() -> None:
             "Run **Period Comparison** to populate structural diagnostics."
         )
 
+    crowding_df = st.session_state.get("crowding_df")
+    proc_df = st.session_state.get("procrustes_results")
+
+    risk_status = "Unavailable"
+    primary_driver = "Awaiting live regime diagnostics"
+    regime_condition = "Unknown"
+    executive_note = (
+        "Run Period Comparison to populate the universe-level structural risk monitor."
+    )
+
+    latest_crowding = None
+    disinflation_score = None
+    rs_disinflation_disp = None
+
+    try:
+        if crowding_df is not None and not crowding_df.empty:
+            latest_crowding = crowding_df.iloc[-1]
+            disinflation_rows = crowding_df[
+                crowding_df["period"].astype(str).str.strip() == "Disinflation"
+            ]
+            if not disinflation_rows.empty:
+                disinflation_score = float(
+                    disinflation_rows.iloc[0]["crowding_score"]
+                )
+            else:
+                disinflation_score = float(latest_crowding["crowding_score"])
+    except Exception:
+        disinflation_score = None
+
+    try:
+        if proc_df is not None and not proc_df.empty:
+            rs_dis_rows = proc_df[
+                (
+                    proc_df["Period A"].astype(str).str.strip() == "Rate Shock"
+                ) &
+                (
+                    proc_df["Period B"].astype(str).str.strip() == "Disinflation"
+                )
+            ]
+            if rs_dis_rows.empty:
+                rs_dis_rows = proc_df[
+                    (
+                        proc_df["Period A"].astype(str).str.strip() == "Disinflation"
+                    ) &
+                    (
+                        proc_df["Period B"].astype(str).str.strip() == "Rate Shock"
+                    )
+                ]
+            if not rs_dis_rows.empty:
+                rs_disinflation_disp = float(rs_dis_rows.iloc[0]["Disparity"])
+    except Exception:
+        rs_disinflation_disp = None
+
+    if disinflation_score is not None:
+        if disinflation_score >= 70:
+            risk_status = "🔴 High"
+        elif disinflation_score >= 50:
+            risk_status = "🟠 Elevated"
+        else:
+            risk_status = "🟢 Normal"
+
+        primary_driver = f"Disinflation crowding ({disinflation_score:.1f})"
+
+    if rs_disinflation_disp is not None:
+        if rs_disinflation_disp >= 0.30:
+            regime_condition = f"🔴 Structural break ({rs_disinflation_disp:.3f})"
+        else:
+            regime_condition = f"🟢 Stable regime ({rs_disinflation_disp:.3f})"
+
+    if disinflation_score is not None and rs_disinflation_disp is not None:
+        if disinflation_score >= 50 and rs_disinflation_disp < 0.30:
+            executive_note = (
+                "Crowding is elevated inside a structurally stable regime — "
+                "conditions consistent with compression and synchronized unwind risk."
+            )
+        elif disinflation_score >= 50 and rs_disinflation_disp >= 0.30:
+            executive_note = (
+                "Crowding is elevated alongside structural regime change — "
+                "conditions indicate both compression risk and structural instability."
+            )
+        elif disinflation_score < 50 and rs_disinflation_disp >= 0.30:
+            executive_note = (
+                "Structural change is present without acute crowding escalation — "
+                "monitor for further regime reorganization."
+            )
+        else:
+            executive_note = (
+                "No elevated crowding or structural break is currently dominant "
+                "in the latest regime view."
+            )
+
+    st.markdown("---")
+    st.markdown("### Executive Structural Risk Summary")
+
+    risk_col1, risk_col2, risk_col3 = st.columns(3)
+    risk_col1.metric("Structural Risk Status", risk_status)
+    risk_col2.metric("Primary Driver", primary_driver)
+    risk_col3.metric("Regime Condition", regime_condition)
+
+    st.info(executive_note)
+
     st.markdown("---")
 
     panel = st.radio(
