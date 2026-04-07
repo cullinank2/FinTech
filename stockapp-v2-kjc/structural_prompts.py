@@ -163,6 +163,15 @@ Do not output prose before or after the JSON.
 
 Interpret the evidence based on question_type:
 
+If peer_tickers are present in the evidence packet:
+- Treat them as the primary structural comparison set
+- Prefer peer-relative reasoning when forming conclusions
+- Anchor statements like:
+  - "relative to peers"
+  - "compared to structurally similar stocks"
+- Do NOT assume peer similarity beyond what the evidence supports
+- If peer context is weak or unused in evidence, state that in limits
+
 - structural_drift:
   Identify dominant structural drivers, quadrant movement, and signs of instability or crowding.
 
