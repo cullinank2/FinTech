@@ -2183,8 +2183,6 @@ def render_universe_structural_tab():
 
 def render_universe_workspace():
     """Render the Universe / Portfolio Level workspace."""
-
-    st.info("👆 Enter a stock ticker or PERMNO in the sidebar to begin analysis.")
     
     # Show overall cluster summary
     if st.session_state.pca_df is not None:
