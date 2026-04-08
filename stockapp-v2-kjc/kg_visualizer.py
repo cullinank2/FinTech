@@ -935,7 +935,7 @@ def _render_crowding_chain_panel(kg) -> None:
     pc_score  = [_cs(r) for r in REGIME_ORDER]
     d01, n01  = _ps(*REGIME_TRANSITIONS[0])
     d02, n02  = _ps("Post-COVID", "Disinflation")
-    d12, n12  = _ps("Rate Shock", "Disinflation")
+    d12, n12  = _ps(*REGIME_TRANSITIONS[1])
 
     if using_fallback:
         st.info("📋 Displaying Appendix B empirical values. Run Period Comparison to populate live data.")
