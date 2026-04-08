@@ -1151,7 +1151,7 @@ def _render_reasoning_chain_panel(kg) -> None:
     )
     run_chain = st.button("Generate Reasoning Chain", key="si_chain_run")
     if not run_chain:
-        st.info("Select a regime and click **Generate Reasoning Chain**.")
+        st.info("Select a regime and generate the structural reasoning chain.")
         return
 
     node_ids = [
