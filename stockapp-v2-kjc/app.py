@@ -116,6 +116,16 @@ from period_analysis import (
     PERIOD_KEYS,
 )
 from narrative_engine import generate_narrative  # ARCH: intentional NE boundary — app.py is the sole authorized caller
+from factor_registry import REGIME_ORDER
+
+REGIME_DATE_RANGES = dict(zip(
+    REGIME_ORDER,
+    [
+        ("2021-03-01", "2022-06-30"),
+        ("2022-07-01", "2023-09-30"),
+        ("2023-10-01", "2024-10-31"),
+    ]
+))
 
 
 # =============================================================================
@@ -2066,16 +2076,6 @@ def render_universe_period_comparison():
                     # FORCE rebuild KG after period_scores is created (critical for Tier 2)
                     from kg_builder import build_kg
                     from kg_interface import KnowledgeGraph
-                    from factor_registry import REGIME_ORDER
-
-                    REGIME_DATE_RANGES = dict(zip(
-                        REGIME_ORDER,
-                        [
-                            ('2021-03-01', '2022-06-30'),
-                            ('2022-07-01', '2023-09-30'),
-                            ('2023-10-01', '2024-10-31'),
-                        ]
-                    ))
 
                     kg_result = build_kg(
                         period_data=st.session_state.get("period_scores"),
@@ -3062,7 +3062,7 @@ def main():
             st.session_state.kg_instance = KnowledgeGraph(kg_result.graph)
 
             if "kg_current_regime" not in st.session_state:
-                st.session_state.kg_current_regime = "Disinflation"
+                st.session_state.kg_current_regime = REGIME_ORDER[-1]
 
         except Exception as e:
             st.warning(f"KG build failed: {e}")
