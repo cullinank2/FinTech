@@ -32,7 +32,7 @@ except NameError:
 
 import networkx as nx
 
-from factor_registry import REGIME_ORDER
+from semantic_constants import REGIME_ORDER
 
 # ── Schema import ─────────────────────────────────────────────────────────────
 try:

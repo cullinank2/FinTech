@@ -116,7 +116,7 @@ from period_analysis import (
     PERIOD_KEYS,
 )
 from narrative_engine import generate_narrative  # ARCH: intentional NE boundary — app.py is the sole authorized caller
-from factor_registry import REGIME_ORDER
+from semantic_constants import REGIME_ORDER
 
 REGIME_DATE_RANGES = dict(zip(
     REGIME_ORDER,
