@@ -1087,14 +1087,12 @@ def _render_early_warning_panel(kg) -> None:
     dis_score_src = "live" if _dis_live is not None else "Appendix B"
 
     # FIX 6: clean unpacking using shared helper with explicit source labels
-    d_pc_rs_val,  _n_pc_rs,  src_pc_rs  = _get_disp_with_source("Post-COVID", "Rate Shock",   procrustes_live)
-    d_pc_dis_val, _n_pc_dis, src_pc_dis = _get_disp_with_source("Post-COVID", "Disinflation", procrustes_live)
-    d_rs_dis_val, _n_rs_dis, src_rs_dis = _get_disp_with_source("Rate Shock", "Disinflation", procrustes_live)
+    d_pc_rs_val, _n_pc_rs, src_pc_rs = _get_disp_with_source(*REGIME_TRANSITIONS[0], procrustes_live)
+    d_rs_dis_val, _n_rs_dis, src_rs_dis = _get_disp_with_source(*REGIME_TRANSITIONS[1], procrustes_live)
 
     all_transitions = {
-        "Post-COVID → Rate Shock":   d_pc_rs_val,
-        "Post-COVID → Disinflation": d_pc_dis_val,
-        "Rate Shock → Disinflation": d_rs_dis_val,
+        f"{REGIME_TRANSITIONS[0][0]} → {REGIME_TRANSITIONS[0][1]}": d_pc_rs_val,
+        f"{REGIME_TRANSITIONS[1][0]} → {REGIME_TRANSITIONS[1][1]}": d_rs_dis_val,
     }
     major_breaks = {k: v for k, v in all_transitions.items() if v >= 0.30}
     if major_breaks:
