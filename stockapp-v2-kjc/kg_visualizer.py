@@ -1215,7 +1215,7 @@ def _render_reasoning_chain_panel(kg) -> None:
         flagged = score > _CROWDING_FLAG
         period_label = REGIME_DATE_RANGES.get(regime_sel)
 
-        st.markdown(f"#### Structural Reasoning Chain — {regime_sel}")
+        st.markdown(f"#### Structural Trace — {regime_sel}")
         st.caption(f"Values sourced from: **{source}**")
 
         chain_lines = [
