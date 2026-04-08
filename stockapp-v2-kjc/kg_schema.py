@@ -533,8 +533,6 @@ EMPIRICAL_ANCHORS: Dict = {}
 APPENDIX_B_PROCRUSTES = {
     ("Post-COVID", "Rate Shock"):   {"disparity": 0.342, "common_tickers": 322,
                                      "interpretation": "Major regime change"},
-    ("Post-COVID", "Disinflation"): {"disparity": 0.459, "common_tickers": 316,
-                                     "interpretation": "Major regime change"},
     ("Rate Shock", "Disinflation"): {"disparity": 0.186, "common_tickers": 1590,
                                      "interpretation": "Meaningful structural change"},
 }
