@@ -67,6 +67,8 @@ except Exception as _kg_builder_err:
             return default
 
 
+from kg_schema import APPENDIX_B_PROCRUSTES as _APPENDIX_B_PROCRUSTES
+
 # =============================================================================
 # VISUAL DESIGN CONSTANTS
 # =============================================================================
