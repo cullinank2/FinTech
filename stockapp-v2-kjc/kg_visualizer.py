@@ -21,7 +21,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Canonical regime order (single source of truth)
-from semantic_constants import REGIME_ORDER
+from semantic_constants import REGIME_ORDER, REGIME_DATE_RANGES
 
 try:
     from pyvis.network import Network
@@ -739,39 +739,6 @@ def render_kg_tab() -> None:
 # PHASE 5 — STRUCTURAL INTELLIGENCE TAB
 # =============================================================================
 
-# ── Import regime date ranges from period_analysis (single source of truth) ──
-try:
-    from period_analysis import SUB_PERIODS as _SUB_PERIODS
-    # Extract human-readable date ranges from the key strings
-    # Key format: 'Post-COVID\n(Mar 2021–Jun 2022)'
-    _REGIME_DATE_RANGES = {
-        key.split('\n')[0]: key.split('\n')[1].strip('()')
-        for key in _SUB_PERIODS.keys()
-        if '\n' in key
-    }
-except Exception:
-    # Fallback only if period_analysis unavailable
-    _REGIME_DATE_RANGES = {
-        "Post-COVID":   "Mar 2021–Jun 2022",
-        "Rate Shock":   "Jul 2022–Sep 2023",
-        "Disinflation": "Oct 2023–Oct 2024",
-    }
-
-_APPENDIX_B_CROWDING = {
-    "Post-COVID":   28.3,
-    "Rate Shock":   30.1,
-    "Disinflation": 67.9,
-}
-_APPENDIX_B_PROCRUSTES = {
-    ("Post-COVID", "Rate Shock"):    {"disparity": 0.342, "n_tickers": 322},
-    ("Post-COVID", "Disinflation"):  {"disparity": 0.459, "n_tickers": 316},
-    ("Rate Shock", "Disinflation"):  {"disparity": 0.186, "n_tickers": 1590},
-}
-_APPENDIX_B_MIGRATION = {
-    "Post-COVID→Rate Shock":    {"pct": 43.7, "n": 138, "of": 316},
-    "Post-COVID→Disinflation":  {"pct": 30.1, "n": 95,  "of": 316},
-    "Rate Shock→Disinflation":  {"pct": 60.1, "n": 190, "of": 316},
-}
 # Use canonical regime order directly from factor_registry (no local alias)
 _CROWDING_FLAG = 50.0
 
@@ -979,15 +946,15 @@ def _render_crowding_chain_panel(kg) -> None:
     st.markdown("---")
     st.markdown("**Structural distance between adjacent regimes (Procrustes disparity):**")
     chain_cols = st.columns([2, 1, 2, 1, 2])
-    _dr = _REGIME_DATE_RANGES
-    chain_cols[0].markdown(f"**Post-COVID**\n\nCrowding: {pc_score[0]:.1f}\n\n*({_dr.get('Post-COVID', 'Mar 2021–Jun 2022')})*")
+    _dr = REGIME_DATE_RANGES
+    chain_cols[0].markdown(f"**Post-COVID**\n\nCrowding: {pc_score[0]:.1f}\n\n*({_dr.get('Post-COVID')})*")
     src01 = "live" if not using_fallback and ("Post-COVID", "Rate Shock") in procrustes_live else "ref"
     src12 = "live" if not using_fallback and ("Rate Shock", "Disinflation") in procrustes_live else "ref"
     chain_cols[1].markdown(f"→\n\n**{d01:.3f}**\n\n*{n01:,} tickers*\n\n{'🔴 Major break' if d01 >= 0.30 else '🟡 Moderate'}\n\n*({src01})*")
-    chain_cols[2].markdown(f"**Rate Shock**\n\nCrowding: {pc_score[1]:.1f}\n\n*({_dr.get('Rate Shock', 'Jul 2022–Sep 2023')})*")
+    chain_cols[2].markdown(f"**Rate Shock**\n\nCrowding: {pc_score[1]:.1f}\n\n*({_dr.get('Rate Shock')})*")
     chain_cols[3].markdown(f"→\n\n**{d12:.3f}**\n\n*{n12:,} tickers*\n\n{'🔴 Major break' if d12 >= 0.30 else '🟢 Stable'}\n\n*({src12})*")
     dis_flag = " 🚨" if pc_score[2] > _CROWDING_FLAG else ""
-    chain_cols[4].markdown(f"**Disinflation**\n\nCrowding: {pc_score[2]:.1f}{dis_flag}\n\n*({_dr.get('Disinflation', 'Oct 2023–Oct 2024')})*")
+    chain_cols[4].markdown(f"**Disinflation**\n\nCrowding: {pc_score[2]:.1f}{dis_flag}\n\n*({_dr.get('Disinflation')})*")
     st.markdown("---")
     st.markdown(
         f"**Non-adjacent structural distance** (Post-COVID → Disinflation): **{d02:.3f}** "
@@ -1254,9 +1221,9 @@ def _render_reasoning_chain_panel(kg) -> None:
         source  = "live pipeline" if live_score is not None else "Appendix B reference"
         flagged = score > _CROWDING_FLAG
         date_ranges = [
-            _REGIME_DATE_RANGES.get("Post-COVID",   "Mar 2021–Jun 2022"),
-            _REGIME_DATE_RANGES.get("Rate Shock",   "Jul 2022–Sep 2023"),
-            _REGIME_DATE_RANGES.get("Disinflation", "Oct 2023–Oct 2024"),
+            REGIME_DATE_RANGES.get("Post-COVID"),
+            REGIME_DATE_RANGES.get("Rate Shock"),
+            REGIME_DATE_RANGES.get("Disinflation"),
         ]
 
         st.markdown(f"#### Structural Reasoning Chain — {regime_sel}")
