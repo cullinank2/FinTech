@@ -1143,8 +1143,8 @@ def _render_early_warning_panel(kg) -> None:
 def _render_reasoning_chain_panel(kg) -> None:
     st.markdown("### 🔍 Reasoning Chain Viewer")
     st.caption(
-        "Deterministic KG path traversal for the selected regime — "
-        "node → edge → node provenance. Tier 1 governance artifact: no language model involved."
+    "Knowledge Graph–derived structural path for the selected regime — "
+    "node → edge → node traceability across crowding, transitions, and early warning signals."
     )
     regime_sel = st.selectbox(
         "Select regime to inspect", options=REGIME_ORDER, index=2, key="si_chain_regime",
