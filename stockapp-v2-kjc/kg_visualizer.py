@@ -1050,9 +1050,8 @@ def _render_early_warning_panel(kg) -> None:
     st.markdown("---")
     st.markdown("#### Structural Break Assessment")
     breaks = [
-        ("Post-COVID → Rate Shock",   "Post-COVID",  "Rate Shock"),
-        ("Post-COVID → Disinflation", "Post-COVID",  "Disinflation"),
-        ("Rate Shock → Disinflation", "Rate Shock",  "Disinflation"),
+        (f"{a} → {b}", a, b)
+        for a, b in REGIME_TRANSITIONS
     ]
     procrustes_live = {}
     if kg is not None:
