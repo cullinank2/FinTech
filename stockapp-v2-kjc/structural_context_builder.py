@@ -303,21 +303,21 @@ def _seed_node_ids(
     If your KG node IDs differ, adjust only this function.
     """
     node_ids = [
-        f"ticker_{ticker}",
-        f"regime_{regime}",
+        f"stock:{ticker}",
+        f"regime:{regime}",
     ]
 
     if question_type == "factor_rotation" and factor:
         node_ids.extend([
-            f"factor_{factor}",
-            f"regime_{from_regime}",
-            f"regime_{to_regime}",
+            f"factor:{factor}",
+            f"regime:{from_regime}",
+            f"regime:{to_regime}",
         ])
 
     if question_type == "regime_transition" and from_regime and to_regime:
         node_ids.extend([
-            f"regime_{from_regime}",
-            f"regime_{to_regime}",
+            f"regime:{from_regime}",
+            f"regime:{to_regime}",
         ])
 
     return _dedupe_preserve_order(node_ids)
