@@ -38,18 +38,19 @@ from dataclasses import dataclass
 from typing import Optional, Tuple, Dict
 from enum import Enum
 
+from semantic_constants import (
+    PROCRUSTES_NEGLIGIBLE,
+    PROCRUSTES_DETECTABLE,
+    PROCRUSTES_MEANINGFUL,
+    CROWDING_THRESHOLD_ELEVATED,
+    CROWDING_THRESHOLD_HIGH,
+)
+
 
 # =============================================================================
-# METHODOLOGY CONSTANTS  (Category C — legitimately static)
-# These describe the ESDS methodology thresholds, not computed values.
+# METHODOLOGY CONSTANTS
+# Imported from semantic_constants.py (canonical threshold owner)
 # =============================================================================
-
-PROCRUSTES_NEGLIGIBLE       = 0.05   # < 0.05   → Negligible
-PROCRUSTES_DETECTABLE       = 0.15   # 0.05–0.14 → Detectable
-PROCRUSTES_MEANINGFUL       = 0.30   # >= 0.30   → Major / recalibration trigger
-
-CROWDING_THRESHOLD_ELEVATED = 50.0   # score >= 50 → Elevated
-CROWDING_THRESHOLD_HIGH     = 70.0   # score >= 70 → High
 
 
 # =============================================================================
