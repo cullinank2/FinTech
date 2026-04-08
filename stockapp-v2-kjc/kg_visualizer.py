@@ -1279,13 +1279,16 @@ def _render_reasoning_chain_panel(kg) -> None:
         except Exception:
             pass
 
-        mig_values = list(APPENDIX_B_MIGRATION.values())
+        mig = None
+        mig_src = ""
+
         if live_mig is not None:
             mig, mig_src = live_mig, "live"
-        elif idx < len(mig_values):
-            mig, mig_src = mig_values[idx], "Appendix B"
         else:
-            mig, mig_src = None, ""
+            for (from_regime, to_regime), mig_val in APPENDIX_B_MIGRATION.items():
+                if regime_sel in (from_regime, to_regime):
+                    mig, mig_src = mig_val, "Appendix B"
+                    break
 
         if mig is not None:
             chain_lines += [
