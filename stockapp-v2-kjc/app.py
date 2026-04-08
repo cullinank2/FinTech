@@ -2077,24 +2077,6 @@ def render_universe_period_comparison():
                         include_equity_nodes=True,
                     )
 
-                    G = kg_result.graph
-
-                    # ============================================================
-                    # DEBUG: MIGRATION EDGE VALIDATION (TEMP)
-                    # ============================================================
-
-                    migration_edges = [
-                        (u, v, d)
-                        for u, v, d in G.edges(data=True)
-                        if d.get("edge_type") == "migrates_to"
-                    ]
-
-                    st.write(f"Migration edges count: {len(migration_edges)}")
-
-                    for e in migration_edges[:10]:
-                        st.write(e)
-
-
                     st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
                     st.session_state["kg_current_regime"] = "Disinflation"
 
