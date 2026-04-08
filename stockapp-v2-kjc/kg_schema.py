@@ -46,6 +46,7 @@ from semantic_constants import (
     CROWDING_THRESHOLD_HIGH,
 )
 
+from semantic_constants import REGIME_ORDER
 
 # =============================================================================
 # METHODOLOGY CONSTANTS
@@ -58,10 +59,9 @@ from semantic_constants import (
 # =============================================================================
 
 class RegimeName(str, Enum):
-    """Three macro regimes — short labels match app.py period_label_map keys."""
-    POST_COVID   = "Post-COVID"
-    RATE_SHOCK   = "Rate Shock"
-    DISINFLATION = "Disinflation"
+    POST_COVID   = REGIME_ORDER[0]
+    RATE_SHOCK   = REGIME_ORDER[1]
+    DISINFLATION = REGIME_ORDER[2]
 
 
 class QuadrantID(str, Enum):
