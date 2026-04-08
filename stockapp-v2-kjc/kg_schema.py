@@ -143,6 +143,39 @@ class EdgeType(str, Enum):
 
 
 # =============================================================================
+# KG SERIALIZATION ALLOWLISTS
+# =============================================================================
+
+SERIALIZABLE_NODE_TYPES = {
+    NodeType.STOCK.value,
+    NodeType.FACTOR.value,
+    NodeType.REGIME.value,
+    NodeType.QUADRANT.value,
+    NodeType.MECHANISM.value,
+    NodeType.CLUSTER.value,
+    NodeType.CATEGORY.value,
+    NodeType.AXIS.value,
+    NodeType.PLATFORM.value,
+}
+
+SERIALIZABLE_EDGE_TYPES = {
+    EdgeType.REGIME_TRANSITION.value,
+    EdgeType.FACTOR_LOADING.value,
+    EdgeType.QUADRANT_ASSIGNMENT.value,
+    EdgeType.CLUSTER_MEMBERSHIP.value,
+    EdgeType.CROWDING_LEVEL.value,
+    EdgeType.BELONGS_TO_CATEGORY.value,
+    EdgeType.BELONGS_TO.value,
+    EdgeType.MIGRATES_TO.value,
+    EdgeType.GOVERNS.value,
+    EdgeType.COMPLEMENTS.value,
+    EdgeType.TRIGGERS_BREAK.value,
+    EdgeType.TRIGGERS_WARNING.value,
+    "related_to",
+}
+
+
+# =============================================================================
 # DATACLASS NODE DEFINITIONS
 # =============================================================================
 

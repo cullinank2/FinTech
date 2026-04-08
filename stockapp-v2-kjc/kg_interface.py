@@ -44,6 +44,7 @@ try:
         NodeType, EdgeType,
         PROCRUSTES_MEANINGFUL, CROWDING_THRESHOLD_ELEVATED, CROWDING_THRESHOLD_HIGH,
         APPENDIX_B_PROCRUSTES, APPENDIX_B_CROWDING,
+        SERIALIZABLE_NODE_TYPES, SERIALIZABLE_EDGE_TYPES,
     )
     KG_SCHEMA_AVAILABLE = True
 except Exception as _e:
@@ -55,6 +56,34 @@ except Exception as _e:
     CROWDING_THRESHOLD_HIGH     = 70.0
     APPENDIX_B_PROCRUSTES       = {}
     APPENDIX_B_CROWDING         = {}
+
+    SERIALIZABLE_NODE_TYPES = {
+        "stock",
+        "factor",
+        "regime",
+        "quadrant",
+        "mechanism",
+        "cluster",
+        "category",
+        "axis",
+        "platform",
+    }
+
+    SERIALIZABLE_EDGE_TYPES = {
+        "regime_transition",
+        "factor_loading",
+        "quadrant_assignment",
+        "cluster_membership",
+        "crowding_level",
+        "triggers_break",
+        "triggers_warning",
+        "belongs_to_category",
+        "belongs_to",
+        "migrates_to",
+        "governs",
+        "complements",
+        "related_to",
+    }
 
 
 # ── Regime ordering (chronological) ──────────────────────────────────────────
@@ -853,17 +882,7 @@ class KnowledgeGraph:
         # packet bounded and deterministic for Tier 2 consumption.
         expanded_valid = set(seed_nodes)
 
-        ALLOWED_NODE_TYPES = {
-            "stock",
-            "factor",
-            "regime",
-            "quadrant",
-            "mechanism",
-            "cluster",
-            "category",
-            "axis",
-            "platform",
-        }
+        ALLOWED_NODE_TYPES = SERIALIZABLE_NODE_TYPES
 
         MAX_NEIGHBORS_PER_SEED = 12
 
@@ -933,21 +952,7 @@ class KnowledgeGraph:
         # Edges — include all allowed relationships among included nodes
         valid_set = set(valid)
         serialized_edges = []
-        ALLOWED_EDGE_TYPES = {
-            "regime_transition",
-            "factor_loading",
-            "quadrant_assignment",
-            "cluster_membership",
-            "crowding_level",
-            "triggers_break",
-            "triggers_warning",
-            "belongs_to_category",
-            "belongs_to",
-            "migrates_to",
-            "governs",
-            "complements",
-            "related_to",
-        }
+        ALLOWED_EDGE_TYPES = SERIALIZABLE_EDGE_TYPES
 
         for u, v, attrs in self._G.edges(data=True):
             if u not in valid_set or v not in valid_set:
