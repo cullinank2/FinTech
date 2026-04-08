@@ -2070,6 +2070,7 @@ def render_universe_period_comparison():
                     # FORCE rebuild KG after period_scores is created (critical for Tier 2)
                     from kg_builder import build_kg
                     from kg_interface import KnowledgeGraph
+                    from factor_registry import REGIME_ORDER
 
                     kg_result = build_kg(
                         period_data=st.session_state.get("period_scores"),
@@ -2078,7 +2079,7 @@ def render_universe_period_comparison():
                     )
 
                     st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
-                    st.session_state["kg_current_regime"] = "Disinflation"
+                    st.session_state["kg_current_regime"] = REGIME_ORDER[-1]
 
                     if not crowding_df.empty:
 
