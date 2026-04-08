@@ -32,6 +32,8 @@ except NameError:
 
 import networkx as nx
 
+from factor_registry import REGIME_ORDER
+
 # ── Schema import ─────────────────────────────────────────────────────────────
 try:
     from kg_schema import (
@@ -549,8 +551,7 @@ def _wire_migration_edges(G: nx.DiGraph, migration_df, result: KGResult) -> None
         result.warnings.append("No migration_df — migration edges skipped.")
         return
 
-    period_cols = [c for c in ["Post-COVID", "Rate Shock", "Disinflation"]
-                   if c in migration_df.columns]
+    period_cols = [c for c in REGIME_ORDER if c in migration_df.columns]
 
     for i in range(len(period_cols) - 1):
         col_from, col_to = period_cols[i], period_cols[i + 1]
