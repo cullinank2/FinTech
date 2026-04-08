@@ -43,8 +43,9 @@ from factor_registry import (
     FEATURE_DISPLAY_NAMES,
     FEATURE_ECONOMIC_MEANINGS,
     PCA_DRIVER_GROUPS,
-    REGIME_ORDER,
 )
+
+from semantic_constants import REGIME_ORDER
 
 # ---------------------------------------------------------------------------
 # Feature display name mapping — mirrors config.py / visualizations.py
