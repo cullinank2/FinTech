@@ -584,8 +584,7 @@ def _render_metrics_panel() -> None:
                 st.metric(pc, f"{v:.1f}%")
 
         st.markdown("**Quadrant Migration**")
-        for a, b, label in [("Post-COVID", "Rate Shock", "PC→RS"),
-                             ("Rate Shock", "Disinflation", "RS→D")]:
+        for (a, b), label in zip(REGIME_TRANSITIONS, ["PC→RS", "RS→D"]):
             mr = _migration_row_live(f"{a} -> {b}")
             if mr is not None:
                 rate    = str(mr.get("Migration Rate", "N/A"))
