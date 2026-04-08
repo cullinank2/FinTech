@@ -116,16 +116,7 @@ from period_analysis import (
     PERIOD_KEYS,
 )
 from narrative_engine import generate_narrative  # ARCH: intentional NE boundary — app.py is the sole authorized caller
-from semantic_constants import REGIME_ORDER
-
-REGIME_DATE_RANGES = dict(zip(
-    REGIME_ORDER,
-    [
-        ("2021-03-01", "2022-06-30"),
-        ("2022-07-01", "2023-09-30"),
-        ("2023-10-01", "2024-10-31"),
-    ]
-))
+from semantic_constants import REGIME_ORDER, REGIME_DATE_RANGES
 
 
 # =============================================================================
