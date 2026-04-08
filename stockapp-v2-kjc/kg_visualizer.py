@@ -22,6 +22,8 @@ import streamlit.components.v1 as components
 
 # Canonical regime order (single source of truth)
 from semantic_constants import REGIME_ORDER, REGIME_DATE_RANGES
+from kg_schema import APPENDIX_B_PROCRUSTES as _APPENDIX_B_PROCRUSTES
+from kg_schema import APPENDIX_B_CROWDING as _APPENDIX_B_CROWDING
 
 try:
     from pyvis.network import Network
