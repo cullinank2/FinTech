@@ -826,8 +826,8 @@ def generate_structural_context(
 
     # ── 5b: Regime transition chain ───────────────────────────────────────────
     try:
-        regime_idx  = REGIME_ORDER.index(current_regime) if current_regime in REGIME_ORDER else -1
-        prior_regime = REGIME_ORDER[regime_idx - 1] if regime_idx > 0 else None
+        drift = kg.get_structural_drift_summary(current_regime)
+        prior_regime = drift.get("prior_regime")
 
         if prior_regime:
             chain = kg.query_crowding_chain(prior_regime, current_regime)
