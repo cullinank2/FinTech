@@ -536,11 +536,8 @@ def _render_metrics_panel() -> None:
     with col1:
         st.markdown("**Procrustes Disparity**")
         pairs = [
-            (a, b, label)
-            for (a, b), label in zip(
-                REGIME_TRANSITIONS,
-                ["PC→RS", "RS→D"]
-            )
+            (a, b, f"{a}→{b}")
+            for (a, b) in REGIME_TRANSITIONS
         ]
         any_live = False
         for a, b, label in pairs:
@@ -584,7 +581,8 @@ def _render_metrics_panel() -> None:
                 st.metric(pc, f"{v:.1f}%")
 
         st.markdown("**Quadrant Migration**")
-        for (a, b), label in zip(REGIME_TRANSITIONS, ["PC→RS", "RS→D"]):
+        for (a, b) in REGIME_TRANSITIONS:
+            label = f"{a}→{b}"
             mr = _migration_row_live(f"{a} -> {b}")
             if mr is not None:
                 rate    = str(mr.get("Migration Rate", "N/A"))
