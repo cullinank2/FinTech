@@ -1291,11 +1291,15 @@ def _render_reasoning_chain_panel(kg) -> None:
                     break
 
         if mig is not None:
+            pct = mig.get("pct") or mig.get("migration_rate")
+            n   = mig.get("n")   or mig.get("changed")
+            of  = mig.get("of")  or mig.get("total")
+
             chain_lines += [
                 f"**Edge:** `has_migration_event` →",
                 f"**Node:** `quadrant_migration:{regime_sel}` — "
-                f"**{mig['pct']:.1f}%** quadrant migration rate "
-                f"({mig['n']} of {mig['of']} tickers changed quadrant) ({mig_src})",
+                f"**{pct:.1f}%** quadrant migration rate "
+                f"({n} of {of} tickers changed quadrant) ({mig_src})",
                 "",
             ]
 
