@@ -961,11 +961,6 @@ def _render_crowding_chain_panel(kg) -> None:
     dis_flag = " 🚨" if pc_score[2] > _CROWDING_FLAG else ""
     chain_cols[4].markdown(f"**Disinflation**\n\nCrowding: {pc_score[2]:.1f}{dis_flag}\n\n*({_dr.get('Disinflation')})*")
     st.markdown("---")
-    st.markdown(
-        f"**Non-adjacent structural distance** (Post-COVID → Disinflation): **{d02:.3f}** "
-        f"across {n02:,} common tickers — "
-        f"{'largest disparity in the three-regime sequence, confirming cumulative structural drift.' if d02 > d01 and d02 > d12 else 'structural drift assessment.'}"
-    )
     # FIX 1: caption reflects actual data source
     data_source = "live pipeline" if not using_fallback else "Appendix B reference"
     st.caption(
