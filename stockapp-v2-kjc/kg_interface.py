@@ -29,6 +29,7 @@ from typing import Optional
 import networkx as nx
 
 from semantic_constants import REGIME_ORDER as CANONICAL_REGIME_ORDER
+PC, RS, D = CANONICAL_REGIME_ORDER
 
 from factor_registry import (
     FEATURE_COLUMNS,
@@ -1059,31 +1060,31 @@ if __name__ == "__main__":
         print(f"kg_builder unavailable ({e}), building minimal test graph...")
         G = nx.DiGraph(name="ESDS_test")
         # Wire minimal nodes for structural method tests
-        G.add_node("regime:Post-COVID",
-                   node_type="regime", label="Post-COVID",
+        G.add_node(f"regime:{PC}",
+                   node_type="regime", label=PC,
                    start_date="2021-03-31", end_date="2022-06-30",
                    crowding_score=28.3, crowding_risk="Normal")
-        G.add_node("regime:Rate Shock",
-                   node_type="regime", label="Rate Shock",
+        G.add_node(f"regime:{RS}",
+                   node_type="regime", label=RS,
                    start_date="2022-07-31", end_date="2023-09-30",
                    crowding_score=30.1, crowding_risk="Normal")
-        G.add_node("regime:Disinflation",
-                   node_type="regime", label="Disinflation",
+        G.add_node(f"regime:{D}",
+                   node_type="regime", label=D,
                    start_date="2023-10-31", end_date="2024-10-31",
                    crowding_score=67.9, crowding_risk="Elevated")
-        G.add_edge("regime:Post-COVID", "regime:Disinflation",
+        G.add_edge(f"regime:{PC}", f"regime:{D}",
                    edge_type="regime_transition",
                    procrustes_disparity=0.459, common_tickers=316,
                    is_major_break=True, severity="Major",
                    migration_pct=60.1, stocks_changed=190, stocks_analyzed=316,
                    data_source="appendix_b_fallback")
-        G.add_edge("regime:Post-COVID", "regime:Rate Shock",
+        G.add_edge(f"regime:{PC}", f"regime:{RS}",
                    edge_type="regime_transition",
                    procrustes_disparity=0.342, common_tickers=322,
                    is_major_break=True, severity="Major",
                    migration_pct=43.7, stocks_changed=138, stocks_analyzed=316,
                    data_source="appendix_b_fallback")
-        G.add_edge("regime:Rate Shock", "regime:Disinflation",
+        G.add_edge(f"regime:{RS}", f"regime:{D}",
                    edge_type="regime_transition",
                    procrustes_disparity=0.186, common_tickers=1590,
                    is_major_break=False, severity="Meaningful",
