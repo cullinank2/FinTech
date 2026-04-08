@@ -1439,7 +1439,10 @@ def plot_crowding_score(crowding_df: pd.DataFrame):
     if crowding_df.empty:
         return None
 
-    period_order = ['Post-COVID', 'Rate Shock', 'Disinflation']
+    from semantic_constants import REGIME_ORDER
+
+    period_order = REGIME_ORDER
+    
     df = crowding_df.set_index('period').reindex(period_order).dropna()
 
     colors = []

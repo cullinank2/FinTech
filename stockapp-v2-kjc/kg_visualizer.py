@@ -554,7 +554,7 @@ def _render_metrics_panel() -> None:
 
     with col2:
         st.markdown("**Factor Crowding Score**")
-        for period in ["Post-COVID", "Rate Shock", "Disinflation"]:
+        for period in REGIME_ORDER:
             score = _crowding_score_live(period)
             if score is not None:
                 risk = ("Normal" if score < CROWDING_THRESHOLD_ELEVATED

@@ -525,7 +525,8 @@ def compute_crowding_scores(pca_df: pd.DataFrame) -> pd.DataFrame:
     results = []
 
     # Define canonical period order
-    period_order = ['Post-COVID', 'Rate Shock', 'Disinflation']
+    from semantic_constants import REGIME_ORDER
+    period_order = REGIME_ORDER
     periods_present = [p for p in period_order if p in pca_df[period_col].unique()]
 
     for period in periods_present:

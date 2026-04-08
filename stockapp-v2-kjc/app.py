@@ -2219,7 +2219,7 @@ def render_universe_period_comparison():
                 loadings_table = get_loading_comparison_data(raw_df, features, date_col, pc=pc_choice)
                 if not loadings_table.empty:
                     with st.expander(f"🔍 View {pc_choice} factor loadings table"):
-                        period_cols = ['Post-COVID', 'Rate Shock', 'Disinflation']
+                        period_cols = REGIME_ORDER
                         delta_cols = [c for c in loadings_table.columns if c.startswith('Δ')]
 
                         def _style_loading(val):
