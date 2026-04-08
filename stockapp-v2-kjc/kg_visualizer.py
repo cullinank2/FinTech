@@ -21,7 +21,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Canonical regime order (single source of truth)
-from semantic_constants import REGIME_ORDER, REGIME_DATE_RANGES
+from semantic_constants import REGIME_ORDER, REGIME_DATE_RANGES, REGIME_TRANSITIONS
 from kg_schema import APPENDIX_B_PROCRUSTES as _APPENDIX_B_PROCRUSTES
 from kg_schema import APPENDIX_B_CROWDING as _APPENDIX_B_CROWDING
 
@@ -536,9 +536,11 @@ def _render_metrics_panel() -> None:
     with col1:
         st.markdown("**Procrustes Disparity**")
         pairs = [
-            ("Post-COVID", "Rate Shock",   "PC→RS"),
-            ("Post-COVID", "Disinflation", "PC→D"),
-            ("Rate Shock", "Disinflation", "RS→D"),
+            (a, b, label)
+            for (a, b), label in zip(
+                REGIME_TRANSITIONS,
+                ["PC→RS", "RS→D"]
+            )
         ]
         any_live = False
         for a, b, label in pairs:
