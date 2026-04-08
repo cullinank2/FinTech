@@ -1288,7 +1288,7 @@ def _render_reasoning_chain_panel(kg) -> None:
         except Exception:
             pass
 
-        mig_values = list(_APPENDIX_B_MIGRATION.values())
+        mig_values = list(APPENDIX_B_MIGRATION.values())
         if live_mig is not None:
             mig, mig_src = live_mig, "live"
         elif idx < len(mig_values):
