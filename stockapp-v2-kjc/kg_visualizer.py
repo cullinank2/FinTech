@@ -1220,17 +1220,13 @@ def _render_reasoning_chain_panel(kg) -> None:
         score   = live_score if live_score is not None else _APPENDIX_B_CROWDING[regime_sel]
         source  = "live pipeline" if live_score is not None else "Appendix B reference"
         flagged = score > _CROWDING_FLAG
-        date_ranges = [
-            REGIME_DATE_RANGES.get("Post-COVID"),
-            REGIME_DATE_RANGES.get("Rate Shock"),
-            REGIME_DATE_RANGES.get("Disinflation"),
-        ]
+        period_label = REGIME_DATE_RANGES.get(regime_sel)
 
         st.markdown(f"#### Structural Reasoning Chain — {regime_sel}")
         st.caption(f"Values sourced from: **{source}**")
 
         chain_lines = [
-            f"**Node:** `regime:{regime_sel}` — type: `regime` | period: {date_ranges[idx]}",
+            f"**Node:** `regime:{regime_sel}` — type: `regime` | period: {period_label}",
             "",
             f"**Edge:** `has_crowding_metric` →",
             f"**Node:** `crowding:{regime_sel}` — "
@@ -1240,25 +1236,24 @@ def _render_reasoning_chain_panel(kg) -> None:
             "",
         ]
 
-        if idx > 0:
-            prior        = REGIME_ORDER[idx - 1]
-            disp, n, src = _get_disp_with_source(prior, regime_sel, live_procrustes)
-            major        = disp >= 0.30
-            chain_lines += [
-                f"**Edge:** `regime_transition` ← from `regime:{prior}` →",
-                f"**Node:** `procrustes_transition:{prior}:{regime_sel}` — "
-                f"disparity **{disp:.3f}** | {n:,} common tickers | "
-                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} ({src})",
-                "",
-            ]
+        incident_transitions = [
+            (from_regime, to_regime)
+            for from_regime, to_regime in REGIME_TRANSITIONS
+            if regime_sel in (from_regime, to_regime)
+        ]
 
-        if idx < len(REGIME_ORDER) - 1:
-            nxt          = REGIME_ORDER[idx + 1]
-            disp, n, src = _get_disp_with_source(regime_sel, nxt, live_procrustes)
-            major        = disp >= 0.30
+        for from_regime, to_regime in incident_transitions:
+            disp, n, src = _get_disp_with_source(from_regime, to_regime, live_procrustes)
+            major = disp >= 0.30
+
+            if regime_sel == to_regime:
+                edge_line = f"**Edge:** `regime_transition` ← from `regime:{from_regime}` →"
+            else:
+                edge_line = f"**Edge:** `regime_transition` → to `regime:{to_regime}` →"
+
             chain_lines += [
-                f"**Edge:** `regime_transition` → to `regime:{nxt}` →",
-                f"**Node:** `procrustes_transition:{regime_sel}:{nxt}` — "
+                edge_line,
+                f"**Node:** `procrustes_transition:{from_regime}:{to_regime}` — "
                 f"disparity **{disp:.3f}** | {n:,} common tickers | "
                 f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} ({src})",
                 "",
