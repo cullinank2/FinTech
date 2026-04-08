@@ -2351,17 +2351,6 @@ def render_universe_workspace():
         ])
 
         with landing_tab1:
-            col1, col2 = st.columns([20, 1])
-
-            with col1:
-                st.subheader("📊 Cluster Overview")
-
-            with col2:
-                st.markdown(
-                    '<span title="Groupings of stocks based on similar financial characteristics. Use this view to assess market structure, crowding, and dispersion.">❓</span>',
-                    unsafe_allow_html=True
-                )
-
             render_universe_cluster_overview()
 
         with landing_tab2:
