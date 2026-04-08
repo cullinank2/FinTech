@@ -2351,16 +2351,15 @@ def render_universe_workspace():
         ])
 
         with landing_tab1:
-            col1, col2 = st.columns([1, 0.05])
-
-            with col1:
-                st.subheader("📊 Cluster Overview")
-
-            with col2:
-                st.markdown(
-                    '<span title="Groupings of stocks based on similar financial characteristics. Use this view to assess market structure, crowding, and dispersion.">ⓘ</span>',
-                    unsafe_allow_html=True
-                )
+            st.markdown(
+                """
+                <div style="display:flex; align-items:center; gap:6px;">
+                <h3 style="margin:0;">📊 Cluster Overview</h3>
+                <span title="Groupings of stocks based on similar financial characteristics. Use this view to assess market structure, crowding, and dispersion.">ⓘ</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
             render_universe_cluster_overview()
 
