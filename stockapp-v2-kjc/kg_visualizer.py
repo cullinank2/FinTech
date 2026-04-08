@@ -933,7 +933,7 @@ def _render_crowding_chain_panel(kg) -> None:
         return ab["disparity"], ab["n_tickers"]
 
     pc_score  = [_cs(r) for r in REGIME_ORDER]
-    d01, n01  = _ps("Post-COVID", "Rate Shock")
+    d01, n01  = _ps(*REGIME_TRANSITIONS[0])
     d02, n02  = _ps("Post-COVID", "Disinflation")
     d12, n12  = _ps("Rate Shock", "Disinflation")
 
