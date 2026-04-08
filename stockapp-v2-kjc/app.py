@@ -2023,11 +2023,7 @@ def render_universe_period_comparison():
                 # Build a combined pca_df across all three periods
                 from period_analysis import _run_pca_for_period
                 all_period_rows = []
-                period_label_map = {
-                    'Post-COVID':   ('2021-03-01', '2022-06-30'),
-                    'Rate Shock':   ('2022-07-01', '2023-09-30'),
-                    'Disinflation': ('2023-10-01', '2024-10-31'),
-                }
+                period_label_map = REGIME_DATE_RANGES
                 for period_name, (start, end) in period_label_map.items():
                     period_mask = (raw_df[date_col] >= start) & (raw_df[date_col] <= end)
                     period_slice = raw_df[period_mask]
@@ -2071,6 +2067,15 @@ def render_universe_period_comparison():
                     from kg_builder import build_kg
                     from kg_interface import KnowledgeGraph
                     from factor_registry import REGIME_ORDER
+
+                    REGIME_DATE_RANGES = dict(zip(
+                        REGIME_ORDER,
+                        [
+                            ('2021-03-01', '2022-06-30'),
+                            ('2022-07-01', '2023-09-30'),
+                            ('2023-10-01', '2024-10-31'),
+                        ]
+                    ))
 
                     kg_result = build_kg(
                         period_data=st.session_state.get("period_scores"),
