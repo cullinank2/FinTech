@@ -169,7 +169,7 @@ FEATURE_DATA_SOURCES = {
     k: v.get('source') for k, v in FEATURE_METADATA.items()
 }
 
-REGIME_ORDER = ["Post-COVID", "Rate Shock", "Disinflation"]
+# REGIME_ORDER moved to semantic_constants.py
 
 # =============================================================================
 # APPENDIX B LOADINGS (Compatibility Stub for KG Interface)
