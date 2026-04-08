@@ -1167,11 +1167,9 @@ def _render_reasoning_chain_panel(kg) -> None:
         f"crowding:{regime_sel}",
         f"early_warning:{regime_sel}",
     ]
-    idx = REGIME_ORDER.index(regime_sel)
-    if idx > 0:
-        node_ids.append(f"procrustes_transition:{REGIME_ORDER[idx-1]}:{regime_sel}")
-    if idx < len(REGIME_ORDER) - 1:
-        node_ids.append(f"procrustes_transition:{regime_sel}:{REGIME_ORDER[idx+1]}")
+    for from_regime, to_regime in REGIME_TRANSITIONS:
+        if regime_sel in (from_regime, to_regime):
+            node_ids.append(f"procrustes_transition:{from_regime}:{to_regime}")
 
     subgraph_data = None
     if kg is not None:
