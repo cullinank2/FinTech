@@ -21,7 +21,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Canonical regime order (single source of truth)
-from factor_registry import REGIME_ORDER
+from semantic_constants import REGIME_ORDER
 
 try:
     from pyvis.network import Network
