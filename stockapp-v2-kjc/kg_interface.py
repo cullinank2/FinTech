@@ -1103,8 +1103,8 @@ if __name__ == "__main__":
     # ── Test 2: get_factor_rotation (Appendix B fallback) ────────────────────
     test_factor = FEATURE_COLUMNS[0]
 
-    print(f"── Test 2: get_factor_rotation ({test_factor}, Post-COVID → Disinflation)")
-    rot = kg.get_factor_rotation(test_factor, "Post-COVID", "Disinflation")
+    print(f"── Test 2: get_factor_rotation ({test_factor}, {PC} → {D})")
+    rot = kg.get_factor_rotation(test_factor, PC, D)
     print(f"   PC2: {rot.get('pc2_from')} → {rot.get('pc2_to')}")
     print(f"   sign_change_pc2: {rot.get('sign_change_pc2')}")
     print(f"   stability_class: {rot.get('stability_class')}")
@@ -1114,8 +1114,8 @@ if __name__ == "__main__":
     print("   PASS\n")
 
     # ── Test 3: query_crowding_chain ──────────────────────────────────────────
-    print("── Test 3: query_crowding_chain (Post-COVID → Disinflation)")
-    chain = kg.query_crowding_chain("Post-COVID", "Disinflation")
+    print(f"── Test 3: query_crowding_chain ({PC} → {D})")
+    chain = kg.query_crowding_chain(PC, D)
     print(f"   Procrustes:        {chain['procrustes_score']:.3f}")
     print(f"   Crowding delta:    {chain['crowding_before']:.1f} → {chain['crowding_after']:.1f}  (Δ{chain['crowding_delta']:+.1f})")
     print(f"   Early warning:     {chain['early_warning_triggered']}")
@@ -1137,7 +1137,7 @@ if __name__ == "__main__":
     print("   PASS\n")
 
     # ── Test 5: narrative_chain print ─────────────────────────────────────────
-    print("── Test 5: narrative_chain (Post-COVID → Disinflation)")
+    print(f"── Test 5: narrative_chain ({PC} → {D})")
     for step in chain["narrative_chain"]:
         print(f"   Step {step['step']} [{step['type']}]: {step['interpretation']}")
     print()
@@ -1145,7 +1145,7 @@ if __name__ == "__main__":
     # ── Test 6: serialize_subgraph ────────────────────────────────────────────
     print("── Test 6: serialize_subgraph")
     sg = kg.serialize_subgraph([
-        "regime:Post-COVID", "regime:Disinflation", "regime:NONEXISTENT"
+    f"regime:{PC}", f"regime:{D}", "regime:NONEXISTENT"
     ])
     print(f"   Nodes serialized:  {sg['meta']['node_count']}")
     print(f"   Edges serialized:  {sg['meta']['edge_count']}")
