@@ -247,8 +247,7 @@ def _get_factor_regime_notes(kg, current_regime: str) -> dict:
     try:
         drift = kg.get_structural_drift_summary(current_regime)
 
-        idx = REGIME_ORDER.index(current_regime) if current_regime in REGIME_ORDER else -1
-        prior = REGIME_ORDER[idx - 1] if idx > 0 else None
+        prior = drift.get("prior_regime")
 
         notes = []
 
