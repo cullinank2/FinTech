@@ -2351,7 +2351,7 @@ def render_universe_workspace():
         ])
 
         with landing_tab1:
-            col1, col2 = st.columns([20, 1])
+            col1, col2 = st.columns([1, 0.05])
 
             with col1:
                 st.subheader("📊 Cluster Overview")
