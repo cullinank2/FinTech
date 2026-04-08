@@ -2360,7 +2360,7 @@ def render_universe_workspace():
                 st.markdown(
                     '<span title="Groupings of stocks based on similar financial characteristics. Use this view to assess market structure, crowding, and dispersion.">❓</span>',
                     unsafe_allow_html=True
-            )
+                )
 
             render_universe_cluster_overview()
 
