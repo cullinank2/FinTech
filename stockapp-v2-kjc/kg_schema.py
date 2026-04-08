@@ -46,7 +46,7 @@ from semantic_constants import (
     CROWDING_THRESHOLD_HIGH,
 )
 
-from semantic_constants import REGIME_ORDER
+from semantic_constants import REGIME_ORDER, REGIME_TRANSITIONS
 
 # =============================================================================
 # METHODOLOGY CONSTANTS
@@ -494,11 +494,7 @@ def _build_catalogs():
             ),
         }
 
-        transition_pairs = [
-            ("Post-COVID", "Rate Shock"),
-            ("Post-COVID", "Disinflation"),
-            ("Rate Shock", "Disinflation"),
-        ]
+        transition_pairs = REGIME_TRANSITIONS
 
         return (
             regime_nodes, factor_nodes, quadrant_nodes, axis_nodes,
