@@ -28,8 +28,9 @@ from typing import Optional
 
 import networkx as nx
 
+from semantic_constants import REGIME_ORDER as CANONICAL_REGIME_ORDER
+
 from factor_registry import (
-    REGIME_ORDER as CANONICAL_REGIME_ORDER,
     FEATURE_COLUMNS,
     FEATURE_LIST,
     EY, BM, SP, ROE, ROA, GPROF,
