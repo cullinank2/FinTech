@@ -1119,18 +1119,16 @@ def _render_early_warning_panel(kg) -> None:
     summary_src = "live pipeline" if all_live else \
                   "mixed — live + Appendix B" if any_live else "Appendix B reference"
 
+    score_display = f"{disinflation_score:.1f}" if disinflation_score is not None else "Unavailable"
+
     st.info(
         f"**Current structural risk reading (Disinflation regime):**\n\n"
-        f"- Factor space crowding score: **{disinflation_score:.1f}** 🚨 ({dis_score_src}) — "
-        f"above the {_CROWDING_FLAG:.0f}-point flag threshold. "
-        f"Spatial compression of the equity universe is at its highest observed level "
-        f"across the three-regime sequence.\n\n"
+        f"- Factor space crowding score: **{score_display}** 🚨 ({dis_score_src}) — "
+        f"{'above the ' + str(int(_CROWDING_FLAG)) + '-point flag threshold. Spatial compression of the equity universe is at its highest observed level across the three-regime sequence.' if disinflation_score is not None else 'Live data unavailable. Run Period Comparison to populate structural diagnostics.'}\n\n"
         f"{rs_dis_text}\n\n"
         f"{major_text}\n\n"
-        f"**Interpretation:** Factor crowding escalation without a concurrent structural break "
-        f"in Disinflation indicates equities are piling into an increasingly compressed "
-        f"factor space *within a stable structural regime* — conditions historically "
-        f"associated with synchronized factor unwind risk."
+        f"**Interpretation:** "
+        f"{'Factor crowding escalation without a concurrent structural break in Disinflation indicates equities are piling into an increasingly compressed factor space *within a stable structural regime* — conditions historically associated with synchronized factor unwind risk.' if disinflation_score is not None else 'Structural interpretation unavailable without live crowding data.'}"
     )
     # FIX 4: caption reflects actual data source, not hardcoded "Appendix B anchors"
     st.caption(
