@@ -1248,7 +1248,7 @@ def _render_reasoning_chain_panel(kg) -> None:
                 edge_line,
                 f"**Node:** `procrustes_transition:{from_regime}:{to_regime}` — "
                 f"disparity **{disp:.3f}** | {n:,} common tickers | "
-                f"{'🔴 MAJOR STRUCTURAL BREAK' if major else '🟢 structurally stable'} ({src})",
+                f"{'🔴 major structural break' if major else '🟢 structurally stable'} ({src})",
                 "",
             ]
 
