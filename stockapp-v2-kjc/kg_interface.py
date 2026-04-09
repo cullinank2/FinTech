@@ -755,10 +755,6 @@ class KnowledgeGraph:
         # Crowding from node attrs
         crowding_score = _safe_float(node_attrs.get("crowding_score"))
         crowding_risk  = node_attrs.get("crowding_risk", _risk_label(crowding_score))
-        if crowding_score == 0.0:
-            fb = APPENDIX_B_CROWDING.get(regime, {})
-            crowding_score = _safe_float(fb.get("score", 0.0))
-            crowding_risk  = str(getattr(fb.get("risk_level"), "value", fb.get("risk_level", "Normal")))
 
         # Prior regime
         regime_idx  = _regime_index(regime)
