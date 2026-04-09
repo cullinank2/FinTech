@@ -1216,7 +1216,7 @@ def _render_reasoning_chain_panel(kg) -> None:
         period_label = REGIME_DATE_RANGES.get(regime_sel)
 
         st.markdown(f"#### Structural Trace — {regime_sel}")
-        st.caption(f"Values sourced from: **{source}**")
+        st.caption(f"Data source: **{source}**")
 
         chain_lines = [
             f"**Node:** `regime:{regime_sel}` — type: `regime` | period: {period_label}",
