@@ -428,14 +428,6 @@ class KnowledgeGraph:
         to_row   = _get_loading_row(to_regime)
         data_source = "live"
 
-        # Fall back to Appendix B if pipeline hasn't run
-        if from_row is None:
-            from_row = _APPENDIX_B_LOADINGS.get((factor, from_regime))
-            data_source = "appendix_b_fallback"
-        if to_row is None:
-            to_row = _APPENDIX_B_LOADINGS.get((factor, to_regime))
-            data_source = "appendix_b_fallback"
-
         if from_row is None or to_row is None:
             return {
                 "factor":        factor,
