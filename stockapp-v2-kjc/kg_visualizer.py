@@ -1212,9 +1212,13 @@ def _render_reasoning_chain_panel(kg) -> None:
 
         live_procrustes = _get_live_procrustes_dict()
 
-        score   = live_score if live_score is not None else _APPENDIX_B_CROWDING[regime_sel]
-        source  = "live pipeline" if live_score is not None else "Appendix B reference"
-        flagged = score > _CROWDING_FLAG
+        score = live_score
+        source = "live pipeline" if live_score is not None else "unavailable"
+
+        if score is None:
+            flagged = False
+        else:
+            flagged = score > _CROWDING_FLAG
         period_label = REGIME_DATE_RANGES.get(regime_sel)
 
         st.markdown(f"#### Structural Trace — {regime_sel}")
