@@ -1284,9 +1284,7 @@ def _render_reasoning_chain_panel(kg) -> None:
         if live_mig is not None:
             mig, mig_src = live_mig, "live"
         else:
-            for (from_regime, to_regime), mig_val in APPENDIX_B_MIGRATION.items():
-                if regime_sel in (from_regime, to_regime):
-                    mig, mig_src = mig_val, "Appendix B"
+            mig, mig_src = None, "unavailable"
                     break
 
         if mig is not None:
