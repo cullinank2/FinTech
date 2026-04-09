@@ -575,16 +575,6 @@ class KnowledgeGraph:
             attrs = self._node_attrs(regime_id)
             score = _safe_float(attrs.get("crowding_score"))
             risk  = attrs.get("crowding_risk", _risk_label(score))
-            if score == 0.0:
-                # Appendix B fallback
-                short = regime_id.replace("regime:", "")
-                fb = APPENDIX_B_CROWDING.get(short, {})
-                score = _safe_float(getattr(fb.get("score", 0.0), "real", fb.get("score", 0.0))
-                                    if hasattr(fb.get("score", 0.0), "real")
-                                    else fb.get("score", 0.0))
-                risk  = fb.get("risk_level", _risk_label(score))
-                if hasattr(risk, "value"):
-                    risk = risk.value
             return round(score, 1), str(risk)
 
         crowding_before, crowding_risk_before = _crowding_from_node(src_id)
