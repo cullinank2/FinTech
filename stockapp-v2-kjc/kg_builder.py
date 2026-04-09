@@ -128,11 +128,6 @@ def _get_procrustes_row(ss, period_a: str, period_b: str):
                     "interpretation":  str(row.get("Interpretation", "")),
                     "source":          "live",
                 }
-    # Fallback to Appendix B
-    fb = APPENDIX_B_PROCRUSTES.get((period_a, period_b)) or \
-         APPENDIX_B_PROCRUSTES.get((period_b, period_a))
-    if fb:
-        return {**fb, "source": "appendix_b_fallback"}
     return {"disparity": 0.0, "common_tickers": 0, "interpretation": "", "source": "missing"}
 
 
