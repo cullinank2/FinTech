@@ -529,19 +529,16 @@ class KnowledgeGraph:
         if self._G.has_edge(src_id, tgt_id):
             transition_attrs = dict(self._G.edges[src_id, tgt_id])
         else:
-            # Try Appendix B fallback
-            fb = (APPENDIX_B_PROCRUSTES.get((from_regime, to_regime)) or
-                  APPENDIX_B_PROCRUSTES.get((to_regime, from_regime)) or {})
             transition_attrs = {
-                "procrustes_disparity": fb.get("disparity", 0.0),
-                "common_tickers":       fb.get("common_tickers", 0),
-                "interpretation":       fb.get("interpretation", ""),
-                "is_major_break":       fb.get("disparity", 0.0) >= PROCRUSTES_MEANINGFUL,
-                "severity":             "Major" if fb.get("disparity", 0.0) >= PROCRUSTES_MEANINGFUL else "Meaningful",
+                "procrustes_disparity": 0.0,
+                "common_tickers":       0,
+                "interpretation":       "",
+                "is_major_break":       False,
+                "severity":             "Unknown",
                 "migration_pct":        0.0,
                 "stocks_changed":       0,
                 "stocks_analyzed":      0,
-                "data_source":          "appendix_b_fallback",
+                "data_source":          "missing",
             }
 
         proc_score       = _safe_float(transition_attrs.get("procrustes_disparity"))
