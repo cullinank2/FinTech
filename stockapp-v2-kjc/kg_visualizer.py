@@ -1074,11 +1074,14 @@ def _render_early_warning_panel(kg) -> None:
     st.markdown("#### Signal Summary")
 
     # FIX 5 & 6: all values sourced from live data with explicit labels
-    _dis_live = crowding_data.get("Disinflation", {}).get("crowding_score") \
-                if not using_fallback else None
-    disinflation_score = _dis_live if _dis_live is not None \
-                         else _APPENDIX_B_CROWDING["Disinflation"]
-    dis_score_src = "live" if _dis_live is not None else "Appendix B"
+    _dis_live = crowding_data.get("Disinflation", {}).get("crowding_score")
+
+    if _dis_live is not None:
+        disinflation_score = _dis_live
+        dis_score_src = "live"
+    else:
+        disinflation_score = None
+        dis_score_src = "unavailable"
 
     # FIX 6: clean unpacking using shared helper with explicit source labels
     d_pc_rs_val, _n_pc_rs, src_pc_rs = _get_disp_with_source(*REGIME_TRANSITIONS[0], procrustes_live)
