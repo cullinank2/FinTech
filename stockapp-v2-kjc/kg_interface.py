@@ -90,32 +90,7 @@ except Exception as _e:
 
 # Use canonical regime ordering from registry
 
-# AUDIT NOTE:
-# The Appendix B fallback map below uses factor_registry constants
-# (for example: EY, DEBT_ASSETS, BM, SP) as tuple keys.
-# These are canonical registry-defined factor identifiers, not hard-coded
-# PCA feature strings. Static audit scanners may still flag selected entries
-# as "PCA Feature Leakage" because they inspect the fallback dictionary
-# literally. Those warnings are accepted scanner exceptions, not true
-# architecture violations.
-#
-# Governance intent:
-# - source of truth remains factor_registry.py
-# - fallback is used only when live period_loadings are unavailable
-# - validation below enforces alignment against FEATURE_LIST
-
-# Appendix B per-period loading fallbacks for get_factor_rotation()
-# Used ONLY when session_state["period_loadings"] is not yet populated.
-# Values: loading on the PC axis that shows the most dramatic shift.
-from factor_registry import APPENDIX_B_FACTOR_LOADINGS as _APPENDIX_B_LOADINGS
-
-# ── VALIDATION: ensure Appendix B factors align with registry ───────────────
-for (factor, _regime) in _APPENDIX_B_LOADINGS.keys():
-    if factor not in FEATURE_LIST:
-        raise ValueError(
-            f"[kg_interface] Unknown factor '{factor}' in _APPENDIX_B_LOADINGS — "
-            "not found in FEATURE_LIST (factor_registry.py)"
-        )
+# Use canonical regime ordering from registry
 
 
 # =============================================================================
