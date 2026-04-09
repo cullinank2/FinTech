@@ -755,11 +755,8 @@ class KnowledgeGraph:
                 stocks_changed  = int(_safe_float(edge_attrs.get("stocks_changed")))
                 stocks_analyzed = int(_safe_float(edge_attrs.get("stocks_analyzed")))
             else:
-                # Appendix B fallback for transition
-                fb = (APPENDIX_B_PROCRUSTES.get((prior_regime, regime)) or
-                      APPENDIX_B_PROCRUSTES.get((regime, prior_regime)) or {})
-                proc_from_prior = _safe_float(fb.get("disparity", 0.0))
-                is_major_break  = proc_from_prior >= PROCRUSTES_MEANINGFUL
+                proc_from_prior = 0.0
+                is_major_break  = False
 
             # ── Tier 2: override migration values from live session state ─────
             # The graph edge was built from Appendix B — live migration_summary_df
