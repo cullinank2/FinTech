@@ -1110,8 +1110,8 @@ def _render_early_warning_panel(kg) -> None:
         f"{'below the 0.30 break threshold, indicating structural continuity despite the crowding escalation.' if d_rs_dis_val < 0.30 else 'above the 0.30 break threshold, indicating structural discontinuity alongside crowding escalation.'}"
     )
 
-    all_live = all(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs, src_pc_dis])
-    any_live = any(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs, src_pc_dis])
+    all_live = all(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs])
+    any_live = any(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs])
     summary_src = "live pipeline" if all_live else \
                   "mixed — live + Appendix B" if any_live else "Appendix B reference"
 
