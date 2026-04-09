@@ -1224,7 +1224,7 @@ def _render_reasoning_chain_panel(kg) -> None:
             f"**Edge:** `has_crowding_metric` →",
             f"**Node:** `crowding:{regime_sel}` — "
             f"score **{score:.1f}** / 100 | "
-            f"{'🚨 FLAGGED — above threshold' if flagged else '🟢 within normal range'} "
+            f"{'🚨 elevated crowding — above threshold' if flagged else '🟢 crowding within normal range'} "
             f"(threshold: {_CROWDING_FLAG:.0f})",
             "",
         ]
