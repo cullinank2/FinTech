@@ -1303,9 +1303,9 @@ def _render_reasoning_chain_panel(kg) -> None:
         if flagged:
             chain_lines += [
                 f"**Edge:** `triggers_early_warning` →",
-                f"**Node:** `early_warning:{regime_sel}` — 🚨 crowding flag active | "
+                f"**Node:** `early_warning:{regime_sel}` — 🚨 elevated crowding alert | "
                 f"score {score:.1f} > threshold {_CROWDING_FLAG:.0f} | "
-                f"prospective structural risk signal",
+                f"prospective structural risk",
             ]
 
         for line in chain_lines:
