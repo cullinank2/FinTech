@@ -1285,7 +1285,6 @@ def _render_reasoning_chain_panel(kg) -> None:
             mig, mig_src = live_mig, "live"
         else:
             mig, mig_src = None, "unavailable"
-                    break
 
         if mig is not None:
             pct = mig.get("pct") or mig.get("migration_rate")
