@@ -1013,17 +1013,18 @@ def _render_early_warning_panel(kg) -> None:
             pass
 
     if using_fallback:
-        st.info("📋 Appendix B values — run Period Comparison to populate live data.")
+        st.info("⚠️ Live crowding data unavailable — run Period Comparison to populate live data.")
 
     for regime in REGIME_ORDER:
-        score = (
-            crowding_data[regime].get("crowding_score")
-            if not using_fallback and regime in crowding_data
-            else None
-        )
-        # FIX 5: explicit None check — only fall back to Appendix B if truly missing
+        score = crowding_data.get(regime, {}).get("crowding_score")
         if score is None:
-            score = _APPENDIX_B_CROWDING[regime]
+            st.markdown(
+                f"**{regime}** ⚪ &nbsp; Score: **Unavailable** &nbsp;|&nbsp; "
+                f"Run Period Comparison to populate live data."
+            )
+            st.markdown("")
+            continue
+
         flagged = score > _CROWDING_FLAG
         bar_pct = min(int(score), 100)
         if flagged:
