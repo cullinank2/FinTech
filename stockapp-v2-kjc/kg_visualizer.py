@@ -921,13 +921,12 @@ def _render_crowding_chain_panel(kg) -> None:
 
     def _ps(r_a, r_b):
         key = (r_a, r_b)
-        ab  = _APPENDIX_B_PROCRUSTES[key]
         if not using_fallback and key in procrustes_live:
             d = procrustes_live[key].get("disparity")
             n = procrustes_live[key].get("n_tickers")
             if d is not None and n is not None:
                 return d, n
-        return ab["disparity"], ab["n_tickers"]
+        return None, None
 
     pc_score  = [_cs(r) for r in REGIME_ORDER]
     d01, n01  = _ps(*REGIME_TRANSITIONS[0])
