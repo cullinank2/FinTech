@@ -1046,7 +1046,7 @@ if __name__ == "__main__":
     assert s["total_nodes"] >= 3, "Expected at least 3 regime nodes"
     print("   PASS\n")
 
-    # ── Test 2: get_factor_rotation (Appendix B fallback) ────────────────────
+    # ── Test 2: get_factor_rotation (missing-state path) ─────────────────────
     test_factor = FEATURE_COLUMNS[0]
 
     print(f"── Test 2: get_factor_rotation ({test_factor}, {PC} → {D})")
