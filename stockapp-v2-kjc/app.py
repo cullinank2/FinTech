@@ -2085,24 +2085,57 @@ def render_universe_period_comparison():
                         latest = crowding_df.iloc[-1]
                         earliest = crowding_df.iloc[0]
 
-                        trend = "↑ Increasing" if latest['crowding_score'] > earliest['crowding_score'] else "↓ Decreasing"
+                        latest_period = latest.get('period')
+                        latest_score = latest.get('crowding_score')
+                        earliest_score = earliest.get('crowding_score')
+                        latest_risk = latest.get('risk_level')
+
+                        score_values_available = (
+                            pd.notna(latest_score) and pd.notna(earliest_score)
+                        )
+
+                        trend = (
+                            "↑ Increasing"
+                            if score_values_available and latest_score > earliest_score
+                            else "↓ Decreasing"
+                            if score_values_available
+                            else None
+                        )
+
+                        regime_value = (
+                            latest_period
+                            if pd.notna(latest_period)
+                            else "Missing — Run Period Comparison"
+                        )
+
+                        score_value = (
+                            f"{latest_score:.0f} / 100"
+                            if pd.notna(latest_score)
+                            else "Missing — Run Period Comparison"
+                        )
+
+                        risk_value = (
+                            latest_risk
+                            if pd.notna(latest_risk)
+                            else "Missing — Run Period Comparison"
+                        )
 
                         kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
 
                         kpi_col1.metric(
                             "Current Regime",
-                            latest['period']
+                            regime_value
                         )
 
                         kpi_col2.metric(
                             "Crowding Score",
-                            f"{latest['crowding_score']:.0f} / 100",
+                            score_value,
                             delta=trend
                         )
 
                         kpi_col3.metric(
                             "Risk Level",
-                            latest['risk_level']
+                            risk_value
                         )
 
                         st.markdown("---")
