@@ -869,9 +869,8 @@ def generate_structural_context(
                     disp = rev.get("display_name", rev.get("factor", ""))
                     pc2f = rev.get("pc2_from", 0.0)
                     pc2t = rev.get("pc2_to", 0.0)
-                    src  = " *(Appendix B)*" if rev.get("data_source") == "appendix_b_fallback" else ""
                     lines.append(
-                        f"- **{disp}**: PC2 {pc2f:+.3f} → {pc2t:+.3f} 🔴 reversed{src}"
+                        f"- **{disp}**: PC2 {pc2f:+.3f} → {pc2t:+.3f} 🔴 reversed"
                     )
             lines.append("")
         else:
