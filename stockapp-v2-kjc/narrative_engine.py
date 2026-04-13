@@ -949,8 +949,8 @@ def generate_structural_context(
     lines += [
         "---",
         "*Section 5 is a Tier 1 governance output — deterministic KG path traversal, "
-        "no language model involved. All values sourced from live pipeline outputs "
-        "or Appendix B fallbacks where labeled.*",
+        "no language model involved. All values sourced from live pipeline outputs. "
+        "If data is unavailable, run Period Comparison to populate structural diagnostics.*",
     ]
 
     return "\n".join(lines)
