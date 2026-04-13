@@ -559,12 +559,7 @@ def _render_metrics_panel() -> None:
                 st.metric(period, f"{score:.1f}", delta=risk,
                           delta_color="normal" if score < CROWDING_THRESHOLD_HIGH else "inverse")
             else:
-                fb = APPENDIX_B_CROWDING.get(period) if KG_SCHEMA_AVAILABLE else None
-                if fb:
-                    st.metric(f"{period} (ref)", f"{fb['score']:.1f}",
-                              delta=f"{fb['risk_level'].value} (Appendix B)")
-                else:
-                    st.metric(period, "N/A")
+                st.metric(period, "Unavailable")
 
     with col3:
         st.markdown("**PC Variance Explained**")
