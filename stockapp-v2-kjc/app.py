@@ -2278,18 +2278,36 @@ def render_universe_period_comparison():
                     col_c.metric("Stayed Same", stayed_same_value)
 
                     st.markdown("**Migration rates between adjacent periods:**")
-                    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                    if summary_df is not None and not summary_df.empty:
+                        st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                    else:
+                        st.info(
+                            "Migration rate detail is missing — Run Period Comparison "
+                            "to populate adjacent-regime migration rates."
+                        )
 
                     st.markdown("**Flow diagram:**")
                     fig_sankey = create_migration_sankey(migration_df, period_names)
-                    st.plotly_chart(fig_sankey, use_container_width=True)
+                    if fig_sankey is not None:
+                        st.plotly_chart(fig_sankey, use_container_width=True)
+                    else:
+                        st.info(
+                            "Migration flow diagram is missing — Run Period Comparison "
+                            "to populate the migration flow view."
+                        )
 
                     with st.expander("🔍 View stock-level quadrant table"):
-                        st.dataframe(
-                            migration_df.sort_values('Any Change', ascending=False),
-                            use_container_width=True,
-                            hide_index=True
-                        )
+                        if 'Any Change' in migration_df.columns:
+                            st.dataframe(
+                                migration_df.sort_values('Any Change', ascending=False),
+                                use_container_width=True,
+                                hide_index=True
+                            )
+                        else:
+                            st.info(
+                                "Stock-level migration table is missing required fields — "
+                                "Run Period Comparison to populate migration details."
+                            )
                 else:
                     st.warning("Not enough common tickers across all three sub-periods to compute migration.")
 
