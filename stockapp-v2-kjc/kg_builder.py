@@ -134,7 +134,7 @@ def _get_procrustes_row(ss, period_a: str, period_b: str):
 def _get_crowding_row(ss, period: str):
     """
     Look up a crowding row from session_state['crowding_df'].
-    Falls back to Appendix B if not populated.
+    Returns explicit missing-state values if not populated.
     Returns dict with keys: score, risk_level, largest_cluster_pct, centroid_dispersion.
     """
     for key in ["crowding_df", "crowding_results"]:
@@ -158,7 +158,7 @@ def _get_crowding_row(ss, period: str):
 def _get_migration_row(ss, period_a: str, period_b: str):
     """
     Look up a migration row from session_state['migration_summary'].
-    Falls back to Appendix B if not populated.
+    Returns explicit missing-state values if not populated.
     Returns dict with keys: migration_pct, changed, analyzed.
     """
     df = ss.get("migration_summary")
