@@ -210,7 +210,7 @@ def _migration_row_live(transition_str: str):
 
 
 def _pc_variance_live() -> dict:
-     """Return {PC1: float, PC2: float, PC3: float} from live pca_model or explicit missing-state defaults."""
+    """Return {PC1: float, PC2: float, PC3: float} from live pca_model or explicit missing-state defaults."""
     pca_model = st.session_state.get("pca_model")
     if pca_model is not None:
         try:
