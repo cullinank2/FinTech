@@ -201,7 +201,7 @@ def _get_universe_count(ss):
     pca_df = ss.get("pca_df")
     if pca_df is not None and not pca_df.empty:
         return len(pca_df)
-    return APPENDIX_B_UNIVERSE_COUNT
+    return 0
 
 
 def _get_live_factor_axis_map(ss):
