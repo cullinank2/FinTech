@@ -2096,8 +2096,17 @@ def render_universe_period_comparison():
                         include_equity_nodes=True,
                     )
 
-                    st.session_state["kg_instance"] = KnowledgeGraph(kg_result.graph)
-                    st.session_state["kg_current_regime"] = REGIME_ORDER[-1]
+                    kg_graph = getattr(kg_result, "graph", None)
+
+                    if kg_graph is None:
+                        st.warning(
+                            "Knowledge Graph output is missing — Run Period Comparison "
+                            "to populate structural graph data."
+                        )
+                        st.session_state["kg_instance"] = None
+                    else:
+                        st.session_state["kg_instance"] = KnowledgeGraph(kg_graph)
+                        st.session_state["kg_current_regime"] = REGIME_ORDER[-1]
 
                     if not crowding_df.empty:
 
