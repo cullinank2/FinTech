@@ -2351,7 +2351,14 @@ def render_universe_period_comparison():
 
                 with st.spinner("Running PCA for each sub-period…"):
                     fig_loadings = create_loading_comparison_chart(raw_df, features, date_col, pc=pc_choice)
-                st.plotly_chart(fig_loadings, use_container_width=True)
+
+                if fig_loadings is not None:
+                    st.plotly_chart(fig_loadings, use_container_width=True)
+                else:
+                    st.info(
+                        f"{pc_choice} factor loadings chart is missing — Run Period Comparison "
+                        "to populate sub-period factor loading visuals."
+                    )
                 from period_analysis import get_loading_comparison_data
                 loadings_table = get_loading_comparison_data(raw_df, features, date_col, pc=pc_choice)
 
