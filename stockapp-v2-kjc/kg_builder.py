@@ -660,7 +660,7 @@ if __name__ == "__main__":
     print("\nProcrustes chain:")
     for t in summary["procrustes_chain"]:
         flag = " <- MAJOR BREAK" if t["is_major_break"] else ""
-        src  = "(appendix B fallback)" if t["data_source"] == "appendix_b_fallback" else "(live)"
+        src  = f"({t['data_source']})"
         print(f"  {t['from']:<20} -> {t['to']:<20}  score={t['procrustes_score']:.3f}{flag}  {src}")
     assert result.n_nodes >= 15, f"Expected >= 15 nodes, got {result.n_nodes}"
     assert result.n_edges > 0, "Expected structural edges"
