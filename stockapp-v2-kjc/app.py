@@ -2371,6 +2371,58 @@ def render_universe_period_comparison():
                                 "to populate sub-period loading details."
                             )
                         else:
+                            def _style_loading(val):
+                                if not isinstance(val, (int, float)):
+                                    return ''
+                                if val >= 0.30:
+                                    return 'background-color: rgba(84,162,75,0.75); color: white; font-weight:bold;'
+                                elif val >= 0.10:
+                                    return 'background-color: rgba(84,162,75,0.35); color: white;'
+                                elif val <= -0.30:
+                                    return 'background-color: rgba(228,87,86,0.75); color: white; font-weight:bold;'
+                                elif val <= -0.10:
+                                    return 'background-color: rgba(228,87,86,0.35); color: white;'
+                                return ''
+
+                            def _style_delta(val):
+                                if not isinstance(val, (int, float)):
+                                    return ''
+                                if val > 0.05:
+                                    return 'color: #54A24B; font-weight: bold;'
+                                elif val < -0.05:
+                                    return 'color: #E45756; font-weight: bold;'
+                                return 'color: #888888;'
+
+                            styled = (
+                                loadings_table.style
+                                .map(_style_loading, subset=period_cols)
+                                .map(_style_delta, subset=delta_cols)
+                                .format('{:+.3f}', subset=delta_cols)
+                                .format('{:.3f}', subset=period_cols)
+                                .set_properties(**{'text-align': 'center'})
+                                .set_table_styles([
+                                    {'selector': 'th',
+                                     'props': [('background-color', '#1e1e2e'),
+                                               ('color', '#ffffff'),
+                                               ('font-size', '12px'),
+                                               ('text-align', 'center'),
+                                               ('padding', '6px 10px')]},
+                                    {'selector': 'td',
+                                     'props': [('font-size', '12px'),
+                                               ('padding', '4px 10px')]},
+                                    {'selector': 'tr:hover td',
+                                     'props': [('background-color', 'rgba(255,255,255,0.05)')]},
+                                ])
+                            )
+
+                            st.dataframe(styled, use_container_width=True)
+                            st.caption(
+                                f"Loading weights for **{pc_choice}** across the three sub-periods. "
+                                "Bold shading = dominant driver (|loading| ≥ 0.30). "
+                                "Δ columns show shift between adjacent regimes; "
+                                "green = strengthening, red = weakening."
+                            )
+
 def render_universe_kg_tab():
     """Render the Universe / Portfolio Level knowledge graph tab."""
 
