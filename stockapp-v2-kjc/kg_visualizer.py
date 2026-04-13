@@ -12,9 +12,9 @@ Architecture:
 All empirical data (Procrustes scores, crowding scores, PC variance,
 migration rates, universe count, factor loadings) flows from:
   PRIMARY:  st.session_state (live pipeline outputs)
-  FALLBACK: Appendix B constants in kg_schema (when pipeline hasn't run)
+  SECONDARY: explicit missing-state defaults when live data is unavailable
 
-No hard-coded Appendix B values appear in this file.
+No hard-coded empirical fallback values appear in this file.
 """
 
 import streamlit as st
