@@ -12,8 +12,8 @@ Exported symbols used by kg_visualizer.py:
 
 All empirical values (Procrustes scores, crowding scores, PC variance,
 migration rates, universe count) are drawn from:
-  1. Streamlit session state (live pipeline outputs) — primary source
-  2. Appendix B fallback constants in kg_schema — only when pipeline hasn't run
+  1. Streamlit session state (live pipeline outputs) — authoritative source
+  2. Explicit missing-state defaults when live pipeline outputs are unavailable
 
 Standalone validation:
     python kg_builder.py
