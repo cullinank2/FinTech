@@ -579,11 +579,8 @@ def _render_metrics_panel() -> None:
                 st.metric(f"Migration {label}", rate,
                           delta=f"{changed:,} / {total:,} stocks")
             else:
-                fb = APPENDIX_B_MIGRATION.get((a, b)) if KG_SCHEMA_AVAILABLE else None
-                if fb:
-                    st.metric(f"Migration {label} (ref)",
-                              f"{fb['migration_pct']:.1f}%",
-                              delta=f"{fb['changed']:,}/{fb['analyzed']:,} (Appendix B)")
+                st.metric(f"Migration {label}", "Unavailable",
+                          delta="Run Period Comparison")
 
 
 # =============================================================================
