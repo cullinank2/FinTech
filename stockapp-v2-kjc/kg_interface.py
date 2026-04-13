@@ -380,7 +380,7 @@ class KnowledgeGraph:
             magnitude_delta_pc2,   # PC2 is the primary diagnostic axis
             stability_class,       # "stable" | "rotated" | "reversed"
             headline_pc,           # which PC shows the most dramatic shift
-            data_source            # "live" | "appendix_b_fallback"
+            data_source            # "live" | "missing"
         """
         period_loadings = self._ss.get("period_loadings", {})
 
