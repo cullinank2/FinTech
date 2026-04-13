@@ -1482,12 +1482,20 @@ def render_full_universe_loadings_table():
         return "background-color: rgba(228,87,86,0.30);"
 
     numeric_cols = [c for c in ["PC1", "PC2", "PC3"] if c in loadings_df.columns]
+    required_label_cols = ["Factor", "Code", "Domain"]
+
+    if not numeric_cols or any(col not in loadings_df.columns for col in required_label_cols):
+        st.warning(
+            "Main PCA loadings table is incomplete — Run Period Comparison "
+            "to refresh PCA outputs."
+        )
+        return
 
     styled = (
         loadings_df.style
         .map(_style_loading, subset=numeric_cols)
         .format({col: "{:+.2f}" for col in numeric_cols})
-        .set_properties(subset=["Factor", "Code", "Domain"], **{"text-align": "left"})
+        .set_properties(subset=required_label_cols, **{"text-align": "left"})
         .set_properties(subset=numeric_cols, **{"text-align": "center"})
         .set_table_styles([
             {
