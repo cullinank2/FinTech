@@ -2144,18 +2144,42 @@ def render_universe_period_comparison():
                         metric_cols = st.columns(len(crowding_df))
                         for i, row in crowding_df.iterrows():
                             with metric_cols[i]:
-                                delta_str = ""
+                                row_period = row.get('period')
+                                row_score = row.get('crowding_score')
+                                row_risk = row.get('risk_level')
+
+                                label_value = (
+                                    str(row_period)
+                                    if pd.notna(row_period)
+                                    else "Missing — Run Period Comparison"
+                                )
+
+                                metric_value = (
+                                    f"{row_score:.0f} / 100"
+                                    if pd.notna(row_score)
+                                    else "Missing — Run Period Comparison"
+                                )
+
+                                delta_str = None
                                 if i > 0:
-                                    prev_score = crowding_df.iloc[i - 1]['crowding_score']
-                                    delta = row['crowding_score'] - prev_score
-                                    delta_str = f"{delta:+.1f} vs prior regime"
+                                    prev_score = crowding_df.iloc[i - 1].get('crowding_score')
+                                    if pd.notna(row_score) and pd.notna(prev_score):
+                                        delta = row_score - prev_score
+                                        delta_str = f"{delta:+.1f} vs prior regime"
+
+                                risk_caption = (
+                                    row_risk
+                                    if pd.notna(row_risk)
+                                    else "Missing — Run Period Comparison"
+                                )
+
                                 st.metric(
-                                    label=f"{row['period']}",
-                                    value=f"{row['crowding_score']:.0f} / 100",
+                                    label=label_value,
+                                    value=metric_value,
                                     delta=delta_str,
                                     delta_color="inverse"
                                 )
-                                st.caption(row['risk_level'])
+                                st.caption(risk_caption)
 
                         # Chart
                         crowding_fig = plot_crowding_score(crowding_df)
