@@ -221,7 +221,7 @@ def _pc_variance_live() -> dict:
                     for i in range(min(len(ratios), 3))}
         except Exception:
             pass
-    return {k: v for k, v in APPENDIX_B_PC_VARIANCE.items() if k.startswith("PC")}
+    return {"PC1": 0.0, "PC2": 0.0, "PC3": 0.0}
 
 
 def _universe_count_live() -> int:
