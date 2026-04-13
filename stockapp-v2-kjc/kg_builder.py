@@ -150,15 +150,7 @@ def _get_crowding_row(ss, period: str):
                         "centroid_dispersion": _safe_float(row.get("centroid_dispersion"), 0.0),
                         "source":              "live",
                     }
-    fb = APPENDIX_B_CROWDING.get(period)
-    if fb:
-        return {
-            "score":               fb["score"],
-            "risk_level":          fb["risk_level"].value,
-            "largest_cluster_pct": 0.0,
-            "centroid_dispersion": 0.0,
-            "source":              "appendix_b_fallback",
-        }
+
     return {"score": 0.0, "risk_level": "Normal", "largest_cluster_pct": 0.0,
             "centroid_dispersion": 0.0, "source": "missing"}
 
