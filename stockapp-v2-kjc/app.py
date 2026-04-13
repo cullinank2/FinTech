@@ -3203,10 +3203,19 @@ def main():
                 include_equity_nodes=True,
             )
 
-            st.session_state.kg_instance = KnowledgeGraph(kg_result.graph)
+            kg_graph = getattr(kg_result, "graph", None)
 
-            if "kg_current_regime" not in st.session_state:
-                st.session_state.kg_current_regime = REGIME_ORDER[-1]
+            if kg_graph is None:
+                st.warning(
+                    "Knowledge Graph output is missing — Run Period Comparison "
+                    "to populate structural graph data."
+                )
+                st.session_state.kg_instance = None
+            else:
+                st.session_state.kg_instance = KnowledgeGraph(kg_graph)
+
+                if "kg_current_regime" not in st.session_state:
+                    st.session_state.kg_current_regime = REGIME_ORDER[-1]
 
         except Exception as e:
             st.warning(f"KG build failed: {e}")
