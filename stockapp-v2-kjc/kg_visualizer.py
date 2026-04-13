@@ -22,8 +22,7 @@ import streamlit.components.v1 as components
 
 # Canonical regime order (single source of truth)
 from semantic_constants import REGIME_ORDER, REGIME_DATE_RANGES, REGIME_TRANSITIONS
-from kg_schema import APPENDIX_B_PROCRUSTES as _APPENDIX_B_PROCRUSTES
-from kg_schema import APPENDIX_B_CROWDING as _APPENDIX_B_CROWDING
+ 
 
 try:
     from pyvis.network import Network
@@ -37,8 +36,7 @@ try:
         NodeType, EdgeType,
         REGIME_NODES, FACTOR_NODES, QUADRANT_NODES, MECHANISM_NODES,
         PLATFORM_NODES, AXIS_NODES, CATEGORY_NODES,
-        APPENDIX_B_PROCRUSTES, APPENDIX_B_CROWDING, APPENDIX_B_PC_VARIANCE,
-        APPENDIX_B_MIGRATION, SHORT_PERIOD_MAP,
+ 
         PROCRUSTES_MEANINGFUL,
         CROWDING_THRESHOLD_ELEVATED, CROWDING_THRESHOLD_HIGH,
     )
@@ -69,7 +67,7 @@ except Exception as _kg_builder_err:
             return default
 
 
-from kg_schema import APPENDIX_B_PROCRUSTES as _APPENDIX_B_PROCRUSTES
+ 
 
 # =============================================================================
 # VISUAL DESIGN CONSTANTS
