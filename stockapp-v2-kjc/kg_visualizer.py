@@ -906,7 +906,7 @@ def _render_crowding_chain_panel(kg) -> None:
 
             live_proc = _get_live_procrustes_dict()
             for key, vals in live_proc.items():
-                if key in _APPENDIX_B_PROCRUSTES:
+                if key in REGIME_TRANSITIONS:
                     procrustes_live[key] = vals
         except Exception:
             pass
