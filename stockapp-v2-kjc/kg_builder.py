@@ -177,7 +177,7 @@ def _get_migration_row(ss, period_a: str, period_b: str):
 def _get_pc_variance(ss):
     """
     Get PC variance ratios from session_state['pca_model'].
-    Falls back to Appendix B values.
+    Returns explicit missing-state defaults when live values are unavailable.
     Returns dict {PC1: float, PC2: float, PC3: float}.
     """
     pca_model = ss.get("pca_model")
@@ -196,7 +196,7 @@ def _get_pc_variance(ss):
 def _get_universe_count(ss):
     """
     Get universe count from session_state['pca_df'].
-    Falls back to Appendix B.
+    Returns explicit missing-state default when live values are unavailable.
     """
     pca_df = ss.get("pca_df")
     if pca_df is not None and not pca_df.empty:
