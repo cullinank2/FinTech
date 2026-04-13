@@ -933,38 +933,59 @@ def _render_crowding_chain_panel(kg) -> None:
     # Removed non-adjacent transition (Post-COVID → Disinflation)
     d12, n12  = _ps(*REGIME_TRANSITIONS[1])
 
-    if using_fallback:
-        st.info("⚠️ Live structural data unavailable — run Period Comparison to populate live data.")
-
-    col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns(3)
     for col, regime, score, prev in zip(
         [col1, col2, col3], REGIME_ORDER, pc_score, [None] + pc_score[:-1]
     ):
-        delta_str = f"{score - prev:+.1f} vs prior regime" if prev is not None else None
-        flag = " 🚨" if score > _CROWDING_FLAG else ""
-        col.metric(label=f"{regime} Crowding{flag}", value=f"{score:.1f}", delta=delta_str)
+        delta_str = (
+            f"{score - prev:+.1f} vs prior regime"
+            if score is not None and prev is not None
+            else None
+        )
+        flag = " 🚨" if score is not None and score > _CROWDING_FLAG else ""
+        value_str = f"{score:.1f}" if score is not None else "Unavailable"
+        col.metric(label=f"{regime} Crowding{flag}", value=value_str, delta=delta_str)
 
     st.markdown("---")
     st.markdown("**Structural distance between adjacent regimes (Procrustes disparity):**")
     chain_cols = st.columns([2, 1, 2, 1, 2])
     _dr = REGIME_DATE_RANGES
-    chain_cols[0].markdown(f"**Post-COVID**\n\nCrowding: {pc_score[0]:.1f}\n\n*({_dr.get('Post-COVID')})*")
-    src01 = "live" if not using_fallback and ("Post-COVID", "Rate Shock") in procrustes_live else "ref"
-    src12 = "live" if not using_fallback and ("Rate Shock", "Disinflation") in procrustes_live else "ref"
-    chain_cols[1].markdown(f"→\n\n**{d01:.3f}**\n\n*{n01:,} tickers*\n\n{'🔴 Major break' if d01 >= 0.30 else '🟡 Moderate'}\n\n*({src01})*")
-    chain_cols[2].markdown(f"**Rate Shock**\n\nCrowding: {pc_score[1]:.1f}\n\n*({_dr.get('Rate Shock')})*")
-    chain_cols[3].markdown(f"→\n\n**{d12:.3f}**\n\n*{n12:,} tickers*\n\n{'🔴 Major break' if d12 >= 0.30 else '🟢 Stable'}\n\n*({src12})*")
-    dis_flag = " 🚨" if pc_score[2] > _CROWDING_FLAG else ""
-    chain_cols[4].markdown(f"**Disinflation**\n\nCrowding: {pc_score[2]:.1f}{dis_flag}\n\n*({_dr.get('Disinflation')})*")
+
+    pc0 = f"{pc_score[0]:.1f}" if pc_score[0] is not None else "Unavailable"
+    pc1 = f"{pc_score[1]:.1f}" if pc_score[1] is not None else "Unavailable"
+    pc2 = f"{pc_score[2]:.1f}" if pc_score[2] is not None else "Unavailable"
+
+    src01 = "live" if d01 is not None and n01 is not None else "unavailable"
+    src12 = "live" if d12 is not None and n12 is not None else "unavailable"
+
+    d01_str = f"{d01:.3f}" if d01 is not None else "Unavailable"
+    d12_str = f"{d12:.3f}" if d12 is not None else "Unavailable"
+    n01_str = f"{n01:,} tickers" if n01 is not None else "Run Period Comparison"
+    n12_str = f"{n12:,} tickers" if n12 is not None else "Run Period Comparison"
+
+    verdict01 = (
+        "🔴 Major break" if d01 is not None and d01 >= 0.30
+        else "🟡 Moderate" if d01 is not None
+        else "Unavailable"
+    )
+    verdict12 = (
+        "🔴 Major break" if d12 is not None and d12 >= 0.30
+        else "🟢 Stable" if d12 is not None
+        else "Unavailable"
+    )
+
+    chain_cols[0].markdown(f"**Post-COVID**\n\nCrowding: {pc0}\n\n*({_dr.get('Post-COVID')})*")
+    chain_cols[1].markdown(f"→\n\n**{d01_str}**\n\n*{n01_str}*\n\n{verdict01}\n\n*({src01})*")
+    chain_cols[2].markdown(f"**Rate Shock**\n\nCrowding: {pc1}\n\n*({_dr.get('Rate Shock')})*")
+    chain_cols[3].markdown(f"→\n\n**{d12_str}**\n\n*{n12_str}*\n\n{verdict12}\n\n*({src12})*")
+    dis_flag = " 🚨" if pc_score[2] is not None and pc_score[2] > _CROWDING_FLAG else ""
+    chain_cols[4].markdown(f"**Disinflation**\n\nCrowding: {pc2}{dis_flag}\n\n*({_dr.get('Disinflation')})*")
     st.markdown("---")
-    # FIX 1: caption reflects actual data source
-    data_source = "live pipeline" if not using_fallback else "Appendix B reference"
+    data_source = "live pipeline" if not using_fallback else "unavailable"
     st.caption(
         f"*Procrustes disparity: rotation-invariant distance between PCA loading matrices. "
         f"Threshold ≥ 0.30 = meaningful structural break. Source: {data_source}.*"
     )
-
-
 # ---------------------------------------------------------------------------
 # Panel 3 — Early Warning Panel
 # ---------------------------------------------------------------------------
