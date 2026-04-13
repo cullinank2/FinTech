@@ -110,7 +110,7 @@ def _get_session_state():
 def _get_procrustes_row(ss, period_a: str, period_b: str):
     """
     Look up a Procrustes row from session_state['procrustes_results'].
-    Falls back to Appendix B if session state not populated.
+    Returns explicit missing-state values if session state is not populated.
     Returns a dict with keys: disparity, common_tickers, interpretation.
     """
     proc_df = ss.get("procrustes_results")
