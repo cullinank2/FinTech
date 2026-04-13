@@ -2423,6 +2423,7 @@ def render_universe_period_comparison():
                                 "green = strengthening, red = weakening."
                             )
 
+
 def render_universe_kg_tab():
     """Render the Universe / Portfolio Level knowledge graph tab."""
 
