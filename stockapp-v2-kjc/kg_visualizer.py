@@ -934,7 +934,7 @@ def _render_crowding_chain_panel(kg) -> None:
     d12, n12  = _ps(*REGIME_TRANSITIONS[1])
 
     if using_fallback:
-        st.info("📋 Displaying Appendix B empirical values. Run Period Comparison to populate live data.")
+        st.info("⚠️ Live structural data unavailable — run Period Comparison to populate live data.")
 
     col1, col2, col3 = st.columns(3)
     for col, regime, score, prev in zip(
