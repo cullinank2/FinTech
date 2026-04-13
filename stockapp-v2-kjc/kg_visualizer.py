@@ -877,7 +877,7 @@ def _render_crowding_chain_panel(kg) -> None:
                 result = kg.get_regime_crowding(regime)
                 if result:
                     crowding_live[regime] = result
-            for (r_a, r_b) in _APPENDIX_B_PROCRUSTES:
+            for (r_a, r_b) in REGIME_TRANSITIONS:
                 result = kg.get_procrustes_transition(r_a, r_b)
                 if result:
                     procrustes_live[(r_a, r_b)] = result
