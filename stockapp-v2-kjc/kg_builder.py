@@ -226,7 +226,7 @@ def _get_live_factor_axis_map(ss):
         if result:
             return result
 
-    # Static fallback derived from config (no Appendix B loading values)
+    # Static config-derived mapping used when live loadings are unavailable
     try:
         from config import FACTOR_CATEGORIES
         # Use known category-PC relationships from the ESDS methodology
