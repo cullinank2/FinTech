@@ -759,8 +759,8 @@ class KnowledgeGraph:
                 is_major_break  = False
 
             # ── Tier 2: override migration values from live session state ─────
-            # The graph edge was built from Appendix B — live migration_summary_df
-            # is more accurate and should take precedence when available.
+            # The graph edge may not reflect the latest live migration data —
+            # migration_summary_df should take precedence when available.
             try:
                 ss = _get_session_state()
                 mig_summary = ss.get("migration_summary_df")
