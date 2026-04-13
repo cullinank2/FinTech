@@ -1023,19 +1023,19 @@ if __name__ == "__main__":
                    procrustes_disparity=0.459, common_tickers=316,
                    is_major_break=True, severity="Major",
                    migration_pct=60.1, stocks_changed=190, stocks_analyzed=316,
-                   data_source="appendix_b_fallback")
+                   data_source="missing")
         G.add_edge(f"regime:{PC}", f"regime:{RS}",
                    edge_type="regime_transition",
                    procrustes_disparity=0.342, common_tickers=322,
                    is_major_break=True, severity="Major",
                    migration_pct=43.7, stocks_changed=138, stocks_analyzed=316,
-                   data_source="appendix_b_fallback")
+                   data_source="missing")
         G.add_edge(f"regime:{RS}", f"regime:{D}",
                    edge_type="regime_transition",
                    procrustes_disparity=0.186, common_tickers=1590,
                    is_major_break=False, severity="Meaningful",
                    migration_pct=30.1, stocks_changed=95, stocks_analyzed=316,
-                   data_source="appendix_b_fallback")
+                   data_source="missing")
 
     kg = KnowledgeGraph(G)
 
