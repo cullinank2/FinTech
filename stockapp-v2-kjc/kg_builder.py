@@ -560,7 +560,7 @@ def build_static_ontology_graph() -> KGResult:
     """
     Build static ESDS ontology (no equity nodes).
     All empirical values drawn from session state where available,
-    falling back to Appendix B constants only when pipeline hasn't run.
+    using explicit missing-state defaults when live pipeline outputs are unavailable.
     Used by kg_visualizer.py for the Static Ontology view.
     """
     if not KG_SCHEMA_AVAILABLE:
