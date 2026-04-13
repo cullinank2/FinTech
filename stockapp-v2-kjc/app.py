@@ -2258,10 +2258,24 @@ def render_universe_period_comparison():
                         st.session_state["migration_summary_df"] = summary_df
 
                 if migration_df is not None and not migration_df.empty:
+                    stocks_tracked_value = f"{len(migration_df):,}"
+
+                    changed_quadrant_value = (
+                        f"{migration_pct:.1f}%"
+                        if pd.notna(migration_pct)
+                        else "Missing — Run Period Comparison"
+                    )
+
+                    stayed_same_value = (
+                        f"{100 - migration_pct:.1f}%"
+                        if pd.notna(migration_pct)
+                        else "Missing — Run Period Comparison"
+                    )
+
                     col_a, col_b, col_c = st.columns(3)
-                    col_a.metric("Stocks Tracked", f"{len(migration_df):,}")
-                    col_b.metric("Changed Quadrant", f"{migration_pct:.1f}%")
-                    col_c.metric("Stayed Same", f"{100 - migration_pct:.1f}%")
+                    col_a.metric("Stocks Tracked", stocks_tracked_value)
+                    col_b.metric("Changed Quadrant", changed_quadrant_value)
+                    col_c.metric("Stayed Same", stayed_same_value)
 
                     st.markdown("**Migration rates between adjacent periods:**")
                     st.dataframe(summary_df, use_container_width=True, hide_index=True)
