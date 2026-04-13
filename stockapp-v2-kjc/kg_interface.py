@@ -363,7 +363,7 @@ class KnowledgeGraph:
         """
         Return the loading shift for a factor across a regime boundary.
         Reads from session_state["period_loadings"] (populated after Period
-        Comparison runs). Falls back to Appendix B constants.
+        Comparison runs). Returns explicit missing-state values when unavailable.
 
         Parameters
         ----------
