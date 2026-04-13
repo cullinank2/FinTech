@@ -911,13 +911,13 @@ def _render_crowding_chain_panel(kg) -> None:
         except Exception:
             pass
 
-    # FIX 2: explicit None checks in inner functions — no silent Appendix B substitution
+    # FIX 2: explicit None checks in inner functions — explicit unavailable state
     def _cs(regime):
         if not using_fallback and regime in crowding_live:
             val = crowding_live[regime].get("crowding_score")
             if val is not None:
                 return val
-        return _APPENDIX_B_CROWDING[regime]
+        return None
 
     def _ps(r_a, r_b):
         key = (r_a, r_b)
