@@ -1704,6 +1704,13 @@ def render_structural_intelligence_tab_universe() -> None:
 
     st.markdown("---")
 
+    if kg is None:
+        st.warning(
+            "⚠️ Knowledge Graph view is unavailable. "
+            "Run **Period Comparison** to populate structural graph diagnostics."
+        )
+        return
+
     if panel == "📈 Regime Crowding Chain":
         _render_crowding_chain_panel(kg)
     elif panel == "🚨 Early Warning Panel":
