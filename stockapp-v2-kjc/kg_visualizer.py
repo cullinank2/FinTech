@@ -933,7 +933,7 @@ def _render_crowding_chain_panel(kg) -> None:
     # Removed non-adjacent transition (Post-COVID → Disinflation)
     d12, n12  = _ps(*REGIME_TRANSITIONS[1])
 
-        col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
     for col, regime, score, prev in zip(
         [col1, col2, col3], REGIME_ORDER, pc_score, [None] + pc_score[:-1]
     ):
