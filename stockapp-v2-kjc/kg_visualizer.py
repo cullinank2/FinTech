@@ -774,13 +774,12 @@ def _get_live_procrustes_dict() -> dict:
 def _get_disp_with_source(r_a: str, r_b: str, live_proc: dict) -> tuple:
     """
     Return (disparity_value, n_tickers, source_label) for a regime pair.
-    Prefers live session state; falls back to Appendix B with label.
+    Uses live session state when available; otherwise returns explicit missing state.
     """
-    ab = _APPENDIX_B_PROCRUSTES.get((r_a, r_b), {"disparity": 0.0, "n_tickers": 0})
     live = live_proc.get((r_a, r_b), live_proc.get((r_b, r_a), {}))
     if live:
         return live["disparity"], live["n_tickers"], "live"
-    return ab["disparity"], ab["n_tickers"], "Appendix B"
+    return 0.0, 0, "unavailable"
 
 
 # ---------------------------------------------------------------------------
