@@ -41,10 +41,7 @@ try:
         REGIME_NODES, FACTOR_NODES, QUADRANT_NODES, AXIS_NODES,
         CATEGORY_NODES, MECHANISM_NODES, PLATFORM_NODES,
         TRANSITION_PAIRS, SHORT_PERIOD_MAP,
-        # Appendix B fallbacks (display only, never used for graph construction)
-        APPENDIX_B_PROCRUSTES, APPENDIX_B_CROWDING,
-        APPENDIX_B_PC_VARIANCE, APPENDIX_B_MIGRATION,
-        APPENDIX_B_UNIVERSE_COUNT,
+ 
         # Enums / types
         RegimeName, QuadrantID, RiskLevel, StructuralBreakSeverity,
         NodeType, EdgeType,
