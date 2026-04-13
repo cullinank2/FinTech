@@ -2396,8 +2396,6 @@ def render_universe_period_comparison():
                             styled = (
                                 loadings_table.style
                                 .map(_style_loading, subset=period_cols)
-                                .map(_style_delta, subset=delta_cols)
-                                .format('{:+.3f}', subset=delta_cols)
                                 .format('{:.3f}', subset=period_cols)
                                 .set_properties(**{'text-align': 'center'})
                                 .set_table_styles([
@@ -2414,6 +2412,13 @@ def render_universe_period_comparison():
                                      'props': [('background-color', 'rgba(255,255,255,0.05)')]},
                                 ])
                             )
+
+                            if delta_cols:
+                                styled = (
+                                    styled
+                                    .map(_style_delta, subset=delta_cols)
+                                    .format('{:+.3f}', subset=delta_cols)
+                                )
 
                             st.dataframe(styled, use_container_width=True)
                             st.caption(
