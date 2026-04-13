@@ -1410,11 +1410,25 @@ def render_full_universe_loadings_table():
         return
 
     # Build raw loading matrix: rows = factors, cols = PCs
-    n_components = min(3, pca_model.components_.shape[0])
+    components = getattr(pca_model, "components_", None)
+    if components is None or len(components.shape) != 2:
+        st.warning("Main PCA loadings are missing — Run Period Comparison to refresh PCA outputs.")
+        return
+
+    n_components = min(3, components.shape[0])
     component_names = [f"PC{i+1}" for i in range(n_components)]
 
+    loading_matrix = components[:n_components].T
+
+    if loading_matrix.shape[0] != len(FEATURE_COLUMNS):
+        st.warning(
+            "Main PCA loadings are incomplete or misaligned — Run Period Comparison "
+            "to refresh PCA outputs."
+        )
+        return
+
     loadings_df = pd.DataFrame(
-        pca_model.components_[:n_components].T,
+        loading_matrix,
         index=FEATURE_COLUMNS,
         columns=component_names
     ).reset_index().rename(columns={"index": "Code"})
