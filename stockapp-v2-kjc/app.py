@@ -2201,17 +2201,44 @@ def render_universe_period_comparison():
                         # Plain-English narrative
                         latest = crowding_df.iloc[-1]
                         earliest = crowding_df.iloc[0]
-                        trend = "increased" if latest['crowding_score'] > earliest['crowding_score'] else "decreased"
-                        st.info(
-                            f"**Crowding Trend:** Factor crowding has **{trend}** from "
-                            f"{earliest['crowding_score']:.0f} in the {earliest['period']} regime "
-                            f"to {latest['crowding_score']:.0f} in the {latest['period']} regime. "
-                            f"The current {latest['risk_level']} reading reflects that "
-                            f"{latest['largest_cluster_pct']:.0f}% of the universe is concentrated "
-                            f"in the single largest cluster — a portfolio overweight this cluster "
-                            f"is running a structural factor bet that may not be visible in "
-                            f"traditional correlation-based risk systems."
-                        )
+
+                        latest_score = latest.get('crowding_score')
+                        earliest_score = earliest.get('crowding_score')
+                        latest_period = latest.get('period')
+                        earliest_period = earliest.get('period')
+                        latest_risk = latest.get('risk_level')
+                        latest_cluster_pct = latest.get('largest_cluster_pct')
+
+                        narrative_values_available = all([
+                            pd.notna(latest_score),
+                            pd.notna(earliest_score),
+                            pd.notna(latest_period),
+                            pd.notna(earliest_period),
+                            pd.notna(latest_risk),
+                            pd.notna(latest_cluster_pct),
+                        ])
+
+                        if narrative_values_available:
+                            trend = (
+                                "increased"
+                                if latest_score > earliest_score
+                                else "decreased"
+                            )
+                            st.info(
+                                f"**Crowding Trend:** Factor crowding has **{trend}** from "
+                                f"{earliest_score:.0f} in the {earliest_period} regime "
+                                f"to {latest_score:.0f} in the {latest_period} regime. "
+                                f"The current {latest_risk} reading reflects that "
+                                f"{latest_cluster_pct:.0f}% of the universe is concentrated "
+                                f"in the single largest cluster — a portfolio overweight this cluster "
+                                f"is running a structural factor bet that may not be visible in "
+                                f"traditional correlation-based risk systems."
+                            )
+                        else:
+                            st.info(
+                                "**Crowding Trend:** Missing — Run Period Comparison to populate "
+                                "the explanatory crowding narrative."
+                            )
                     else:
                         st.warning("Crowding score could not be computed — check cluster labels.")
                 else:
