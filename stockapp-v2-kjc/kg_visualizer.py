@@ -229,11 +229,7 @@ def _universe_count_live() -> int:
     pca_df = st.session_state.get("pca_df")
     if pca_df is not None and not pca_df.empty:
         return len(pca_df)
-    try:
-        from kg_schema import APPENDIX_B_UNIVERSE_COUNT
-        return APPENDIX_B_UNIVERSE_COUNT
-    except Exception:
-        return 0
+    return 0
 
 
 def _factor_loading_tooltip(factor_code: str) -> str:
