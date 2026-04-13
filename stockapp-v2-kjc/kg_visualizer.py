@@ -1407,19 +1407,27 @@ def render_structural_intelligence_tab_universe() -> None:
 
     kg = st.session_state.get("kg_instance", None)
 
-    has_live_data = (
-        st.session_state.get("crowding_df") is not None or
-        st.session_state.get("procrustes_results") is not None
-    )
+    crowding_df = st.session_state.get("crowding_df")
+    proc_df = st.session_state.get("procrustes_results")
+
+    has_crowding_data = crowding_df is not None and not crowding_df.empty
+    has_procrustes_data = proc_df is not None and not proc_df.empty
+    has_live_data = has_crowding_data or has_procrustes_data
+    has_complete_structural_data = has_crowding_data and has_procrustes_data
 
     if kg is None and not has_live_data:
         st.warning(
             "⚠️ No live data available yet. "
             "Run **Period Comparison** to populate structural diagnostics."
         )
+        return
 
-    crowding_df = st.session_state.get("crowding_df")
-    proc_df = st.session_state.get("procrustes_results")
+    if not has_complete_structural_data:
+        st.warning(
+            "⚠️ Structural Intelligence requires complete structural inputs. "
+            "Run **Period Comparison** to populate the missing structural diagnostics."
+        )
+        return
 
     risk_status = "Unavailable"
     primary_driver = "Awaiting live regime diagnostics"
