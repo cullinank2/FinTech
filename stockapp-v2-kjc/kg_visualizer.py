@@ -544,10 +544,7 @@ def _render_metrics_panel() -> None:
                 st.metric(label, f"{disp:.3f}", delta=f"{common:,} common tickers")
                 any_live = True
             else:
-                fb = APPENDIX_B_PROCRUSTES.get((a, b)) if KG_SCHEMA_AVAILABLE else None
-                if fb:
-                    st.metric(f"{label} (ref)", f"{fb['disparity']:.3f}",
-                              delta=f"{fb['common_tickers']:,} tickers (Appendix B)")
+                st.metric(label, "Unavailable", delta="Run Period Comparison")
         if not any_live:
             st.info("Run Period Comparison to populate live Procrustes diagnostics.")
 
