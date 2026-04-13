@@ -210,7 +210,7 @@ def _migration_row_live(transition_str: str):
 
 
 def _pc_variance_live() -> dict:
-    """Return {PC1: float, PC2: float, PC3: float} from live pca_model or Appendix B."""
+     """Return {PC1: float, PC2: float, PC3: float} from live pca_model or explicit missing-state defaults."""
     pca_model = st.session_state.get("pca_model")
     if pca_model is not None:
         try:
@@ -223,7 +223,7 @@ def _pc_variance_live() -> dict:
 
 
 def _universe_count_live() -> int:
-    """Return live universe count from pca_df or Appendix B fallback."""
+    """Return live universe count from pca_df or explicit missing-state default."""
     pca_df = st.session_state.get("pca_df")
     if pca_df is not None and not pca_df.empty:
         return len(pca_df)
@@ -711,7 +711,7 @@ def render_kg_tab() -> None:
   Procrustes edges scale with disparity score — thicker = more structural distance.
   Crowding edges scale with crowding score — thicker = more concentrated.
 - **All values are live** from the pipeline when Period Comparison has been run.
-  Appendix B fallbacks are used only before the pipeline runs, and are labeled as such.
+  When live data is unavailable, metrics are explicitly labeled as unavailable.
 
 **Zero prior art mechanisms**
 - *Procrustes Disparity*: no prior application to equity factor spaces.
@@ -1119,7 +1119,7 @@ def _render_early_warning_panel(kg) -> None:
     all_live = all(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs])
     any_live = any(s == "live" for s in [dis_score_src, src_rs_dis, src_pc_rs])
     summary_src = "live pipeline" if all_live else \
-                  "mixed — live + Appendix B" if any_live else "Appendix B reference"
+                  "mixed — partial live availability" if any_live else "unavailable"
 
     score_display = f"{disinflation_score:.1f}" if disinflation_score is not None else "Unavailable"
 
@@ -1132,7 +1132,7 @@ def _render_early_warning_panel(kg) -> None:
         f"**Interpretation:** "
         f"{'Factor crowding escalation without a concurrent structural break in Disinflation indicates equities are piling into an increasingly compressed factor space *within a stable structural regime* — conditions historically associated with synchronized factor unwind risk.' if disinflation_score is not None else 'Structural interpretation unavailable without live crowding data.'}"
     )
-    # FIX 4: caption reflects actual data source, not hardcoded "Appendix B anchors"
+    # FIX 4: caption reflects actual live-data availability state
     st.caption(
         f"*Tier 1 governance output: deterministic KG path traversal. "
         f"Flag threshold (>50). Data source: {summary_src}. "
