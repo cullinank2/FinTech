@@ -173,9 +173,7 @@ def _get_migration_row(ss, period_a: str, period_b: str):
                 pct      = _safe_float(pct_str, 0.0)
                 return {"migration_pct": pct, "changed": changed,
                         "analyzed": analyzed, "source": "live"}
-    fb = APPENDIX_B_MIGRATION.get((period_a, period_b))
-    if fb:
-        return {**fb, "source": "appendix_b_fallback"}
+
     return {"migration_pct": 0.0, "changed": 0, "analyzed": 0, "source": "missing"}
 
 
